@@ -10,6 +10,7 @@ using GamedayTracker.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using ChalkDotNET;
+using GamedayTracker.Interfaces;
 using Serilog;
 
 namespace GamedayTracker
@@ -54,6 +55,7 @@ namespace GamedayTracker
 
             //add services here.
             var services = new ServiceCollection()
+                .AddSingleton<IGameData, GameDataService>()
                 .BuildServiceProvider();
 
             var commandsConfig = new CommandsNextConfiguration

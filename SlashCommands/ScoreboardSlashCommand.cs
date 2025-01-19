@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DSharpPlus.Entities;
+﻿using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using GamedayTracker.Services;
 
@@ -11,7 +6,7 @@ namespace GamedayTracker.SlashCommands
 {
    
     [SlashCommandGroup("Scoreboard", "Scoreboard Commands")]
-    public class ScoreboardSlashCommand: ApplicationCommandModule
+    public class ScoreboardSlashCommand : ApplicationCommandModule
     {
         private readonly GameDataService _gameService = new();
 
@@ -23,11 +18,17 @@ namespace GamedayTracker.SlashCommands
             var parsedWeekResult = int.TryParse(week, out var weekParsed);
 
             var scoreBoardResult = _gameService.GetScoreboard(seasonParsed, weekParsed);
-
+            
             await ctx.DeferAsync();
-            var embed = new DiscordEmbedBuilder().WithTitle("Testing Response");
+            var message = new DiscordMessageBuilder()
+                .AddEmbed(new DiscordEmbedBuilder()
+                    .WithTitle("Gameday Tracker")
+                    .WithThumbnail(scoreBoardResult.Value[0].Opponents.AwayTeam.LogoPath, 10, 10)
+                    .AddField("Season", season, true)
+                    .AddField("Week", week, true)
+                    .AddField("Record", scoreBoardResult.Value[0].Opponents.AwayTeam.Record, true));
 
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
         }
     }
 }
