@@ -10,7 +10,7 @@ namespace GamedayTracker.Services
     {
         public static Dictionary<string, string> LogoPaths { get; set; } = new()
         {
-            { "default", Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Logo", "img_default.png") },
+            { "default", "https://i.imgur.com/jj94UiI.png" },
             { "ARI", "https://i.imgur.com/FeiV2pG.png" },
             { "ATL", "https://i.imgur.com/IVo1dYV.png" },
             { "BAL", "https://i.imgur.com/whCL1a7.png" },

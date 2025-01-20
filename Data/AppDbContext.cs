@@ -1,4 +1,5 @@
-﻿using GamedayTracker.Models;
+﻿using GamedayTracker.Configuration.EntityTypeConfiguration;
+using GamedayTracker.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -13,7 +14,8 @@ namespace GamedayTracker.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //TODO: configure IEntityTypeConfiguration here
-           
+            modelBuilder.ApplyConfiguration(new TeamEntityTypeConfiguration());
+
         }
     }
 }
