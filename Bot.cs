@@ -24,6 +24,7 @@ namespace GamedayTracker
 
         public async Task RunAsync()
         {
+            
             var configService = new ConfigurationDataService();
             var token = configService.GetBotToken();
             var prefix = configService.GetBotPrefix();
