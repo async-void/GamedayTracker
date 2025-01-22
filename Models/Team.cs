@@ -14,6 +14,7 @@ namespace GamedayTracker.Models
         public required string Record { get; set; }
         public required string Abbreviation { get; set; }
         public required string LogoPath { get; set; }
+        public required string Emoji { get; set; }
         public int? Score { get; set; }
         public virtual ICollection<TeamPlayer>? Players { get; set; }
     }

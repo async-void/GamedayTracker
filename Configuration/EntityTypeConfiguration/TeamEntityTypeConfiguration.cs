@@ -24,6 +24,8 @@ namespace GamedayTracker.Configuration.EntityTypeConfiguration
                 .HasMaxLength(15);
             builder.Property(x => x.LogoPath)
                 .HasMaxLength(200);
+            builder.Property(x => x.Emoji)
+                .HasMaxLength(50);
         }
     }
 }

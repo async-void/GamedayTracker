@@ -20,20 +20,34 @@ namespace GamedayTracker.SlashCommands
             var sBuilder = new StringBuilder();
 
             var scoreBoardResult = _gameService.GetScoreboard(seasonParsed, weekParsed);
+            var _season = scoreBoardResult.Value[0].Season;
+            var _week = scoreBoardResult.Value[0].Week;
+
+            sBuilder.Append($"**Season {_season}: Week {_week}**\r\n\r\n");
             await ctx.DeferAsync();
 
             if (scoreBoardResult.IsOk)
             {
                 for (int i = 0; i < scoreBoardResult.Value.Count; i++)
                 {
+                    var awayName = scoreBoardResult.Value[i].Opponents.AwayTeam.Name;
+                    var awayScore = scoreBoardResult.Value[i].Opponents.AwayTeam.Score;
+                    var awayRecord = scoreBoardResult.Value[i].Opponents.AwayTeam.Record;
+                    var awayEmoji = scoreBoardResult.Value[i].Opponents.AwayTeam.Emoji;
+
+                    var homeName = scoreBoardResult.Value[i].Opponents.HomeTeam.Name;
+                    var homeScore = scoreBoardResult.Value[i].Opponents.HomeTeam.Score;
+                    var homeRecord = scoreBoardResult.Value[i].Opponents.HomeTeam.Record;
+                    var homeEmoji = scoreBoardResult.Value[i].Opponents.HomeTeam.Emoji;
+
                     sBuilder.Append(
-                        $"{scoreBoardResult.Value[i].Opponents.AwayTeam.Name} {scoreBoardResult.Value[i].Opponents.AwayTeam.Record} at " +
-                        $"{scoreBoardResult.Value[i].Opponents.HomeTeam.Name} {scoreBoardResult.Value[i].Opponents.HomeTeam.Record}\r\n" );
+                        $"{awayName} {awayRecord} **{awayScore}** {awayEmoji} \\|| " +
+                        $"{homeName} {homeRecord} **{homeScore}** {homeEmoji}\r\n" );
                 }
                 
                 var message = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle("Gameday Tracker")
+                        .WithTitle($"Gameday Tracker Scoreboard")
                         .WithDescription(sBuilder.ToString()));
 
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));

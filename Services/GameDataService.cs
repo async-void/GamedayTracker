@@ -13,7 +13,7 @@ namespace GamedayTracker.Services
     public class GameDataService : IGameData
     {
         private readonly AppDbContextFactory _dbFactory = new AppDbContextFactory();
-
+        
         /// <summary>
         /// Get Scoreboard for season and week
         /// </summary>
@@ -26,16 +26,16 @@ namespace GamedayTracker.Services
             var matchups = new List<Matchup>();
             var db = _dbFactory.CreateDbContext();
 
-            var weeklyMatchups = db.Matchups?
-                .Where(x => x.Season == season && x.Week == week)
-                .Include(x => x.Opponents.AwayTeam)
-                .Include(x => x.Opponents.HomeTeam)
-            .ToList();
+            //var weeklyMatchups = db.Matchups?
+            //    .Where(x => x.Season == season && x.Week == week)
+            //    .Include(x => x.Opponents.AwayTeam)
+            //    .Include(x => x.Opponents.HomeTeam)
+            //.ToList();
 
-            if (weeklyMatchups!.Count > 0)
-            {
-                return Result<List<Matchup>, SystemError<GameDataService>>.Ok(weeklyMatchups);
-            }
+            //if (weeklyMatchups!.Count > 0)
+            //{
+            //    return Result<List<Matchup>, SystemError<GameDataService>>.Ok(weeklyMatchups);
+            //}
 
             Console.WriteLine($"no matchups in database for Season {season} : Week {week}\r\nAttempting to collect data from website!");
             var seasonType = "reg";
@@ -133,7 +133,8 @@ namespace GamedayTracker.Services
                     Record = awayRecord.Value,
                     Division = awayNameFinal.Value.ToDivision(),
                     Abbreviation = awayAbbr,
-                    LogoPath = LogoPathService.GetLogoPath(awayAbbr)
+                    LogoPath = LogoPathService.GetLogoPath(awayAbbr),
+                    Emoji = NflEmojiService.GetEmoji(awayAbbr)
                 };
 
                 var homeTeam = new Team()
@@ -143,7 +144,8 @@ namespace GamedayTracker.Services
                     Record = homeRecord.Value,
                     Division = homeNameFinal.Value.ToDivision(),
                     Abbreviation = homeAbbr,
-                    LogoPath = LogoPathService.GetLogoPath(homeAbbr)
+                    LogoPath = LogoPathService.GetLogoPath(homeAbbr),
+                    Emoji = NflEmojiService.GetEmoji(homeAbbr)
                 };
                 var matchup = new Matchup()
                 {

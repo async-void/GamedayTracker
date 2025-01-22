@@ -60,9 +60,10 @@ namespace GamedayTracker.Extensions
         {
             var result = name switch
             {
+                "Arizona" => "ARI",
                 "Buffalo" => "BUF",
                 "Miami" => "MIA",
-                "New England" => "PAT",
+                "New England" => "NE",
                 "NY Jets" => "NYJ",
                 "Baltimore" => "BAL",
                 "Cincinnati" => "CIN",
@@ -88,7 +89,6 @@ namespace GamedayTracker.Extensions
                 "Carolina" => "CAR",
                 "New Orleans" => "NO",
                 "Tampa Bay" => "TB",
-                "Arizona" => "ARI",
                 "LA Rams" => "LAR",
                 "San Francisco" => "SF",
                 "Seattle" => "SEA",
