@@ -41,14 +41,16 @@ namespace GamedayTracker.SlashCommands
                     var homeEmoji = scoreBoardResult.Value[i].Opponents.HomeTeam.Emoji;
 
                     sBuilder.Append(
-                        $"{awayName} {awayRecord} **{awayScore}** {awayEmoji} \\|| " +
-                        $"{homeName} {homeRecord} **{homeScore}** {homeEmoji}\r\n" );
+                        $"{awayEmoji} **{awayScore}** -" +
+                        $"**{homeScore}** {homeEmoji}\t\t\\|| FINAL\r\n" );
                 }
                 
                 var message = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithTitle($"Gameday Tracker Scoreboard")
-                        .WithDescription(sBuilder.ToString()));
+                        .WithDescription(sBuilder.ToString())
+                        .WithThumbnail("https://i.imgur.com/jj94UiI.png", 64, 64)
+                        .WithTimestamp(DateTimeOffset.UtcNow));
 
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
             }

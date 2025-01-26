@@ -26,16 +26,17 @@ namespace GamedayTracker.Services
             var matchups = new List<Matchup>();
             var db = _dbFactory.CreateDbContext();
 
-            //var weeklyMatchups = db.Matchups?
-            //    .Where(x => x.Season == season && x.Week == week)
-            //    .Include(x => x.Opponents.AwayTeam)
-            //    .Include(x => x.Opponents.HomeTeam)
-            //.ToList();
+            var weeklyMatchups = db.Matchups?
+                .Where(x => x.Season == season && x.Week == week)
+                .Include(x => x.Opponents)
+                .Include(x => x.Opponents.AwayTeam)
+                .Include(x => x.Opponents.HomeTeam)
+            .ToList();
 
-            //if (weeklyMatchups!.Count > 0)
-            //{
-            //    return Result<List<Matchup>, SystemError<GameDataService>>.Ok(weeklyMatchups);
-            //}
+            if (weeklyMatchups!.Count > 0)
+            {
+                return Result<List<Matchup>, SystemError<GameDataService>>.Ok(weeklyMatchups);
+            }
 
             Console.WriteLine($"no matchups in database for Season {season} : Week {week}\r\nAttempting to collect data from website!");
             var seasonType = "reg";
@@ -61,7 +62,7 @@ namespace GamedayTracker.Services
                                 matchups.Add(matchup.Value);
                             else
                             {
-                                Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.Yellow(matchup.Error.ErrorMessage!)}");
+                                Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.DarkGray(matchup.Error.ErrorMessage!)}");
                             }
                         }
                         catch (Exception e)
@@ -73,7 +74,7 @@ namespace GamedayTracker.Services
                                 CreatedAt = DateTime.UtcNow,
                                 ErrorType = Enums.ErrorType.INFORMATION,
                             };
-                            Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.Yellow(error.ErrorMessage)}");
+                            Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.DarkGray(error.ErrorMessage)}");
                         }
                     }
                 }

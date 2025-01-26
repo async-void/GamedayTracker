@@ -35,11 +35,12 @@ namespace GamedayTracker.Services
             var curArticle = articles[0];
             if (curArticle.HasChildNodes)
             {
-                for (int i = 0; i < curArticle.ChildNodes.Count; i+= 2)
+                var childCount = curArticle.ChildNodes.Count;
+                for (var i = 0; i < childCount; i+= 2)
                 {
                     //even child nodes has image data
                     //odd child nodes have title and content
-                    var childCount = curArticle.ChildNodes.Count;
+                    
                     var cNode= curArticle.ChildNodes[i + 1];
 
                     var imgNode = curArticle.ChildNodes[i].ChildNodes[0].ChildNodes[0].ChildNodes[0].ChildNodes[0];
@@ -72,6 +73,8 @@ namespace GamedayTracker.Services
             }
             if (newsArticles.Count > 0) 
                 return Result<List<NewsArticle>, SystemError<NFLNewsService>>.Ok(newsArticles);
+
+            //if the newsArticles are empty or null return Error
             return Result<List<NewsArticle>, SystemError<NFLNewsService>>.Err(new SystemError<NFLNewsService>
             {
                 ErrorMessage = "no news articles found.",

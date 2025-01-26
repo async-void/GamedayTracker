@@ -13,7 +13,7 @@ namespace GamedayTracker.Utility
 
         public static List<T> Shuffle<T>(this List<T> list)
         {
-            int n = list.Count;
+            var n = list.Count;
             while (n > 1)
             {
                 n--;

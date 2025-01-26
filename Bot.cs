@@ -10,6 +10,7 @@ using GamedayTracker.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using ChalkDotNET;
+using DSharpPlus.EventArgs;
 using GamedayTracker.Interfaces;
 using Serilog;
 
@@ -78,7 +79,7 @@ namespace GamedayTracker
 
         
 
-        private void RegisterCommands() => Client!.GetCommandsNext().RegisterCommands(Assembly.GetExecutingAssembly());
+        private void RegisterCommands() => Client.GetCommandsNext().RegisterCommands(Assembly.GetExecutingAssembly());
         private void RegisterSlashCommands() => Client.GetSlashCommands().RegisterCommands(Assembly.GetExecutingAssembly());
 
 
@@ -87,15 +88,19 @@ namespace GamedayTracker
         #region CLIENT READY
         private Task OnClientReady(DiscordClient sender, DSharpPlus.EventArgs.ReadyEventArgs args)
         {
-            Console.WriteLine(Chalk.Yellow("Client Ready...\r\nListening for events..."));
+            Console.WriteLine(Chalk.Yellow(
+                $"{Chalk.DarkGray($"[{DateTime.UtcNow}]")} {Chalk.Yellow("Client Ready...")}\r\n{Chalk.DarkGray($"[{DateTime.UtcNow}]")} {Chalk.Yellow("Listening for events...")}"));
             return Task.CompletedTask;
         }
         #endregion
 
         #region MESSAGE CREATED
-        private async Task OnMessageCreated(DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs args)
+        private async Task OnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
         {
-            
+            if (!args.Message.Author.IsBot)
+            {
+
+            }
         }
         #endregion
 

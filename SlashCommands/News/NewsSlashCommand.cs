@@ -27,7 +27,7 @@ namespace GamedayTracker.SlashCommands.News
                 var sBuilder = new StringBuilder();
                 var count = articles.Value.Count;
                 var embedTitle = $"**Latest NFL News {DateTime.UtcNow}**";
-                sBuilder.Append($"{embedTitle}\r\n\r\n");
+                sBuilder.Append($"<:newspaper:1331763576150425620> {embedTitle}\r\n\r\n");
 
                 for (int i = 0; i < count; i++)
                 {

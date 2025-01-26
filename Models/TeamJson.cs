@@ -2,7 +2,7 @@
 
 namespace GamedayTracker.Models
 {
-    internal class TeamJson
+    public class TeamJson
     {
         [JsonPropertyName("abbr")]
         public string? Abbr { get; set; }

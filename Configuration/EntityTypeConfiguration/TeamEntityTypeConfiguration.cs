@@ -17,15 +17,15 @@ namespace GamedayTracker.Configuration.EntityTypeConfiguration
             builder.Property(x => x.Name)
                 .HasMaxLength(25);
             builder.Property(x => x.Abbreviation)
-                .HasMaxLength(5);
+                .HasMaxLength(10);
             builder.Property(x => x.Division)
                 .HasMaxLength(25);
             builder.Property(x => x.Record)
                 .HasMaxLength(15);
             builder.Property(x => x.LogoPath)
-                .HasMaxLength(200);
+                .HasMaxLength(500);
             builder.Property(x => x.Emoji)
-                .HasMaxLength(50);
+                .HasMaxLength(100);
         }
     }
 }
