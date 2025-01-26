@@ -17,6 +17,7 @@ Here are some of the commands you can use with the Gameday Tracker:
 - `/scoreboard [season]` - Get NFL scores for a selected season.
 - `/standings [season]` - Get stats for a specific player or team.
 - `/news` - Get current NFL news and updates.
+- more to come...
 
 
 ## Usage
@@ -25,7 +26,7 @@ Once the bot is up and running, you can invite it to your Discord server and use
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU GENERAL PUBLIC LICENSE - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgements
 
@@ -33,4 +34,4 @@ Special thanks to all contributors and the Discord community for their support.
 
 ## Contact
 
-For any inquiries or issues, feel free to open an issue on the GitHub repository or contact me at your-email@example.com.
+For any inquiries or issues, feel free to open an issue on the GitHub repository or contact me on Discord.
