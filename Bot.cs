@@ -13,14 +13,22 @@ using ChalkDotNET;
 using DSharpPlus.EventArgs;
 using GamedayTracker.Interfaces;
 using Serilog;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.TextCommands;
+using DSharpPlus.Commands.Processors.TextCommands.Parsing;
+using GamedayTracker.SlashCommands;
+using GamedayTracker.SlashCommands.Economy;
+using GamedayTracker.SlashCommands.News;
+using GamedayTracker.SlashCommands.Player;
 
 namespace GamedayTracker
 {
     public class Bot
     { 
-        private DiscordClient Client;
+        private DiscordClient? Client;
         public CommandsNextExtension? Commands { get; set; }
-        public SlashCommandsExtension? SlashCommands { get; set; }
+        public CommandsNextExtension? SlashCommands { get; set; }
         public static InteractivityExtension? Interactivity { get; set; }
 
         public async Task RunAsync()
@@ -30,80 +38,37 @@ namespace GamedayTracker
             var token = configService.GetBotToken();
             var prefix = configService.GetBotPrefix();
 
-            var clientConfig = new DiscordConfiguration
+            var dBuilder = DiscordClientBuilder.CreateDefault(token.Value, TextCommandProcessor.RequiredIntents | SlashCommandProcessor.RequiredIntents);
+
+            dBuilder.UseCommands ((IServiceProvider serviceProvider, CommandsExtension extension) =>
             {
-                Token = token.Value,
-                TokenType = TokenType.Bot,
-                AutoReconnect = true,
-                AlwaysCacheMembers = true,
-                MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Debug,
-                Intents = DiscordIntents.All
-            };
+                extension.AddCommands(Assembly.GetExecutingAssembly());
 
-            Client = new DiscordClient(clientConfig);
-            Client.Ready += OnClientReady;
-            Client.MessageCreated += OnMessageCreated;
+                TextCommandProcessor textCommandProcessor = new(new()
+                {
+                    PrefixResolver = new DefaultPrefixResolver(true, prefix.Value).ResolvePrefixAsync,
+                });
 
-            var iteractivityConfig = new InteractivityConfiguration
+                extension.AddProcessor(textCommandProcessor);
+            }, new CommandsConfiguration()
             {
-                Timeout = TimeSpan.FromMinutes(1),
-                PollBehaviour = PollBehaviour.KeepEmojis,
-                PaginationEmojis = new PaginationEmojis(),
-                PaginationBehaviour = PaginationBehaviour.WrapAround,
-                PaginationDeletion = PaginationDeletion.KeepEmojis
-            };
+                RegisterDefaultCommandProcessors = true,
+                DebugGuildId = 0,
 
-            Client.UseInteractivity(iteractivityConfig);
+            });
 
-            //add services here.
-            var services = new ServiceCollection()
-                .AddSingleton<IGameData, GameDataService>()
-                .BuildServiceProvider();
+            dBuilder.ConfigureEventHandlers(
+                m => m.HandleMessageCreated(async (s, e) =>
+                {
+                    if (e.Message.Author!.IsBot) return;
+                }));
 
-            var commandsConfig = new CommandsNextConfiguration
-            {
-                StringPrefixes = [ prefix.Value ] ,
-                EnableDms = true,
-                EnableMentionPrefix = true,
-                Services = services
-            };
-
-            this.Commands = Client.UseCommandsNext(commandsConfig);
-            this.SlashCommands = Client.UseSlashCommands();
-            RegisterCommands();
-            RegisterSlashCommands();
-
-            await Client.ConnectAsync(new DiscordActivity("Game-Day", ActivityType.Watching)).ConfigureAwait(false);
-            await Task.Delay(-1).ConfigureAwait(false);
+            var status = new DiscordActivity("Game-Day", DiscordActivityType.Watching);
+            var client = dBuilder.Build();
+            dBuilder.SetReconnectOnFatalGatewayErrors();
+            await client.ConnectAsync(status, DiscordUserStatus.Online, DateTimeOffset.UtcNow);
+            Console.WriteLine($"{Chalk.DarkGray("Connection Success!")}");
+            await Task.Delay(-1);
         }
-
-        
-
-        private void RegisterCommands() => Client.GetCommandsNext().RegisterCommands(Assembly.GetExecutingAssembly());
-        private void RegisterSlashCommands() => Client.GetSlashCommands().RegisterCommands(Assembly.GetExecutingAssembly());
-
-
-        #region GATEWAY EVENTS
-
-        #region CLIENT READY
-        private Task OnClientReady(DiscordClient sender, DSharpPlus.EventArgs.ReadyEventArgs args)
-        {
-            Console.WriteLine(Chalk.Yellow(
-                $"{Chalk.DarkGray($"[{DateTime.UtcNow}]")} {Chalk.Yellow("Client Ready...")}\r\n{Chalk.DarkGray($"[{DateTime.UtcNow}]")} {Chalk.Yellow("Listening for events...")}"));
-            return Task.CompletedTask;
-        }
-        #endregion
-
-        #region MESSAGE CREATED
-        private async Task OnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
-        {
-            if (!args.Message.Author.IsBot)
-            {
-
-            }
-        }
-        #endregion
-
-        #endregion
     }
 }

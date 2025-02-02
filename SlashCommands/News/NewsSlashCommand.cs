@@ -1,23 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Security.Cryptography;
+﻿using System.ComponentModel;
 using System.Text;
-using System.Threading.Tasks;
+using DSharpPlus.Commands;
 using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
 
 namespace GamedayTracker.SlashCommands.News
 {
-    public class NewsSlashCommand: ApplicationCommandModule
+    public class NewsSlashCommand
     {
         private readonly NFLNewsService _newsService = new();
 
-        [SlashCommand("news", "Gets the most recent NFL News and Updates.")]
-        public async Task GetNewOrUpdates(InteractionContext ctx)
+        [DSharpPlus.Commands.Command("news")]
+        [Description("Gets the most recent NFL News and Updates.")]
+        public async Task GetNewOrUpdates(CommandContext ctx)
         {
             var rnd = new Random();
             var articles = _newsService.GetNews();
@@ -39,7 +35,7 @@ namespace GamedayTracker.SlashCommands.News
                 }
 
                 imgList.Shuffle();
-                await ctx.DeferAsync();
+                await ctx.DeferResponseAsync();
                 var message = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithDescription(sBuilder.ToString())
@@ -50,12 +46,12 @@ namespace GamedayTracker.SlashCommands.News
             }
             else
             {
-                await ctx.DeferAsync();
+                await ctx.DeferResponseAsync();
                 var errorMessage = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithTitle($"Error: {articles.Error.ErrorMessage}")
-                        .AddField("CreatedBy", articles!.Error!.CreatedBy!.ToString(), true)
-                        .AddField("CreatedAt", articles!.Error!.CreatedAt!.ToString(), true));
+                        .AddField("CreatedBy", articles!.Error!.CreatedBy!.ToString()!, true)
+                        .AddField("CreatedAt", articles!.Error!.CreatedAt!.ToString()!, true));
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(errorMessage));
 
             }

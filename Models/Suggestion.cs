@@ -11,7 +11,7 @@ namespace GamedayTracker.Models
     public class Suggestion
     {
         public int Id { get; set; }
-        public required DiscordMember Author { get; set; }
+        public required GuildMember Author { get; set; }
         public required string Title { get; set; }
         public required string Description { get; set; }
         public DateTimeOffset CreatedAt { get; set; }

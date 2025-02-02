@@ -1,18 +1,21 @@
-﻿using System.Linq;
+﻿using System.ComponentModel;
 using System.Text;
+using DSharpPlus.Commands;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using GamedayTracker.Factories;
-using GamedayTracker.Services;
 
 namespace GamedayTracker.SlashCommands
 {
-    public class StandingsSlashCommand: ApplicationCommandModule
+    public class StandingsSlashCommand
     {
-        [SlashCommand("standings", "get season Team Standings")]
-        public async Task GetStandings(InteractionContext ctx,
+        [Command("standings")]
+        [Description("get season Team Standings")]
+        public async Task GetStandings(CommandContext ctx,
             [Option("season", "the season to fetch standings")] string season)
         {
+            await ctx.DeferResponseAsync();
+
             await using var db = new AppDbContextFactory().CreateDbContext();
             var standings = db.TeamStandings
                 .Where(s => s.Season == int.Parse(season))
@@ -29,8 +32,6 @@ namespace GamedayTracker.SlashCommands
                 else
                     sBuilder.Append($"``{standing.Abbr.PadLeft(2)}\t{standing.Wins.PadLeft(2)}\t{standing.Loses}\t{standing.Pct}``\r\n");
             }
-
-            await ctx.DeferAsync();
 
             var message = new DiscordMessageBuilder()
                 .AddEmbed(new DiscordEmbedBuilder()

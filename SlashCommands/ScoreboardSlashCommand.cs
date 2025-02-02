@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.ComponentModel;
+using System.Text;
+using DSharpPlus.Commands;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using GamedayTracker.Services;
@@ -6,12 +8,13 @@ using GamedayTracker.Utility;
 
 namespace GamedayTracker.SlashCommands
 {
-    public class ScoreboardSlashCommand : ApplicationCommandModule
+    public class ScoreboardSlashCommand
     {
         private readonly GameDataService _gameService = new();
 
-        [SlashCommand("scoreboard", "Get scoreboards for a season and a week")]
-        public async Task GetScoreboard(InteractionContext ctx, [Option("season", "enter the year")] string season,
+        [DSharpPlus.Commands.Command("scoreboard")]
+        [Description("get the scores for a specified week")]
+        public async Task GetScoreboard(CommandContext ctx, [Option("season", "enter the year")] string season,
             [Option("week", "enter the week")] string week)
         {
 
@@ -24,7 +27,7 @@ namespace GamedayTracker.SlashCommands
             var _week = scoreBoardResult.Value[0].Week;
 
             sBuilder.Append($"**Season {_season}: Week {_week}**\r\n\r\n");
-            await ctx.DeferAsync();
+            await ctx.DeferResponseAsync();
 
             if (scoreBoardResult.IsOk)
             {

@@ -11,8 +11,9 @@ namespace GamedayTracker.Models
     {
         [JsonPropertyName("default")]
         public string? Default { get; set; }
-
         [JsonPropertyName("cloud")]
         public string? Cloud { get; set; }
+        [JsonPropertyName("gameday")] 
+        public string? Gameday { get; set; }
     }
 }

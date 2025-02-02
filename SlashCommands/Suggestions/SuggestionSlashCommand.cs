@@ -1,19 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
+using DSharpPlus.Commands;
+
 using DSharpPlus.SlashCommands;
 
 namespace GamedayTracker.SlashCommands.Suggestions
 {
-    public class SuggestionSlashCommand: ApplicationCommandModule
+    public class SuggestionSlashCommand
     {
-        [SlashCommand("suggestion", "creates a suggestion")]
-        public async Task CreateSuggestion(InteractionContext ctx, [Option("title", "suggestion title")] string title,
+        [DSharpPlus.Commands.Command("suggestion")]
+        [Description("creates a suggestion")]
+        public async Task CreateSuggestion(CommandContext ctx, [Option("title", "suggestion title")] string title,
             [Option("suggestion", "the suggestion description")] string description)
         {
-
+            await ctx.DeferResponseAsync();
         }
     }
 }
