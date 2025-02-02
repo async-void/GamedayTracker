@@ -21,6 +21,8 @@ using GamedayTracker.SlashCommands;
 using GamedayTracker.SlashCommands.Economy;
 using GamedayTracker.SlashCommands.News;
 using GamedayTracker.SlashCommands.Player;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Reflection.Metadata;
 
 namespace GamedayTracker
 {
@@ -57,17 +59,31 @@ namespace GamedayTracker
 
             });
 
+            #region EVENT HANDLERS
             dBuilder.ConfigureEventHandlers(
                 m => m.HandleMessageCreated(async (s, e) =>
                 {
                     if (e.Message.Author!.IsBot) return;
                 }));
+            dBuilder.ConfigureEventHandlers(
+            m => m.HandleSessionCreated(async (s, e) =>
+            {
+                    Console.WriteLine($"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray("shaking hands with discord...")}");
+                    Console.WriteLine($"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray("Session Started!")}");
+                }));
+            dBuilder.ConfigureEventHandlers(
+                m => m.HandleGuildDownloadCompleted(async (e, s) =>
+                {
+                    Console.WriteLine($"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray("Guild Download Complete.")}");
+                    Console.WriteLine($"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray("Connection Success, Listening for events...")}");
+                }));
+            #endregion
 
             var status = new DiscordActivity("Game-Day", DiscordActivityType.Watching);
             var client = dBuilder.Build();
             dBuilder.SetReconnectOnFatalGatewayErrors();
             await client.ConnectAsync(status, DiscordUserStatus.Online, DateTimeOffset.UtcNow);
-            Console.WriteLine($"{Chalk.DarkGray("Connection Success!")}");
+           
             await Task.Delay(-1);
         }
     }
