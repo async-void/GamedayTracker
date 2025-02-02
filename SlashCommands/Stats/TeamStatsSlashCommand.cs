@@ -10,7 +10,7 @@ namespace GamedayTracker.SlashCommands.Stats
         [Description("Get the Team Statistics")]
         public async Task GetTeamStats(CommandContext ctx, [Option("team", "Team Name")] string teamName)
         {
-
+            await ctx.DeferResponseAsync();
         }
     }
 }
