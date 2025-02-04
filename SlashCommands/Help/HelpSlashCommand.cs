@@ -15,7 +15,9 @@ namespace GamedayTracker.SlashCommands.Help
             var buttons = new DiscordComponent[]
             {
                 new DiscordButtonComponent(DiscordButtonStyle.Primary, "scoreboardBtn", "Scoreboard"),
-                new DiscordButtonComponent(DiscordButtonStyle.Primary, "standingsBtn", "Standings")
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "standingsBtn", "Standings"),
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "useSettingsBtn", "User Settings"),
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "newsBtn", "News")
             };
            
 

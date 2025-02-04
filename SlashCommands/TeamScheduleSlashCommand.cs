@@ -7,7 +7,7 @@ namespace GamedayTracker.SlashCommands
     {
         [Command("schedule")]
         [Description("Gets selected Team's Schedule")]
-        public async Task GetTeamSchedule(CommandContext cyx, [Parameter("team name")] string teamName)
+        public async Task GetTeamSchedule(CommandContext cyx, [Parameter("team")] string teamName)
         {
 
         }
