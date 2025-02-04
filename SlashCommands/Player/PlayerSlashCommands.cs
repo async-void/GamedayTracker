@@ -1,7 +1,6 @@
 ﻿using System.ComponentModel;
 using DSharpPlus.Commands;
 using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
 
 namespace GamedayTracker.SlashCommands.Player
 {
@@ -11,7 +10,7 @@ namespace GamedayTracker.SlashCommands.Player
         [DSharpPlus.Commands.Command("add")]
         [Description("add player to the pool")]
         public async Task AddPlayer(CommandContext ctx,
-            [Option("member", "member to add to the pool")] DiscordUser user)
+            [Parameter("member")] DiscordUser user)
         {
             await ctx.DeferResponseAsync();
 

@@ -1,21 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
+using DSharpPlus.Commands;
 using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
+
+
 
 namespace GamedayTracker.SlashCommands.Settings
 {
-    [SlashCommandGroup("user-settings", "Gameday Tracker user-settings")]
-    public class SettingsSlashCommands: ApplicationCommandModule
+    [Command("user-settings")]
+    public class SettingsSlashCommands
     {
-        [SlashCommand("favorite-team", "set's the user's favorite NFL team.")]
-        public async Task SetFavoriteTeam(InteractionContext ctx,
-            [Option("team", "enter favorite team example KC or PIT")] string teamName)
+        [Command("favorite-team")]
+        [Description("set's the user's favorite NFL team.")]
+        public async Task SetFavoriteTeam(CommandContext ctx,
+            [Parameter("team")] string teamName)
         {
-           
+            await ctx.DeferResponseAsync();
+
+            var message = new DiscordMessageBuilder()
+                .WithContent("help slashcommand");
+
+            await ctx.EditResponseAsync(message);
         }
     }
 }

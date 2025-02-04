@@ -1,16 +1,15 @@
 ﻿using System.ComponentModel;
 using DSharpPlus.Commands;
 using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
 
 namespace GamedayTracker.SlashCommands.Economy
 {
     public class BankSlashCommand
     {
-        [DSharpPlus.Commands.Command("balance")]
+        [Command("balance")]
         [Description("Get User Bank Balance")]
         public async Task GetUserBalance(CommandContext ctx,
-            [Option("member", "select a member to view their bank balance")] DiscordUser user)
+            [Parameter("member")] DiscordUser user)
         {
             await ctx.DeferResponseAsync();
 

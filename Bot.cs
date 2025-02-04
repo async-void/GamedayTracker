@@ -1,38 +1,17 @@
 ﻿using DSharpPlus;
-using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
-using DSharpPlus.Interactivity;
-using DSharpPlus.Interactivity.Enums;
-using DSharpPlus.Interactivity.Extensions;
-using DSharpPlus.SlashCommands;
-using GamedayTracker.Models;
 using GamedayTracker.Services;
-using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using ChalkDotNET;
-using DSharpPlus.EventArgs;
-using GamedayTracker.Interfaces;
-using Serilog;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Processors.TextCommands.Parsing;
-using GamedayTracker.SlashCommands;
-using GamedayTracker.SlashCommands.Economy;
-using GamedayTracker.SlashCommands.News;
-using GamedayTracker.SlashCommands.Player;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Reflection.Metadata;
 
 namespace GamedayTracker
 {
     public class Bot
     { 
-        private DiscordClient? Client;
-        public CommandsNextExtension? Commands { get; set; }
-        public CommandsNextExtension? SlashCommands { get; set; }
-        public static InteractivityExtension? Interactivity { get; set; }
-
         public async Task RunAsync()
         {
             
@@ -60,11 +39,17 @@ namespace GamedayTracker
             });
 
             #region EVENT HANDLERS
+
             dBuilder.ConfigureEventHandlers(
                 m => m.HandleMessageCreated(async (s, e) =>
-                {
-                    if (e.Message.Author!.IsBot) return;
-                }));
+                    {
+                        if (e.Message.Author!.IsBot) return;
+                    })
+                    .HandleChannelCreated(async (s, e) =>
+                    {
+
+                    }));
+                
             dBuilder.ConfigureEventHandlers(
             m => m.HandleSessionCreated(async (s, e) =>
             {

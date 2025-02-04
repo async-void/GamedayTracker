@@ -7,7 +7,7 @@ namespace GamedayTracker.SlashCommands.Economy
 {
     public class DailySlashCommand
     {
-        [DSharpPlus.Commands.Command("daily")]
+        [Command("daily")]
         [Description("runs the daily command")]
         public async ValueTask Daily(CommandContext ctx)
         {

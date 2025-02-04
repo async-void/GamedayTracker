@@ -2,7 +2,6 @@
 using System.Text;
 using DSharpPlus.Commands;
 using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
 
@@ -12,10 +11,10 @@ namespace GamedayTracker.SlashCommands
     {
         private readonly GameDataService _gameService = new();
 
-        [DSharpPlus.Commands.Command("scoreboard")]
+        [Command("scoreboard")]
         [Description("get the scores for a specified week")]
-        public async Task GetScoreboard(CommandContext ctx, [Option("season", "enter the year")] string season,
-            [Option("week", "enter the week")] string week)
+        public async Task GetScoreboard(CommandContext ctx, [Parameter("season")] string season,
+            [Parameter("week")] string week)
         {
 
             var parseSeasonResult = int.TryParse(season, out var seasonParsed);
@@ -23,14 +22,15 @@ namespace GamedayTracker.SlashCommands
             var sBuilder = new StringBuilder();
 
             var scoreBoardResult = _gameService.GetScoreboard(seasonParsed, weekParsed);
-            var _season = scoreBoardResult.Value[0].Season;
-            var _week = scoreBoardResult.Value[0].Week;
-
-            sBuilder.Append($"**Season {_season}: Week {_week}**\r\n\r\n");
+            
             await ctx.DeferResponseAsync();
 
             if (scoreBoardResult.IsOk)
             {
+                var _season = scoreBoardResult.Value[0].Season;
+                var _week = scoreBoardResult.Value[0].Week;
+
+                sBuilder.Append($"**Season {_season}: Week {_week}**\r\n\r\n");
                 for (int i = 0; i < scoreBoardResult.Value.Count; i++)
                 {
                     var awayName = scoreBoardResult.Value[i].Opponents.AwayTeam.Name;

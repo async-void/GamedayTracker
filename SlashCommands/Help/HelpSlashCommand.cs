@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
 using DSharpPlus.Commands;
 using DSharpPlus.Entities;
 
@@ -13,15 +8,20 @@ namespace GamedayTracker.SlashCommands.Help
     {
         [Command("help")]
         [Description("a list of commands and a brief explaination")]
-        public async ValueTask Help(CommandContext ctx)
+        public async Task Help(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            await ctx.EditResponseAsync("Building help context...");
+
+            var buttons = new DiscordComponent[]
+            {
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "scoreboardBtn", "Scoreboard"),
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "standingsBtn", "Standings")
+            };
+           
 
             var message = new DiscordMessageBuilder()
-                .AddEmbed(new DiscordEmbedBuilder()
-                    .WithTitle("Help Context")
-                    .WithDescription("a list of commands and a brief explaination"));
+                .WithContent("a list of help topics")
+                .AddComponents(buttons);
 
             await ctx.EditResponseAsync(message);
         }

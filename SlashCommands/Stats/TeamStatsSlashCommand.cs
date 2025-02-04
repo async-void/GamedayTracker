@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel;
 using DSharpPlus.Commands;
-using DSharpPlus.SlashCommands;
 
 namespace GamedayTracker.SlashCommands.Stats
 {
@@ -8,7 +7,7 @@ namespace GamedayTracker.SlashCommands.Stats
     {
         [Command("teamstats")]
         [Description("Get the Team Statistics")]
-        public async Task GetTeamStats(CommandContext ctx, [Option("team", "Team Name")] string teamName)
+        public async Task GetTeamStats(CommandContext ctx, [Parameter("team")] string teamName)
         {
             await ctx.DeferResponseAsync();
         }
