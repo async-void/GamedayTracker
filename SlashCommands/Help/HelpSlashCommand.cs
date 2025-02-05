@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using DSharpPlus.Commands;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 
 namespace GamedayTracker.SlashCommands.Help
 {
@@ -24,7 +25,8 @@ namespace GamedayTracker.SlashCommands.Help
             var message = new DiscordMessageBuilder()
                 .WithContent("a list of help topics")
                 .AddComponents(buttons);
-
+            
+            
             await ctx.EditResponseAsync(message);
         }
     }
