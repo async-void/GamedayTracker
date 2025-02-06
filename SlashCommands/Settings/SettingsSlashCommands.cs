@@ -2,6 +2,7 @@
 using DSharpPlus.Commands;
 using DSharpPlus.Entities;
 using GamedayTracker.Factories;
+using Microsoft.EntityFrameworkCore;
 
 namespace GamedayTracker.SlashCommands.Settings
 {
@@ -13,15 +14,31 @@ namespace GamedayTracker.SlashCommands.Settings
             [Parameter("team")] string teamName)
         {
             await ctx.DeferResponseAsync();
-            var user = ctx.Member!.Username;
+            var userName = ctx.Member!.Username;
 
             await using var db = new BotDbContextFactory().CreateDbContext();
-            var dbMember = db.Members.Where(x => x.Member.Username.Equals(user))!.FirstOrDefault();
+            var dbMember = db.Members.Where(x => x.MemberName.Equals(userName))!.FirstOrDefault();
 
-            var message = new DiscordMessageBuilder()
-                .WithContent("help slashcommand");
+            if (dbMember is not null)
+            {
+                var message = new DiscordMessageBuilder()
+                    .AddEmbed(new DiscordEmbedBuilder()
+                        .WithTitle($"Daily Command")
+                        .WithDescription("WIP: member is in db, favorite-team command was run....")
+                        .WithTimestamp(DateTime.UtcNow));
 
-            await ctx.EditResponseAsync(message);
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
+            }
+            else
+            {
+                var message = new DiscordMessageBuilder()
+                    .AddEmbed(new DiscordEmbedBuilder()
+                        .WithTitle($"Daily Command")
+                        .WithDescription("WIP: member is not in db\r\nwould you like to add the member now?")
+                        .WithTimestamp(DateTime.UtcNow));
+
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
+            }
         }
     }
 }

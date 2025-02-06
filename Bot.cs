@@ -18,6 +18,7 @@ namespace GamedayTracker
         {
             
             var configService = new ConfigurationDataService();
+            var interactionService = new InteractionDataProviderService();
             var token = configService.GetBotToken();
             var prefix = configService.GetBotPrefix();
 
@@ -70,8 +71,10 @@ namespace GamedayTracker
                     {
                         await args.Interaction.DeferAsync();
                         var buttonContent = "";
-                        if (args.Interaction.Data.CustomId == "scoreboardBtn")
-                            buttonContent = "Scoreboard";
+                        var buttonContentResult = interactionService.ParseButtonId(args.Id);
+
+                        if (buttonContentResult.IsOk)
+                            buttonContent = buttonContentResult.Value;
 
                         await args.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder()
                             .WithContent($"Button {buttonContent} Clicked"));

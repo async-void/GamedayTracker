@@ -10,8 +10,9 @@ namespace GamedayTracker.Models
     public class GuildMember
     {
         public int Id { get; set; }
-        public required DiscordMember Member { get; set; }
-        public Team? FavoriteTeam { get; set; }
+        public required string MemberName { get; set; }
+        public required string MemberId { get; set; }
+        public string? FavoriteTeam { get; set; }
 
         //Navigational Properties
         public int BankId { get; set; }

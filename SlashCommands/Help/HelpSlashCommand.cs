@@ -17,7 +17,7 @@ namespace GamedayTracker.SlashCommands.Help
             {
                 new DiscordButtonComponent(DiscordButtonStyle.Primary, "scoreboardBtn", "Scoreboard"),
                 new DiscordButtonComponent(DiscordButtonStyle.Primary, "standingsBtn", "Standings"),
-                new DiscordButtonComponent(DiscordButtonStyle.Primary, "useSettingsBtn", "User Settings"),
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "userSettingsBtn", "User Settings"),
                 new DiscordButtonComponent(DiscordButtonStyle.Primary, "newsBtn", "News")
             };
            
