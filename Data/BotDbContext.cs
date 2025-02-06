@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using GamedayTracker.Configuration.EntityTypeConfiguration;
 
 namespace GamedayTracker.Data
 {
@@ -15,6 +16,7 @@ namespace GamedayTracker.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.ApplyConfiguration(new GuildMemberEntityTypeConfiguration());
             base.OnModelCreating(modelBuilder);
         }
     }
