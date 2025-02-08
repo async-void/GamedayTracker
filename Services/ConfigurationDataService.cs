@@ -51,22 +51,24 @@ namespace GamedayTracker.Services
             });
         }
 
-        public Result<string, SystemError<AppDbContext>> GetConnectionString(string type)
+        public Result<string, SystemError<ConfigurationDataService>> GetConnectionString(ConnectionStringType type)
         {
             var configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration", "config.json");
             var content = File.ReadAllText(configPath);
             var json = JsonSerializer.Deserialize<ConfigJson>(content);
-            var conStr = json!.ConnectionStrings!.Default!;
+            var conStr = "";
+
+            conStr = type.ToString() == "Default" ? json!.ConnectionStrings!.Default : json!.ConnectionStrings!.Gameday;
 
             if (conStr != "")
-                return Result<string, SystemError<AppDbContext>>.Ok(conStr);
+                return Result<string, SystemError<ConfigurationDataService>>.Ok(conStr);
 
-            return Result<string, SystemError<AppDbContext>>.Err(new SystemError<AppDbContext>
+            return Result<string, SystemError<ConfigurationDataService>>.Err(new SystemError<ConfigurationDataService>
             {
                 ErrorMessage = "Could not find config.json file",
                 ErrorType = ErrorType.WARNING,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = new AppDbContext(null)
+                CreatedBy = new ConfigurationDataService()
             });
         }
     }

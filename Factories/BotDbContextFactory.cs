@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using GamedayTracker.Data;
+using GamedayTracker.Enums;
 using GamedayTracker.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
@@ -16,7 +17,7 @@ namespace GamedayTracker.Factories
 
         public BotDbContext CreateDbContext(string[]? args = null)
         {
-            var result = _dataService.GetConnectionString("gameday");
+            var result = _dataService.GetConnectionString(ConnectionStringType.Gameday);
             if (result.IsOk)
             {
                 var conStr = result.Value;

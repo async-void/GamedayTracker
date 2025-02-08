@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using GamedayTracker.Data;
+using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Services;
@@ -18,7 +19,7 @@ namespace GamedayTracker.Factories
         private readonly ConfigurationDataService _dataService = new();
         public AppDbContext CreateDbContext(string[]? args = null)
         {
-            var result = _dataService.GetConnectionString("default");
+            var result = _dataService.GetConnectionString(ConnectionStringType.Default);
             if (result.IsOk)
             {
                 var conStr = result.Value;

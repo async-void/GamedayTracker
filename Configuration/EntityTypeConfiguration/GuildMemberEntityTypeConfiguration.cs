@@ -16,6 +16,7 @@ namespace GamedayTracker.Configuration.EntityTypeConfiguration
             builder.Property(x => x.MemberName).HasMaxLength(100);
             builder.Property(x => x.MemberId).HasMaxLength(100);
             builder.Property(x => x.FavoriteTeam).HasMaxLength(100);
+            builder.Property(x => x.GuildId).HasMaxLength(100);
         }
     }
 }

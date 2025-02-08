@@ -13,10 +13,5 @@ namespace GamedayTracker.Models
         public double DepositAmount { get; set; }
         public double LastDeposit { get; set; }
         public DateTime DepositTimestamp { get; set; }
-
-        //Navigational Properties
-        public int GuildMemberId { get; set; }
-        public GuildMember GuildMember { get; set; }
-
     }
 }

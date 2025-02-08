@@ -9,11 +9,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace GamedayTracker.Migrations
+namespace GamedayTracker.Data.Migrations.BotDb
 {
     [DbContext(typeof(BotDbContext))]
-    [Migration("20250206084609_BotDb-Initial")]
-    partial class BotDbInitial
+    [Migration("20250208094204_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,31 @@ namespace GamedayTracker.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("GamedayTracker.Models.Bank", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<double>("Balance")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("DepositAmount")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("DepositTimestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double>("LastDeposit")
+                        .HasColumnType("double precision");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Bank");
+                });
 
             modelBuilder.Entity("GamedayTracker.Models.Bet", b =>
                 {
@@ -64,20 +89,27 @@ namespace GamedayTracker.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("FavoriteTeam")
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
-                    b.Property<int>("GuildMemberId")
-                        .HasColumnType("integer");
+                    b.Property<string>("GuildId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("MemberId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("MemberName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BankId");
 
                     b.ToTable("Members");
                 });
@@ -123,6 +155,17 @@ namespace GamedayTracker.Migrations
                         .IsRequired();
 
                     b.Navigation("GuildMember");
+                });
+
+            modelBuilder.Entity("GamedayTracker.Models.GuildMember", b =>
+                {
+                    b.HasOne("GamedayTracker.Models.Bank", "Bank")
+                        .WithMany()
+                        .HasForeignKey("BankId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bank");
                 });
 
             modelBuilder.Entity("GamedayTracker.Models.Suggestion", b =>
