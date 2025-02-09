@@ -22,7 +22,7 @@ namespace GamedayTracker
             var token = configService.GetBotToken();
             var prefix = configService.GetBotPrefix();
 
-            var dBuilder = DiscordClientBuilder.CreateDefault(token.Value, TextCommandProcessor.RequiredIntents | SlashCommandProcessor.RequiredIntents);
+            var dBuilder = DiscordClientBuilder.CreateDefault(token.Value, TextCommandProcessor.RequiredIntents | SlashCommandProcessor.RequiredIntents | DiscordIntents.All);
             dBuilder.UseInteractivity();
 
             dBuilder.UseCommands ((IServiceProvider serviceProvider, CommandsExtension extension) =>
