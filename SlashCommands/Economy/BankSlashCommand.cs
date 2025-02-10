@@ -2,6 +2,7 @@
 using ChalkDotNET;
 using DSharpPlus.Commands;
 using DSharpPlus.Entities;
+using GamedayTracker.Enums;
 using GamedayTracker.Factories;
 using GamedayTracker.Models;
 using Humanizer;
@@ -54,12 +55,14 @@ namespace GamedayTracker.SlashCommands.Economy
             //user is in db, run daily command.
             if (dbUser is not null)
             {
-                var balance = dbUser.Bank!.Balance + 5.00;
                 var dailyTimeStamp = dbUser.Bank.DepositTimestamp;
-                var delta = DateTimeOffset.UtcNow.AddHours(dailyTimeStamp.Hour);
+                var currentTime = DateTime.UtcNow;
+                var timeRemaining = dailyTimeStamp - currentTime;
 
-                if (delta.Hour <= 0)
+                if (timeRemaining > TimeSpan.FromHours(24))
                 {
+                    var balance = dbUser.Bank!.Balance + 5.00;
+
                     var message = new DiscordMessageBuilder()
                         .AddEmbed(new DiscordEmbedBuilder()
                             .WithTitle($"Daily Command")
@@ -67,7 +70,7 @@ namespace GamedayTracker.SlashCommands.Economy
                             .WithTimestamp(DateTime.UtcNow));
 
                     dbUser.Bank.Balance = balance;
-
+                    dbUser.Bank.DepositTimestamp = DateTime.UtcNow;
                     db.Members.Update(dbUser);
                     await db.SaveChangesAsync();
 
@@ -77,9 +80,13 @@ namespace GamedayTracker.SlashCommands.Economy
                 }
                 else
                 {
+                    var expiryTime = currentTime.Subtract(timeRemaining);
+                    var unixExpiryTimestamp = ((DateTimeOffset)expiryTime).ToUnixTimeSeconds();
+                    var discordTimestamp = $"<t:{unixExpiryTimestamp}:R>";
+
                     var message = new DiscordMessageBuilder()
                         .AddEmbed(new DiscordEmbedBuilder() 
-                            .WithDescription($"you can use daily {delta.ToTimestamp()}")
+                            .WithDescription($"you can use daily ``{expiryTime.Humanize()}``")
                             .WithTimestamp(DateTime.UtcNow));
                     Console.WriteLine(
                         $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray($"[Daily was attempted use in {ctx.Guild.Name}]")}");
@@ -104,10 +111,13 @@ namespace GamedayTracker.SlashCommands.Economy
                     MemberName = member!.GlobalName!,
                     MemberId = member.Id.ToString()
                 };
-
+                var currentTime = DateTime.UtcNow;
+                
                 var dailyTimeStamp = dbUser.Bank.DepositTimestamp;
-                var delta = (DateTime.UtcNow - dailyTimeStamp).Add(TimeSpan.FromHours(-24));
-
+                var timeRemaining = dailyTimeStamp - currentTime;
+                var expiryTime = currentTime.Subtract(timeRemaining);
+                var discordTimestamp = ((DateTimeOffset)dailyTimeStamp).ToTimestamp();
+               
                 db.Members.Add(dbMember);
                 await db.SaveChangesAsync();
 
@@ -115,7 +125,7 @@ namespace GamedayTracker.SlashCommands.Economy
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithTitle($"Daily Command")
                         .WithDescription($"Member **{member.GlobalName}'s** balance is <:money:1337795714855600188> ${dbMember.Bank.Balance:#.##}\r\nyou may use daily again in " +
-                                         $"{delta.Humanize(2, minUnit: TimeUnit.Minute, countEmptyUnits: true)} from now.")
+                                         $"``{expiryTime.Humanize()}``")
                         .WithTimestamp(DateTime.UtcNow)
                         );
                 Console.WriteLine(

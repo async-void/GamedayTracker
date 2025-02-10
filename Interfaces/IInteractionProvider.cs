@@ -16,5 +16,7 @@ namespace GamedayTracker.Interfaces
 
         Result<DiscordMessageBuilder, SystemError<InteractionDataProviderService>> BuildDiscordMessage(string title,
             string description);
+
+        
     }
 }
