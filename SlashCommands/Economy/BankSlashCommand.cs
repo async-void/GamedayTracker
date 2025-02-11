@@ -33,6 +33,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 .AddEmbed(new DiscordEmbedBuilder()
                     .WithTitle($"Balance for member **{user.Username}**")
                     .WithDescription("WIP: this gets member's bank balance")
+                    .AddField("<:money:1337795714855600188>", $"{dbUser.Bank.Balance}", true)
                     .WithTimestamp(DateTime.UtcNow));
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
@@ -50,16 +51,17 @@ namespace GamedayTracker.SlashCommands.Economy
             // check if user is in the db. consider making a util function to do the following.
             var dbUser = db.Members.Where(x => x.MemberName.Equals(member!.GlobalName) &&
                                                x.GuildId == ctx.Guild!.Id.ToString())!
-                .Include(x => x.Bank)
-                .FirstOrDefault();
+                                               .Include(x => x.Bank)
+                                               .FirstOrDefault();
             //user is in db, run daily command.
             if (dbUser is not null)
             {
                 var dailyTimeStamp = dbUser.Bank.DepositTimestamp;
                 var currentTime = DateTime.UtcNow;
                 var timeRemaining = dailyTimeStamp - currentTime;
+                var expiryTime = currentTime.AddHours(24);
 
-                if (timeRemaining > TimeSpan.FromHours(24))
+                if (timeRemaining.Hours >= 24)
                 {
                     var balance = dbUser.Bank!.Balance + 5.00;
 
@@ -80,13 +82,12 @@ namespace GamedayTracker.SlashCommands.Economy
                 }
                 else
                 {
-                    var expiryTime = currentTime.Subtract(timeRemaining);
-                    var unixExpiryTimestamp = ((DateTimeOffset)expiryTime).ToUnixTimeSeconds();
-                    var discordTimestamp = $"<t:{unixExpiryTimestamp}:R>";
+                    currentTime = DateTime.UtcNow;
+                    timeRemaining = dailyTimeStamp - currentTime;
 
                     var message = new DiscordMessageBuilder()
                         .AddEmbed(new DiscordEmbedBuilder() 
-                            .WithDescription($"you can use daily ``{expiryTime.Humanize()}``")
+                            .WithDescription($"you can use daily again ``{expiryTime.Humanize()}``")
                             .WithTimestamp(DateTime.UtcNow));
                     Console.WriteLine(
                         $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray($"[Daily was attempted use in {ctx.Guild.Name}]")}");
@@ -111,13 +112,12 @@ namespace GamedayTracker.SlashCommands.Economy
                     MemberName = member!.GlobalName!,
                     MemberId = member.Id.ToString()
                 };
-                var currentTime = DateTime.UtcNow;
-                
+
                 var dailyTimeStamp = dbUser.Bank.DepositTimestamp;
+                var currentTime = DateTime.UtcNow;
                 var timeRemaining = dailyTimeStamp - currentTime;
-                var expiryTime = currentTime.Subtract(timeRemaining);
-                var discordTimestamp = ((DateTimeOffset)dailyTimeStamp).ToTimestamp();
-               
+                var expiryTime = currentTime.AddHours(24);
+
                 db.Members.Add(dbMember);
                 await db.SaveChangesAsync();
 

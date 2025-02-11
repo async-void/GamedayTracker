@@ -10,7 +10,7 @@ namespace GamedayTracker.Data
         //DbSet<T> here
         public DbSet<Matchup> Matchups { get; set; }
         public DbSet<TeamStanding> TeamStandings { get; set; }
-        public DbSet<GuildMember> Members { get; set; }
+        public DbSet<DraftEntity> DraftEntities { get; set; }
 
         // public DbSet<Team> Teams { get; set; }
 
@@ -20,6 +20,7 @@ namespace GamedayTracker.Data
             modelBuilder.ApplyConfiguration(new TeamEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new TeamStandingEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new GuildMemberEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new DraftEntityTypeConfiguration());
         }
     }
 }

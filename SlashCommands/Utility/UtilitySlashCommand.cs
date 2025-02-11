@@ -7,7 +7,7 @@ namespace GamedayTracker.SlashCommands.Help
 {
     [Command("utility")]
     [Description("Utility Slash Commands")]
-    public class HelpSlashCommand
+    public class UtilitySlashCommand
     {
         [Command("help")]
         [Description("a list of commands and a brief explaination")]
@@ -19,6 +19,7 @@ namespace GamedayTracker.SlashCommands.Help
             {
                 new DiscordButtonComponent(DiscordButtonStyle.Primary, "scoreboardBtn", "Scoreboard"),
                 new DiscordButtonComponent(DiscordButtonStyle.Primary, "standingsBtn", "Standings"),
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "draftBtn", "Draft"),
                 new DiscordButtonComponent(DiscordButtonStyle.Primary, "userSettingsBtn", "User Settings"),
                 new DiscordButtonComponent(DiscordButtonStyle.Primary, "newsBtn", "News")
             };
@@ -28,7 +29,8 @@ namespace GamedayTracker.SlashCommands.Help
                     .WithColor(DiscordColor.Blurple)
                     .WithTitle("Help")
                     .WithFooter("Gameday Tracker")
-                    .WithTimestamp(DateTimeOffset.UtcNow));
+                    .WithTimestamp(DateTimeOffset.UtcNow)
+                    ).AddComponents(buttons);
             
             await ctx.EditResponseAsync(message);
         }
@@ -39,10 +41,10 @@ namespace GamedayTracker.SlashCommands.Help
         public async ValueTask Ping(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            var guildId = ctx.Guild.Id;
+            var guildId = ctx.Guild!.Id;
             var connectionLat = ctx.Client.GetConnectionLatency(guildId);
 
-            await ctx.EditResponseAsync(new DiscordMessageBuilder().WithContent($"{connectionLat.Microseconds.ToString()}ms"));
+            await ctx.EditResponseAsync(new DiscordMessageBuilder().WithContent($"{connectionLat.Nanoseconds.ToString()}ns"));
         }
     }
 }
