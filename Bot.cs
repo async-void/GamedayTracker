@@ -60,8 +60,8 @@ namespace GamedayTracker
                         Console.WriteLine(
                             $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray("Connection Success, Listening for events...")}");
 
-                        var teamData = new TeamDataService();
-                        var nubs = await teamData.GetDraftResultsAsync(2024);
+                        //var teamData = new TeamDataService();
+                        //var nubs = await teamData.GetDraftResultsAsync(2024);
                     })
                     .HandleSessionCreated(async (s, e) =>
                     {

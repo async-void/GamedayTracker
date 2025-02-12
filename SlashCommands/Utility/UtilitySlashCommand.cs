@@ -43,7 +43,7 @@ namespace GamedayTracker.SlashCommands.Help
             await ctx.DeferResponseAsync();
             var guildId = ctx.Guild!.Id;
             var connectionLat = ctx.Client.GetConnectionLatency(guildId);
-
+            //TODO: finish me.
             await ctx.EditResponseAsync(new DiscordMessageBuilder().WithContent($"{connectionLat.Nanoseconds.ToString()}ns"));
         }
     }
