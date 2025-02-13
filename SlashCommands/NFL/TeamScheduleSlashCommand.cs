@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using DSharpPlus.Commands;
 
-namespace GamedayTracker.SlashCommands
+namespace GamedayTracker.SlashCommands.NFL
 {
     public class TeamScheduleSlashCommand
     {

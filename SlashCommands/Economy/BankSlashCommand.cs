@@ -12,16 +12,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GamedayTracker.SlashCommands.Economy
 {
+      
     [Command("bank")]
     [Description("bank group commands")]
     public class BankSlashCommand
     {
+        #region BALANCE
         [Command("balance")]
         [Description("Get User Bank Balance")]
         public async Task GetUserBalance(CommandContext ctx,
             [Parameter("member")] DiscordUser user)
         {
             await ctx.DeferResponseAsync();
+
             await using var db = new BotDbContextFactory().CreateDbContext();
 
             // check if user is in the db. consider making a util function to do the following.
@@ -47,6 +50,7 @@ namespace GamedayTracker.SlashCommands.Economy
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder(message1));
         }
+        #endregion
 
         #region DAILY SLASHCOMMAND
         [Command("daily")]
@@ -70,7 +74,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 var timeElapsed = currentTime - dailyTimeStamp;
                 var timeRemaining = TimeSpan.FromHours(24) - timeElapsed;
 
-                if (timeRemaining.TotalHours >= 24)
+                if (timeElapsed.Days >= 1)
                 {
                     var balance = dbUser.Bank!.Balance + 5.00;
                     timeRemaining = TimeSpan.FromHours(24);

@@ -4,7 +4,7 @@ using DSharpPlus.Commands;
 using DSharpPlus.Entities;
 using GamedayTracker.Factories;
 
-namespace GamedayTracker.SlashCommands
+namespace GamedayTracker.SlashCommands.NFL
 {
     public class StandingsSlashCommand
     {
@@ -49,7 +49,7 @@ namespace GamedayTracker.SlashCommands
 
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
             }
-            
+
         }
     }
 }

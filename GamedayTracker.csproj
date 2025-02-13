@@ -146,4 +146,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\Migrations\AppDb\" />
+  </ItemGroup>
+
 </Project>

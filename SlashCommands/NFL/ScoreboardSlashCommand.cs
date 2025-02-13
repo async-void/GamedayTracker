@@ -5,7 +5,7 @@ using DSharpPlus.Entities;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
 
-namespace GamedayTracker.SlashCommands
+namespace GamedayTracker.SlashCommands.NFL
 {
     public class ScoreboardSlashCommand
     {
