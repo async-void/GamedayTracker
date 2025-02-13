@@ -82,7 +82,7 @@ namespace GamedayTracker.SlashCommands.Economy
                     var message = new DiscordMessageBuilder()
                         .AddEmbed(new DiscordEmbedBuilder()
                             .WithTitle($"Daily Command")
-                            .WithDescription($"Done!  **{dbUser.MemberName}'s** balance is <:money:1337795714855600188> ${balance:#.##}\r\nyou can use daily again in ``{timeRemaining.Humanize()}`` from now")
+                            .WithDescription($"Done!  **{dbUser.MemberName}'s** balance is <:money:1337795714855600188> ${balance:#.##}\r\nyou can use daily again in ``{timeRemaining.Humanize(3, minUnit: TimeUnit.Minute)}`` from now")
                             .WithTimestamp(DateTime.UtcNow));
 
                     dbUser.Bank.Balance = balance;
@@ -98,7 +98,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 {
                     var message = new DiscordMessageBuilder()
                         .AddEmbed(new DiscordEmbedBuilder() 
-                            .WithDescription($"you can use daily again in ``{timeRemaining.Humanize()}`` from now")
+                            .WithDescription($"you can use daily again in ``{timeRemaining.Humanize(3, minUnit: TimeUnit.Minute)}`` from now")
                             .WithTimestamp(DateTime.UtcNow));
                     Console.WriteLine(
                         $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray($"[Daily was attempted use in {ctx.Guild!.Name}]")}");
@@ -131,7 +131,7 @@ namespace GamedayTracker.SlashCommands.Economy
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithTitle($"Daily Command")
                         .WithDescription($"Done! **{member.GlobalName}'s** balance is <:money:1337795714855600188> ${dbMember.Bank.Balance:#.##}\r\nyou may use daily again in " +
-                                         $"``{TimeSpan.FromHours(24).Humanize()}`` from now")
+                                         $"``{TimeSpan.FromHours(24).Humanize(3, minUnit: TimeUnit.Minute)}`` from now")
                         .WithTimestamp(DateTime.UtcNow)
                         );
                 Console.WriteLine(

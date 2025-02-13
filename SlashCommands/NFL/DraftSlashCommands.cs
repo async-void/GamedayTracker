@@ -5,6 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.Commands;
+using DSharpPlus.Entities;
+using GamedayTracker.Interfaces;
+using GamedayTracker.Models;
+using GamedayTracker.Services;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
@@ -12,13 +16,47 @@ namespace GamedayTracker.SlashCommands.NFL
     [Description("Draft group commands")]
     public class DraftSlashCommands
     {
+        private readonly ITeamData _teamData = new TeamDataService();
+
         [Command("get")]
         [Description("Get supplied draft season")]
-        public async Task GetDraftSeason(CommandContext ctx, [Parameter("season")] string season)
+        public async Task GetDraftSeason(CommandContext ctx, [Parameter("season")] int season, [Parameter("team")] string teamName)
         {
             await ctx.DeferResponseAsync();
+            await ctx.EditResponseAsync("I am working on your request...this may take a moment");
 
-            await ctx.RespondAsync($"WIP: Get draft season {season}");
+            var results = await _teamData.GetDraftResultsAsync(season);
+
+            if (results.IsOk)
+            {
+                await ctx.EditResponseAsync($"I have the results you asked for {results.Value.Count}");
+                var draft = results.Value.Where(x => x.TeamName.Equals(teamName)).ToList();
+                var msgBuilder = new StringBuilder();
+                
+                foreach (var draftEntity in draft)
+                {
+                    msgBuilder.Append($"round **{draftEntity.Round}** **{draftEntity.PlayerName}** position **{draftEntity.Pos}**\r\n");
+                }
+                var draftMessage = new DiscordMessageBuilder()
+                    .AddEmbed(new DiscordEmbedBuilder()
+                        .WithTitle($"{teamName} {season} Draft Results")
+                        .WithDescription(msgBuilder.ToString()));
+
+                await ctx.EditResponseAsync(draftMessage);
+            }
+            else
+            {
+                var errorMessage = new DiscordMessageBuilder()
+                    .AddEmbed(new DiscordEmbedBuilder()
+                        .WithTitle("Error")
+                        .WithDescription($"there was an error while fetching the draft for season {season}")
+                        .AddField("Error", results.Error!.ErrorMessage!, true)
+                        .AddField("Created AT", results.Error!.CreatedAt!.ToString()!, true)
+                        .AddField("Author", results.Error!.CreatedBy!.ToString()!, true));
+
+                await ctx.EditResponseAsync(errorMessage);
+            }
+            
         }
     }
 }

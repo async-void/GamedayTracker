@@ -42,6 +42,7 @@ namespace GamedayTracker.Services
 
                     var de = new DraftEntity()
                     {
+                        Season = year,
                         College = college,
                         PickPosition = pick,
                         PlayerName = playerName,
