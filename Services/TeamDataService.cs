@@ -11,12 +11,12 @@ namespace GamedayTracker.Services
     {
         public async Task<Result<List<DraftEntity>, SystemError<TeamDataService>>> GetDraftResultsAsync(int year)
         {
-            using var db = new AppDbContextFactory().CreateDbContext();
+            await using var db = new AppDbContextFactory().CreateDbContext();
             var entityList = new List<DraftEntity>();
-            var list = await db.DraftEntities.Where(x => x.Season == year).ToListAsync();
+            var dbList = await db.DraftEntities.Where(x => x.Season == year).ToListAsync();
 
-            if (list.Count > 0) 
-                return Result<List<DraftEntity>, SystemError<TeamDataService>>.Ok(list);
+            if (dbList.Count > 0) 
+                return Result<List<DraftEntity>, SystemError<TeamDataService>>.Ok(dbList);
 
             for (var i = 1; i < 8; i++)
             {

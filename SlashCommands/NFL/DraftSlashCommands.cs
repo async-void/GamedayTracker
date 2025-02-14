@@ -23,7 +23,7 @@ namespace GamedayTracker.SlashCommands.NFL
         public async Task GetDraftSeason(CommandContext ctx, [Parameter("season")] int season, [Parameter("team")] string teamName)
         {
             await ctx.DeferResponseAsync();
-            await ctx.EditResponseAsync("I am working on your request...this may take a moment");
+            await ctx.EditResponseAsync("your request is being processed...this may take a moment");
 
             var results = await _teamData.GetDraftResultsAsync(season);
 
@@ -31,11 +31,20 @@ namespace GamedayTracker.SlashCommands.NFL
             {
                 await ctx.EditResponseAsync($"I have the results you asked for {results.Value.Count}");
                 var draft = results.Value.Where(x => x.TeamName.Equals(teamName)).ToList();
+
+                //no results found..... notify the user!
+                if (draft.Count == 0)
+                {
+                    await ctx.EditResponseAsync($"no results found for **{teamName}** in season **{season}**");
+                    return;
+                }
+
                 var msgBuilder = new StringBuilder();
-                
+
+                //results found...notify the user!
                 foreach (var draftEntity in draft)
                 {
-                    msgBuilder.Append($"round **{draftEntity.Round}** **{draftEntity.PlayerName}** position **{draftEntity.Pos}**\r\n");
+                    msgBuilder.Append($"round **{draftEntity.Round}** | **{draftEntity.PlayerName}** | position **{draftEntity.Pos}** | college **{draftEntity.College}**\r\n");
                 }
                 var draftMessage = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
