@@ -148,6 +148,7 @@
 
   <ItemGroup>
     <Folder Include="Data\Migrations\AppDb\" />
+    <Folder Include="Data\Migrations\BotDb\" />
   </ItemGroup>
 
 </Project>

@@ -60,7 +60,7 @@ namespace GamedayTracker.SlashCommands.NFL
                         .WithTitle("Error")
                         .WithDescription($"there was an error while fetching the draft for season {season}")
                         .AddField("Error", results.Error!.ErrorMessage!, true)
-                        .AddField("Created AT", results.Error!.CreatedAt!.ToString()!, true)
+                        .AddField("Timestamp", results.Error!.CreatedAt!.ToString()!, true)
                         .AddField("Author", results.Error!.CreatedBy!.ToString()!, true));
 
                 await ctx.EditResponseAsync(errorMessage);

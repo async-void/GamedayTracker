@@ -14,8 +14,11 @@ namespace GamedayTracker.Models
         public required string MemberId { get; set; }
         public required string GuildId { get; set; }
         public string? FavoriteTeam { get; set; }
+        public int PoolWins { get; set; }
 
         //Navigational Properties
+        public int PlayerPicksId { get; set; }
+        public PlayerPicks? PlayerPicks { get; set; }
         public int BankId { get; set; }
         public Bank? Bank { get; set; }
         public virtual ICollection<Bet>? BetHistory { get; set; }

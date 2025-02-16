@@ -12,7 +12,6 @@ namespace GamedayTracker.Data
     public class BotDbContext(DbContextOptions options) : DbContext(options)
     {
         public DbSet<GuildMember> Members { get; set; }
-        public DbSet<Suggestion> Suggestions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -29,6 +29,21 @@ namespace GamedayTracker.Data.Migrations.BotDb
                 });
 
             migrationBuilder.CreateTable(
+                name: "PlayerPicks",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Season = table.Column<int>(type: "integer", nullable: false),
+                    Week = table.Column<int>(type: "integer", nullable: false),
+                    Picks = table.Column<string[]>(type: "text[]", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PlayerPicks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Members",
                 columns: table => new
                 {
@@ -38,6 +53,8 @@ namespace GamedayTracker.Data.Migrations.BotDb
                     MemberId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     GuildId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     FavoriteTeam = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    PoolWins = table.Column<int>(type: "integer", nullable: false),
+                    PlayerPicksId = table.Column<int>(type: "integer", nullable: false),
                     BankId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -47,6 +64,12 @@ namespace GamedayTracker.Data.Migrations.BotDb
                         name: "FK_Members_Bank_BankId",
                         column: x => x.BankId,
                         principalTable: "Bank",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Members_PlayerPicks_PlayerPicksId",
+                        column: x => x.PlayerPicksId,
+                        principalTable: "PlayerPicks",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -73,29 +96,6 @@ namespace GamedayTracker.Data.Migrations.BotDb
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "Suggestions",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    AuthorId = table.Column<int>(type: "integer", nullable: false),
-                    Title = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    Status = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Suggestions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Suggestions_Members_AuthorId",
-                        column: x => x.AuthorId,
-                        principalTable: "Members",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_Bet_GuildMemberId",
                 table: "Bet",
@@ -107,9 +107,9 @@ namespace GamedayTracker.Data.Migrations.BotDb
                 column: "BankId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Suggestions_AuthorId",
-                table: "Suggestions",
-                column: "AuthorId");
+                name: "IX_Members_PlayerPicksId",
+                table: "Members",
+                column: "PlayerPicksId");
         }
 
         /// <inheritdoc />
@@ -119,13 +119,13 @@ namespace GamedayTracker.Data.Migrations.BotDb
                 name: "Bet");
 
             migrationBuilder.DropTable(
-                name: "Suggestions");
-
-            migrationBuilder.DropTable(
                 name: "Members");
 
             migrationBuilder.DropTable(
                 name: "Bank");
+
+            migrationBuilder.DropTable(
+                name: "PlayerPicks");
         }
     }
 }

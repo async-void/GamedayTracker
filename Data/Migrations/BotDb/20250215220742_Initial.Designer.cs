@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GamedayTracker.Data.Migrations.BotDb
 {
     [DbContext(typeof(BotDbContext))]
-    [Migration("20250208094204_Initial")]
+    [Migration("20250215220742_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -107,14 +107,22 @@ namespace GamedayTracker.Data.Migrations.BotDb
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int>("PlayerPicksId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PoolWins")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BankId");
 
+                    b.HasIndex("PlayerPicksId");
+
                     b.ToTable("Members");
                 });
 
-            modelBuilder.Entity("GamedayTracker.Models.Suggestion", b =>
+            modelBuilder.Entity("GamedayTracker.Models.PlayerPicks", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -122,28 +130,18 @@ namespace GamedayTracker.Data.Migrations.BotDb
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AuthorId")
+                    b.PrimitiveCollection<string[]>("Picks")
+                        .HasColumnType("text[]");
+
+                    b.Property<int>("Season")
                         .HasColumnType("integer");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("Status")
+                    b.Property<int>("Week")
                         .HasColumnType("integer");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AuthorId");
-
-                    b.ToTable("Suggestions");
+                    b.ToTable("PlayerPicks");
                 });
 
             modelBuilder.Entity("GamedayTracker.Models.Bet", b =>
@@ -165,18 +163,15 @@ namespace GamedayTracker.Data.Migrations.BotDb
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Bank");
-                });
-
-            modelBuilder.Entity("GamedayTracker.Models.Suggestion", b =>
-                {
-                    b.HasOne("GamedayTracker.Models.GuildMember", "Author")
+                    b.HasOne("GamedayTracker.Models.PlayerPicks", "PlayerPicks")
                         .WithMany()
-                        .HasForeignKey("AuthorId")
+                        .HasForeignKey("PlayerPicksId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Author");
+                    b.Navigation("Bank");
+
+                    b.Navigation("PlayerPicks");
                 });
 
             modelBuilder.Entity("GamedayTracker.Models.GuildMember", b =>

@@ -65,6 +65,7 @@ namespace GamedayTracker.SlashCommands.Economy
             var dbUser = db.Members.Where(x => x.MemberName.Equals(member!.GlobalName) &&
                                                x.GuildId == ctx.Guild!.Id.ToString())!
                                                .Include(x => x.Bank)
+                                               .Include(x => x.PlayerPicks)
                                                .FirstOrDefault();
             //user is in db, run daily command.
             if (dbUser is not null)
@@ -116,12 +117,21 @@ namespace GamedayTracker.SlashCommands.Economy
                     DepositTimestamp = DateTime.UtcNow,
                     LastDeposit = 5.00
                 };
+
+                var picks = new PlayerPicks()
+                {
+                    Season = 0,
+                    Week = 0,
+                    Picks = new List<string>()
+                };
+
                 var dbMember = new GuildMember()
                 {
                     Bank = bank,
                     GuildId = ctx.Guild!.Id.ToString(),
                     MemberName = member!.GlobalName!,
-                    MemberId = member.Id.ToString()
+                    MemberId = member.Id.ToString(),
+                    PlayerPicks = picks
                 };
 
                 db.Members.Add(dbMember);
