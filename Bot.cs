@@ -72,14 +72,14 @@ namespace GamedayTracker
                     })
                     .HandleComponentInteractionCreated(async (client, args) =>
                     {
-                        await args.Interaction.DeferAsync();
-                        var buttonContent = "";
-                        var buttonContentResult = interactionService.ParseButtonId(args.Id);
+                        //await args.Interaction.DeferAsync();
+                        //var buttonContent = "";
+                        //var buttonContentResult = interactionService.ParseButtonId(args.Id);
 
-                        buttonContent = buttonContentResult.IsOk ? buttonContentResult.Value : buttonContentResult.Error.ErrorMessage;
+                        //buttonContent = buttonContentResult.IsOk ? buttonContentResult.Value : buttonContentResult.Error.ErrorMessage;
 
-                        await args.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder()
-                            .WithContent($"Button {buttonContent} Clicked"));
+                        //await args.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder()
+                        //    .WithContent($"Button {buttonContent} Clicked"));
                     }));
 
             #endregion

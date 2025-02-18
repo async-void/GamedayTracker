@@ -1,6 +1,10 @@
 ﻿using System.ComponentModel;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.Interactivity.Extensions;
 using GamedayTracker.Factories;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,31 +35,36 @@ namespace GamedayTracker.SlashCommands.Player
         #region ADD PLAYER PICKS
         [Command("picks")]
         [Description("add player picks")]
-        public async Task AddPlayerPicks(CommandContext ctx,
+        public async Task AddPlayerPicks(SlashCommandContext ctx,
             [Parameter("member")] DiscordUser user, [Parameter("picks")] string[] picks)
         {
-            await ctx.DeferResponseAsync();
-            //await ctx.EditResponseAsync("fetching this weeks matchups...this may take a moment...");
+            //await ctx.Interaction.DeferAsync();
+           
             await using var db = new AppDbContextFactory().CreateDbContext();
             var matchups = db.Matchups.Where(x => x.Season == 2024 && x.Week == 1)
                 .Include(x => x.Opponents)
                 .Include(x => x.Opponents.AwayTeam)
                 .Include(x => x.Opponents.HomeTeam)
                 .ToList();
-            var buttons = new DiscordComponent[]
-            {
-                new DiscordButtonComponent(DiscordButtonStyle.Primary, $"m{matchups[0].Opponents.AwayTeam.Name}", $"{matchups[0].Opponents.AwayTeam.Name}"),
-                new DiscordButtonComponent(DiscordButtonStyle.Primary, $"m{matchups[0].Opponents.HomeTeam.Name}", $"{matchups[0].Opponents.HomeTeam.Name}")
-            };
-            var message = new DiscordMessageBuilder()
-                .AddEmbed(new DiscordEmbedBuilder()
-                    .WithTitle("Add Player Picks!")
-                    .WithDescription(
-                        "add player picks is not yet implemented. the bot devs are hard at work with the next update.")
-                    .WithTimestamp(DateTime.UtcNow)
-                    ).AddComponents(buttons);
 
-            await ctx.EditResponseAsync(message);
+            var pages = new List<Page>();
+
+            foreach (var matchup in matchups)
+            {
+                var embedM = new DiscordEmbedBuilder()
+                    .WithTitle($"Week {matchup.Week} Matchup")
+                    .WithDescription($"{matchup.Opponents.AwayTeam.Name} vs {matchup.Opponents.HomeTeam.Name}")
+                    .WithTimestamp(DateTime.UtcNow);
+                var buttons = new DiscordComponent[2]
+                {
+                    new DiscordButtonComponent(DiscordButtonStyle.Primary, $"m{matchup.Opponents.AwayTeam.Name}", $"{matchup.Opponents.AwayTeam.Name}"),
+                    new DiscordButtonComponent(DiscordButtonStyle.Primary, $"m{matchup.Opponents.HomeTeam.Name}", $"{matchup.Opponents.HomeTeam.Name}")
+                };
+                ;
+                pages.Add(new Page($"matchup", embedM));
+            }
+
+            await ctx.Interaction.SendPaginatedResponseAsync(false, user, pages);
         }
         #endregion
     }
