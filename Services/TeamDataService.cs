@@ -33,7 +33,7 @@ namespace GamedayTracker.Services
                     if (!curNode.HasChildNodes) continue;
                     if (curNode.ChildNodes.Count != 7) continue;
 
-                    var round = curNode.ChildNodes[0].InnerText;
+                    var round = curNode.ChildNodes[0].InnerText.Split(" ")[0];
                     var pick = curNode.ChildNodes[1].InnerText;
                     var teamName = curNode.ChildNodes[2].ChildNodes[0].ChildNodes[0].InnerText;
                     var playerName = curNode.ChildNodes[3].InnerText;

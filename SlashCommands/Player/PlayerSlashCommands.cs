@@ -6,6 +6,7 @@ using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using GamedayTracker.Factories;
+using GamedayTracker.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace GamedayTracker.SlashCommands.Player
@@ -38,7 +39,7 @@ namespace GamedayTracker.SlashCommands.Player
         public async Task AddPlayerPicks(SlashCommandContext ctx,
             [Parameter("member")] DiscordUser user, [Parameter("picks")] string[] picks)
         {
-            //await ctx.Interaction.DeferAsync();
+            await ctx.Interaction.DeferAsync();
            
             await using var db = new AppDbContextFactory().CreateDbContext();
             var matchups = db.Matchups.Where(x => x.Season == 2024 && x.Week == 1)
@@ -48,23 +49,27 @@ namespace GamedayTracker.SlashCommands.Player
                 .ToList();
 
             var pages = new List<Page>();
-
+            var message = new DiscordMessageBuilder();
             foreach (var matchup in matchups)
             {
-                var embedM = new DiscordEmbedBuilder()
-                    .WithTitle($"Week {matchup.Week} Matchup")
-                    .WithDescription($"{matchup.Opponents.AwayTeam.Name} vs {matchup.Opponents.HomeTeam.Name}")
-                    .WithTimestamp(DateTime.UtcNow);
-                var buttons = new DiscordComponent[2]
+
+
+                var buttons = new DiscordComponent[3]
                 {
                     new DiscordButtonComponent(DiscordButtonStyle.Primary, $"m{matchup.Opponents.AwayTeam.Name}", $"{matchup.Opponents.AwayTeam.Name}"),
-                    new DiscordButtonComponent(DiscordButtonStyle.Primary, $"m{matchup.Opponents.HomeTeam.Name}", $"{matchup.Opponents.HomeTeam.Name}")
+                    new DiscordButtonComponent(DiscordButtonStyle.Primary, $"m{matchup.Opponents.HomeTeam.Name}", $"{matchup.Opponents.HomeTeam.Name}"),
+                    new DiscordButtonComponent(DiscordButtonStyle.Success, "nextObj", "Next >")
                 };
-                ;
-                pages.Add(new Page($"matchup", embedM));
+                message = new DiscordMessageBuilder()
+                    .AddEmbed(new DiscordEmbedBuilder()
+                        .WithTitle($"Week {matchup.Week} Matchup")
+                        .WithDescription($"{matchup.Opponents.AwayTeam.Name} vs {matchup.Opponents.HomeTeam.Name}")
+                        .WithTimestamp(DateTime.UtcNow)).AddComponents(buttons);
+                //pages.Add(new Page($"matchup", message));
             }
 
-            await ctx.Interaction.SendPaginatedResponseAsync(false, user, pages);
+            
+            await ctx.EditResponseAsync(message);
         }
         #endregion
     }

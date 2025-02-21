@@ -1,7 +1,11 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Entities;
+using GamedayTracker.Data;
+using GamedayTracker.Factories;
 
 namespace GamedayTracker.SlashCommands.Help
 {
@@ -41,10 +45,24 @@ namespace GamedayTracker.SlashCommands.Help
         public async ValueTask Ping(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
+            var sw = new Stopwatch();
+            sw.Start();
+            await using var db = new AppDbContextFactory().CreateDbContext();
+            sw.Stop();
             var guildId = ctx.Guild!.Id;
             var connectionLat = ctx.Client.GetConnectionLatency(guildId);
+
+            var message = new DiscordMessageBuilder().AddEmbed(
+                new DiscordEmbedBuilder()
+                    .WithTitle("Latency")
+                    .WithDescription("Total Connection Latency")
+                    .AddField("Db Latency", $"{ sw.ElapsedMilliseconds}ms", true)
+                    .AddField("Gateway Latency", $"{connectionLat}ms", true)
+                    .WithColor(DiscordColor.Teal)
+                    .WithTimestamp(DateTimeOffset.UtcNow));
+
             //TODO: finish me.
-            await ctx.EditResponseAsync(new DiscordMessageBuilder().WithContent($"{connectionLat.Nanoseconds.ToString()}ns"));
+            await ctx.EditResponseAsync(message);
         }
     }
 }

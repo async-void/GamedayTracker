@@ -28,19 +28,24 @@ namespace GamedayTracker.SlashCommands.Economy
             await using var db = new BotDbContextFactory().CreateDbContext();
 
             // check if user is in the db. consider making a util function to do the following.
-            var dbUser = db.Members.Where(x => x.MemberName.Equals(user!.GlobalName) && x.GuildId == ctx.Guild!.Id.ToString())!
+            var dbUser = db.Members.Where(x => x.MemberName.Equals(user!.Username) && x.GuildId == ctx.Guild!.Id.ToString())!
                 .Include(x => x.Bank)
                 .FirstOrDefault();
-            if (dbUser is not null)
+
+            if (dbUser != null)
             {
                 var message = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithTitle($"Balance for member **{user.Username}**")
                         .WithDescription("WIP: this gets member's bank balance")
-                        .AddField("<:money:1337795714855600188>", $"{dbUser!.Bank!.Balance}", true)
+                        .AddField("<:money:1337795714855600188>Balance<:money:1337795714855600188>", $"{dbUser!.Bank!.Balance}", true)
+                        .AddField("Last Deposit", $"{dbUser!.Bank!.DepositTimestamp.ToShortDateString()}", true)
+                        .WithColor(DiscordColor.SpringGreen)
+                        .WithThumbnail("https://i.imgur.com/iR5m51M.png")
                         .WithTimestamp(DateTime.UtcNow));
 
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
+                return;
             }
             var message1 = new DiscordMessageBuilder()
                 .AddEmbed(new DiscordEmbedBuilder()
@@ -62,7 +67,7 @@ namespace GamedayTracker.SlashCommands.Economy
             await using var db = new BotDbContextFactory().CreateDbContext();
 
             // check if user is in the db. consider making a util function to do the following.
-            var dbUser = db.Members.Where(x => x.MemberName.Equals(member!.GlobalName) &&
+            var dbUser = db.Members.Where(x => x.MemberName.Equals(member!.Username) &&
                                                x.GuildId == ctx.Guild!.Id.ToString())!
                                                .Include(x => x.Bank)
                                                .Include(x => x.PlayerPicks)
@@ -129,7 +134,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 {
                     Bank = bank,
                     GuildId = ctx.Guild!.Id.ToString(),
-                    MemberName = member!.GlobalName!,
+                    MemberName = member!.Username!,
                     MemberId = member.Id.ToString(),
                     PlayerPicks = picks
                 };
@@ -140,7 +145,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 var message = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithTitle($"Daily Command")
-                        .WithDescription($"Done! **{member.GlobalName}'s** balance is <:money:1337795714855600188> ${dbMember.Bank.Balance:#.##}\r\nyou may use daily again in " +
+                        .WithDescription($"Done! **{member.Username}'s** balance is <:money:1337795714855600188> ${dbMember.Bank.Balance:#.##}\r\nyou may use daily again in " +
                                          $"``{TimeSpan.FromHours(24).Humanize(3, minUnit: TimeUnit.Minute)}`` from now")
                         .WithTimestamp(DateTime.UtcNow)
                         );

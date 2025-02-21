@@ -72,10 +72,22 @@ namespace GamedayTracker
                     })
                     .HandleComponentInteractionCreated(async (client, args) =>
                     {
-                        //await args.Interaction.DeferAsync();
+                        await args.Interaction.DeferAsync();
                         //var buttonContent = "";
                         //var buttonContentResult = interactionService.ParseButtonId(args.Id);
+                        if (args.Id == "nextObj")
+                        {
+                            var message = new DiscordMessageBuilder()
+                                .AddEmbed(new DiscordEmbedBuilder()
+                                    .WithTitle("Not Implemented Yet!")
+                                    .WithDescription(
+                                        "add player picks is not yet implemented. the bot devs are hard at work with the next update.")
+                                    .WithTimestamp(DateTime.UtcNow));
+                            await args.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder(message));
 
+
+
+                        }
                         //buttonContent = buttonContentResult.IsOk ? buttonContentResult.Value : buttonContentResult.Error.ErrorMessage;
 
                         //await args.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder()
