@@ -8,7 +8,7 @@ namespace GamedayTracker.Services
 
     {
         public Timer? Timer { get; set; }
-        public DateTime StartTime { get; set; }
+        private static DateTime StartTime { get; set; }
 
         public void CreateNew()
         {
@@ -25,14 +25,23 @@ namespace GamedayTracker.Services
 
         public void Start()
         {
+            if (Timer != null) return;
+            CreateNew();
             Timer!.Enabled = true;
             Timer.Start();
         }
 
         public void Stop()
         {
-              Timer!.Stop();
-              Timer.Enabled = false;
+            if (Timer == null) return;
+            Timer!.Stop();
+            Timer.Enabled = false;
+
+        }
+
+        public TimeSpan CalculateRunningTime()
+        {
+            return DateTime.UtcNow - StartTime;
         }
     }
 }

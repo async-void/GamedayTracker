@@ -3,9 +3,8 @@ namespace GamedayTracker.Interfaces
 {
     public interface ITimerService
     {
-        public Timer? Timer { get; set; } 
-        DateTime StartTime { get; set; }
-
+        public Timer? Timer { get; set; }
+        public TimeSpan CalculateRunningTime();
         void CreateNew();
         void Start();
         void Stop();

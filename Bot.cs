@@ -2,6 +2,7 @@
 using DSharpPlus.Entities;
 using GamedayTracker.Services;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Xml;
 using ChalkDotNET;
 using DSharpPlus.Commands;
@@ -9,16 +10,24 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Processors.TextCommands.Parsing;
 using DSharpPlus.Interactivity.Extensions;
+using GamedayTracker.Factories;
+using GamedayTracker.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GamedayTracker
 {
     public class Bot
-    { 
+    {
+        private readonly TimerService timerService = new TimerService();
+
         public async Task RunAsync()
         {
             
             var configService = new ConfigurationDataService();
             var interactionService = new InteractionDataProviderService();
+            
+            
             var token = configService.GetBotToken();
             var prefix = configService.GetBotPrefix();
 
@@ -59,6 +68,8 @@ namespace GamedayTracker
                             $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray("Guild Download Complete.")}");
                         Console.WriteLine(
                             $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray("Connection Success, Listening for events...")}");
+                        timerService.CreateNew();
+                        timerService.Start();
 
                         //var teamData = new TeamDataService();
                         //var nubs = await teamData.GetDraftResultsAsync(2024);
@@ -95,6 +106,14 @@ namespace GamedayTracker
                     }));
 
             #endregion
+
+            dBuilder.ConfigureServices(services =>
+            {
+                services.AddSingleton<ITeamData, TeamDataService>();
+                services.AddScoped<ITimerService, TimerService>();
+                services.AddScoped<ILogger, LoggerService>();
+            });
+
 
             var status = new DiscordActivity("Game-Day", DiscordActivityType.Watching);
             var client = dBuilder.Build();
