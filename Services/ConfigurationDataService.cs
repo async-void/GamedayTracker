@@ -4,8 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using DSharpPlus.Entities;
 using GamedayTracker.Data;
 using GamedayTracker.Enums;
+using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 
@@ -13,6 +15,23 @@ namespace GamedayTracker.Services
 {
     public class ConfigurationDataService : IConfigurationData
     {
+        public Result<bool, SystemError<ConfigurationDataService>> GuildExists(DiscordGuild guild)
+        {
+            using var db = new BotDbContextFactory().CreateDbContext();
+            var guildExists = db.Guilds.Any(g => (ulong)g.GuildId == guild.Id);
+            if (guildExists)
+            {
+                return Result<bool, SystemError<ConfigurationDataService>>.Err(new SystemError<ConfigurationDataService>
+                {
+                    ErrorMessage = "Guild already exists in Database",
+                    ErrorType = ErrorType.WARNING,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = this
+                });
+            }
+            return Result<bool, SystemError<ConfigurationDataService>>.Ok(false);
+        }
+
         public Result<string, SystemError<ConfigurationDataService>> GetBotPrefix()
         {
             var configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration", "config.json");
