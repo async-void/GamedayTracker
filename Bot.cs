@@ -2,9 +2,6 @@
 using DSharpPlus.Entities;
 using GamedayTracker.Services;
 using System.Reflection;
-using System.Runtime.InteropServices.JavaScript;
-using System.Security.Cryptography.X509Certificates;
-using System.Xml;
 using ChalkDotNET;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
@@ -14,7 +11,7 @@ using DSharpPlus.Interactivity.Extensions;
 using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
-using Microsoft.EntityFrameworkCore;
+using GamedayTracker.Utility;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GamedayTracker
@@ -34,6 +31,17 @@ namespace GamedayTracker
             var prefix = configService.GetBotPrefix();
 
             var dBuilder = DiscordClientBuilder.CreateDefault(token.Value, TextCommandProcessor.RequiredIntents | SlashCommandProcessor.RequiredIntents | DiscordIntents.All);
+
+            #region CONFIGURE SERVICES
+            dBuilder.ConfigureServices(services =>
+            {
+                services.AddSingleton<ITeamData, TeamDataService>();
+                services.AddScoped<ITimerService, TimerService>();
+                services.AddScoped<ILogger, LoggerService>();
+                services.AddScoped<IConfigurationData, ConfigurationDataService>();
+            });
+            #endregion
+
             dBuilder.UseInteractivity();
             
             dBuilder.UseCommands ((IServiceProvider serviceProvider, CommandsExtension extension) =>
@@ -55,12 +63,14 @@ namespace GamedayTracker
 
             #region EVENT HANDLERS
 
+            dBuilder.ConfigureEventHandlers(b => b.AddEventHandlers<InteractionHandler>(ServiceLifetime.Singleton));
+
             dBuilder.ConfigureEventHandlers(
                 m => m.HandleMessageCreated(async (s, e) =>
                     {
                         if (e.Message.Author!.IsBot) return;
                     })
-
+                    
                     #region CHANNEL CREATED
                     .HandleChannelCreated(async (s, e) =>
                     {
@@ -94,38 +104,14 @@ namespace GamedayTracker
                     })
                 #endregion
 
-                    #region INTERACTION CREATED
-                    .HandleComponentInteractionCreated(async (client, args) =>
-                    {
-                        await args.Interaction.DeferAsync();
-                        //var buttonContent = "";
-                        //var buttonContentResult = interactionService.ParseButtonId(args.Id);
-                        if (args.Id == "nextObj")
-                        {
-                            var message = new DiscordMessageBuilder()
-                                .AddEmbed(new DiscordEmbedBuilder()
-                                    .WithTitle("Not Implemented Yet!")
-                                    .WithDescription(
-                                        "add player picks is not yet implemented. the bot devs are hard at work with the next update.")
-                                    .WithTimestamp(DateTime.UtcNow));
-                            await args.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder(message));
-
-
-
-                        }
-                        //buttonContent = buttonContentResult.IsOk ? buttonContentResult.Value : buttonContentResult.Error.ErrorMessage;
-
-                        //await args.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder()
-                        //    .WithContent($"Button {buttonContent} Clicked"));
-                    })
-                #endregion
+                   
 
                     #region GUILD CREATED
                     .HandleGuildCreated(async (s, e) =>
                     {
                         await using var db = new BotDbContextFactory().CreateDbContext();
                         var guild = configService.GuildExists(e.Guild);
-                        if (guild.IsOk)
+                        if (!guild.IsOk)
                         {
                             var g = new Guild()
                             {
@@ -144,16 +130,6 @@ namespace GamedayTracker
 
                 );
 
-            #endregion
-
-            #region CONFIGURE SERVICES
-            dBuilder.ConfigureServices(services =>
-            {
-                services.AddSingleton<ITeamData, TeamDataService>();
-                services.AddScoped<ITimerService, TimerService>();
-                services.AddScoped<ILogger, LoggerService>();
-                services.AddScoped<IConfigurationData, ConfigurationDataService>();
-            });
             #endregion
 
             var status = new DiscordActivity("Game-Day", DiscordActivityType.Watching);
