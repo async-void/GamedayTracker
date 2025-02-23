@@ -21,15 +21,16 @@ namespace GamedayTracker.Services
             var guildExists = db.Guilds.Any(g => (ulong)g.GuildId == guild.Id);
             if (guildExists)
             {
-                return Result<bool, SystemError<ConfigurationDataService>>.Err(new SystemError<ConfigurationDataService>
-                {
-                    ErrorMessage = "Guild already exists in Database",
-                    ErrorType = ErrorType.WARNING,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = this
-                });
+                return Result<bool, SystemError<ConfigurationDataService>>.Ok(true);
             }
-            return Result<bool, SystemError<ConfigurationDataService>>.Ok(false);
+            return Result<bool, SystemError<ConfigurationDataService>>.Err(new SystemError<ConfigurationDataService>
+            {
+                ErrorMessage = "Guild does not exist in Database",
+                ErrorType = ErrorType.WARNING,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = this
+            });
+           
         }
 
         public Result<string, SystemError<ConfigurationDataService>> GetBotPrefix()

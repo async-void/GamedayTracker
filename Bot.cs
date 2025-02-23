@@ -152,6 +152,7 @@ namespace GamedayTracker
                 services.AddSingleton<ITeamData, TeamDataService>();
                 services.AddScoped<ITimerService, TimerService>();
                 services.AddScoped<ILogger, LoggerService>();
+                services.AddScoped<IConfigurationData, ConfigurationDataService>();
             });
             #endregion
 

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Entities;
+using GamedayTracker.Factories;
 
 namespace GamedayTracker.SlashCommands.Settings.User
 {
@@ -14,6 +15,35 @@ namespace GamedayTracker.SlashCommands.Settings.User
     [Description("set user settings")]
     public class UserSettingsSlashCommands
     {
-        
+        [Command("favorite-team")]
+        [Description("set's the user's favorite NFL team.")]
+        public async Task SetFavoriteTeam(CommandContext ctx,
+            [Parameter("team")] string teamName)
+        {
+            await ctx.DeferResponseAsync();
+            var userName = ctx.Member!.Username;
+            await using var db = new BotDbContextFactory().CreateDbContext();
+            var dbMember = db.Members.Where(x => x.MemberName.Equals(userName))!.FirstOrDefault();
+            if (dbMember is not null)
+            {
+                var message = new DiscordMessageBuilder()
+                    .AddEmbed(new DiscordEmbedBuilder()
+                        .WithTitle($"User Setting - Favorite Team Command ")
+                        .WithDescription("WIP: member is in db, favorite-team command was run....")
+                        .WithTimestamp(DateTime.UtcNow));
+
+                await ctx.EditResponseAsync(message);
+            }
+            else
+            {
+                var message = new DiscordMessageBuilder()
+                    .AddEmbed(new DiscordEmbedBuilder()
+                        .WithTitle($"Daily Command")
+                        .WithDescription("WIP: member is not in db\r\nwould you like to add the member now?")
+                        .WithTimestamp(DateTime.UtcNow));
+
+                await ctx.EditResponseAsync(message);
+            }
+        }
     }
 }
