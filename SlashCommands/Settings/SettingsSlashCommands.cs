@@ -12,11 +12,9 @@ namespace GamedayTracker.SlashCommands.Settings
     {
         [Command("set-notifications")]
         [Description("set's the server notifications flag")]
-        public async Task SetServerNotifications(CommandContext ctx,
-            [Description("channel")] DiscordChannel channel)
+        public async Task SetServerNotifications(CommandContext ctx, bool setFlag)
         {
             await ctx.DeferResponseAsync();
-           
         }
     }
 }

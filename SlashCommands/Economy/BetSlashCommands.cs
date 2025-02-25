@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 
 namespace GamedayTracker.SlashCommands.Economy
@@ -13,6 +14,7 @@ namespace GamedayTracker.SlashCommands.Economy
     [Description("betting slash commands")]
     public class BetSlashCommands
     {
+
         [Command("bet")]
         [Description("make a bet on a matchup")]
         public async Task Bet(CommandContext ctx, [Description("The team you are betting on to win the game")] string team, [Description("The amount you are betting")] int amount)

@@ -88,7 +88,7 @@ namespace GamedayTracker.Services
 
             return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
             {
-                ErrorMessage = "no matchups found!",
+                ErrorMessage = $"no matchups found for Season [{season}] Week [{week}]",
                 ErrorType = ErrorType.WARNING,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = this

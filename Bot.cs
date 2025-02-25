@@ -43,7 +43,8 @@ namespace GamedayTracker
             #endregion
 
             dBuilder.UseInteractivity();
-            
+
+            #region USE COMMANDS
             dBuilder.UseCommands ((IServiceProvider serviceProvider, CommandsExtension extension) =>
             {
                 extension.AddCommands(Assembly.GetExecutingAssembly());
@@ -60,6 +61,7 @@ namespace GamedayTracker
                 DebugGuildId = 0,
 
             });
+            #endregion
 
             #region EVENT HANDLERS
 

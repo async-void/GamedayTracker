@@ -32,6 +32,8 @@ namespace GamedayTracker.SlashCommands.Economy
                 .Include(x => x.Bank)
                 .FirstOrDefault();
 
+            var member = ctx.Member;
+
             if (dbUser != null)
             {
                 var message = new DiscordMessageBuilder()
@@ -41,7 +43,7 @@ namespace GamedayTracker.SlashCommands.Economy
                         .AddField("<:money:1337795714855600188>Balance<:money:1337795714855600188>", $"{dbUser!.Bank!.Balance}", true)
                         .AddField("Last Deposit", $"{dbUser!.Bank!.DepositTimestamp.ToShortDateString()}", true)
                         .WithColor(DiscordColor.SpringGreen)
-                        .WithThumbnail("https://i.imgur.com/iR5m51M.png")
+                        .WithThumbnail(member.AvatarUrl)
                         .WithTimestamp(DateTime.UtcNow));
 
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
