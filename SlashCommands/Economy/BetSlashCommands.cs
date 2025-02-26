@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
+using GamedayTracker.ChoiceProviders;
+using GamedayTracker.Factories;
+using GamedayTracker.Interfaces;
 
 namespace GamedayTracker.SlashCommands.Economy
 {
@@ -14,6 +17,12 @@ namespace GamedayTracker.SlashCommands.Economy
     [Description("betting slash commands")]
     public class BetSlashCommands
     {
+        private readonly ICommandHelper _slashCmdHelper;
+
+        public BetSlashCommands(ICommandHelper slashCmdHelper)
+        {
+            _slashCmdHelper = slashCmdHelper;
+        }
 
         [Command("bet")]
         [Description("make a bet on a matchup")]
@@ -24,22 +33,26 @@ namespace GamedayTracker.SlashCommands.Economy
 
         [Command("leaderboard")]
         [Description("get the betting leaderboard")]
-        public async Task Leaderboard(CommandContext ctx)
+        public async Task Leaderboard(CommandContext ctx, [SlashChoiceProvider<LeaderboardChoiceProvider>] int choice)
         {
             await ctx.DeferResponseAsync();
-            var options = new DiscordSelectComponentOption[]
-            {
-                new("Server", "ldbServer"),
-                new("Global", "ldbGlobal"),
-            };
+            await using var db = new BotDbContextFactory().CreateDbContext();
 
-            var menu = new DiscordComponent[]
+            switch (choice)
             {
-                new DiscordSelectComponent("ldbOptions", "Options", options)
-            };
-
+                case 0:
+                    var leaderboard = _slashCmdHelper.BuildLeaderboard(ctx.Guild!.Id.ToString(), choice);
+                    //TODO: build embed
+                    break;
+                case 1:
+                    leaderboard = _slashCmdHelper.BuildLeaderboard(ctx.Guild!.Id.ToString(), choice);
+                    //TODO: build embed
+                    break;
+                default:
+                    await ctx.RespondAsync("Unknown choice - command will be ignored");
+                    break;
+            }
             var message = new DiscordMessageBuilder()
-                .AddComponents(menu)
                 .AddEmbed(new DiscordEmbedBuilder()
                     .WithTitle("Leaderboard")
                     .WithDescription("wip - trying to build a embed with select options")

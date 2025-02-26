@@ -9,6 +9,7 @@ using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Processors.TextCommands.Parsing;
 using DSharpPlus.Interactivity.Extensions;
 using GamedayTracker.Factories;
+using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Utility;
@@ -39,6 +40,7 @@ namespace GamedayTracker
                 services.AddScoped<ITimerService, TimerService>();
                 services.AddScoped<ILogger, LoggerService>();
                 services.AddScoped<IConfigurationData, ConfigurationDataService>();
+                services.AddScoped<ICommandHelper, SlashCommandHelper>();
             });
             #endregion
 
