@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -71,6 +72,26 @@ namespace GamedayTracker.Helpers
                     });
 
             }
+        }
+        #endregion
+
+        #region BUILD LEADERBOARD DESCRIPTION
+        public Result<string, SystemError<SlashCommandHelper>> BuildLeaderboardDescription(List<GuildMember> members)
+        {
+            var builder = new StringBuilder(); 
+            var idx = 1;
+            const string prefix = "#";
+            const string uName = "Username";
+            const string balance = "Balance";
+            builder.Append($"``{prefix.PadRight(2)} {uName} {balance.PadLeft(10)}``\r\n");
+
+            foreach (var member in members)
+            {
+                builder.Append($"``{idx.ToString(CultureInfo.CurrentCulture)}. {member.MemberName.PadLeft(8)} {member.Bank!.Balance.ToString(CultureInfo.CurrentCulture).PadLeft(4)}``\r\n");
+                idx++;
+            }
+
+            return Result<string, SystemError<SlashCommandHelper>>.Ok(builder.ToString());
         }
         #endregion
     }

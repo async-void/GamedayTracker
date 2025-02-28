@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.InteropServices.JavaScript;
 using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.Commands;
@@ -31,6 +32,7 @@ namespace GamedayTracker.SlashCommands.Economy
             await ctx.RespondAsync($"You bet {amount} on {team}");
         }
 
+        #region LEADERBOARD
         [Command("leaderboard")]
         [Description("get the betting leaderboard")]
         public async Task Leaderboard(CommandContext ctx, [SlashChoiceProvider<LeaderboardChoiceProvider>] int choice)
@@ -42,7 +44,27 @@ namespace GamedayTracker.SlashCommands.Economy
             {
                 case 0:
                     var leaderboard = _slashCmdHelper.BuildLeaderboard(ctx.Guild!.Id.ToString(), choice);
+                    if (!leaderboard.IsOk)
+                    {
+                        var errEmbed = new DiscordMessageBuilder()
+                            .AddEmbed(new DiscordEmbedBuilder()
+                                .WithTitle("ERROR")
+                                .WithDescription($"❗error building leaderboard ❗")
+                                .WithTimestamp(DateTimeOffset.UtcNow)
+                                .WithFooter("Gameday Tracker "));
+                        await ctx.EditResponseAsync(errEmbed);
+                        return;
+                    }
+
+                    var embedDesc = _slashCmdHelper.BuildLeaderboardDescription(leaderboard.Value).Value;
                     //TODO: build embed
+                     var ldbEmbed = new DiscordMessageBuilder()
+                        .AddEmbed(new DiscordEmbedBuilder()
+                            .WithTitle("Leaderboard")
+                            .WithDescription(embedDesc)
+                            .WithTimestamp(DateTimeOffset.UtcNow)
+                            .WithFooter("Gameday Tracker "));
+                    await ctx.EditResponseAsync(ldbEmbed);
                     break;
                 case 1:
                     leaderboard = _slashCmdHelper.BuildLeaderboard(ctx.Guild!.Id.ToString(), choice);
@@ -52,14 +74,7 @@ namespace GamedayTracker.SlashCommands.Economy
                     await ctx.RespondAsync("Unknown choice - command will be ignored");
                     break;
             }
-            var message = new DiscordMessageBuilder()
-                .AddEmbed(new DiscordEmbedBuilder()
-                    .WithTitle("Leaderboard")
-                    .WithDescription("wip - trying to build a embed with select options")
-                    .WithColor(DiscordColor.Cyan));
-
-
-            await ctx.RespondAsync(message);
         }
+        #endregion
     }
 }

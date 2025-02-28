@@ -1,10 +1,13 @@
-﻿using DSharpPlus;
+﻿using System.Text;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using GamedayTracker.Interfaces;
+using GamedayTracker.Models;
 
 namespace GamedayTracker.Utility
 {
-    public class InteractionHandler: IEventHandler<InteractionCreatedEventArgs>
+    public class InteractionHandler(ITeamData teamData): IEventHandler<InteractionCreatedEventArgs>
     {
         public async Task HandleEventAsync(DiscordClient sender, InteractionCreatedEventArgs eventArgs)
         {
@@ -16,17 +19,32 @@ namespace GamedayTracker.Utility
                 }
                 case DiscordInteractionType.Component:
                 {
-                    switch (eventArgs.Interaction.Data.Values[0])
+                    switch (eventArgs.Interaction.Data.CustomId)
                         {
-                            case "ldbServer":
+                            case "afcDropdown":
                                 {
-                                    await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Server Option Selected!"));
+                                    var tName = eventArgs.Interaction.Data.Values[0];
+                                    var draftResult = await teamData.GetDraftResultForTeamAsync(2024, tName);
+                                    var msgBuilder = new StringBuilder();
+
+                                    //results found...notify the user!
+                                    foreach (var draftEntity in draftResult.Value)
+                                    {
+                                        msgBuilder.Append($"round **{draftEntity.Round}** | **{draftEntity.PlayerName}** | position **{draftEntity.Pos}** | college **{draftEntity.College}**\r\n");
+                                    }
+                                    var draftMessage = new DiscordEmbedBuilder()
+                                            .WithTitle($"2024 Draft Results")
+                                            .WithDescription(msgBuilder.ToString());
+                                    await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(draftMessage));
                                     break;
                                 }
-                            case "ldbGlobal":
+                            case "nfcDropdown":
                             {
-                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Global Option Selected!"));
-                                break;
+                                var tName = eventArgs.Interaction.Data.Values[0];
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent($"NFC Option Selected: {tName}"));
+                                //Build the response with team name and client ctx
+                                var draftResult = await teamData.GetDraftResultForTeamAsync(2020, tName);
+                                    break;
                             }
                             default:
                                 {
