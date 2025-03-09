@@ -14,6 +14,8 @@ using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Utility;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using ILogger = GamedayTracker.Interfaces.ILogger;
 
 namespace GamedayTracker
 {
@@ -25,8 +27,6 @@ namespace GamedayTracker
         {
             
             var configService = new ConfigurationDataService();
-            var interactionService = new InteractionDataProviderService();
-            
             
             var token = configService.GetBotToken();
             var prefix = configService.GetBotPrefix();
@@ -47,7 +47,7 @@ namespace GamedayTracker
             dBuilder.UseInteractivity();
 
             #region USE COMMANDS
-            dBuilder.UseCommands ((IServiceProvider serviceProvider, CommandsExtension extension) =>
+            dBuilder.UseCommands((IServiceProvider serviceProvider, CommandsExtension extension) =>
             {
                 extension.AddCommands(Assembly.GetExecutingAssembly());
 
@@ -57,7 +57,7 @@ namespace GamedayTracker
                 });
 
                 extension.AddProcessor(textCommandProcessor);
-            }, new CommandsConfiguration()
+            }, new CommandsConfiguration
             {
                 RegisterDefaultCommandProcessors = true,
                 DebugGuildId = 0,
@@ -68,11 +68,18 @@ namespace GamedayTracker
             #region EVENT HANDLERS
 
             dBuilder.ConfigureEventHandlers(b => b.AddEventHandlers<InteractionHandler>(ServiceLifetime.Singleton));
+           // dBuilder.ConfigureLogging(l => l.SetMinimumLevel(LogLevel.Debug));
 
             dBuilder.ConfigureEventHandlers(
                 m => m.HandleMessageCreated(async (s, e) =>
                     {
                         if (e.Message.Author!.IsBot) return;
+                        if (e.Message.Content.Contains("help"))
+                        {
+                            var user = e.Author;
+                            await e.Channel.SendMessageAsync(
+                                "I noticed you needed some help.....please use the ``/help`` command to see a list of help topics");
+                        }
                     })
                     
                     #region CHANNEL CREATED
@@ -108,8 +115,6 @@ namespace GamedayTracker
                     })
                 #endregion
 
-                   
-
                     #region GUILD CREATED
                     .HandleGuildCreated(async (s, e) =>
                     {
@@ -130,7 +135,7 @@ namespace GamedayTracker
                         }
 
                     })
-                 #endregion
+                   #endregion
 
                 );
 
@@ -138,7 +143,6 @@ namespace GamedayTracker
 
             var status = new DiscordActivity("Game-Day", DiscordActivityType.Watching);
             var client = dBuilder.Build();
-
             dBuilder.SetReconnectOnFatalGatewayErrors();
             await client.ConnectAsync(status, DiscordUserStatus.Online, DateTimeOffset.UtcNow);
            

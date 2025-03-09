@@ -15,6 +15,7 @@ namespace GamedayTracker.ChoiceProviders
         [
             new DiscordApplicationCommandOptionChoice("AFC", 0),
             new DiscordApplicationCommandOptionChoice("NFC", 1),
+            new DiscordApplicationCommandOptionChoice("All", 2)
         ];
         public ValueTask<IEnumerable<DiscordApplicationCommandOptionChoice>> ProvideAsync(CommandParameter parameter)
         {

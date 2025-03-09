@@ -26,13 +26,17 @@ namespace GamedayTracker.SlashCommands.Settings.User
             var dbMember = db.Members.Where(x => x.MemberName.Equals(userName))!.FirstOrDefault();
             if (dbMember is not null)
             {
+                dbMember.FavoriteTeam = teamName;
                 var message = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithTitle($"User Setting - Favorite Team Command ")
                         .WithDescription("WIP: member is in db, favorite-team command was run....")
                         .WithTimestamp(DateTime.UtcNow));
 
+                db.Members.Update(dbMember);
+                await db.SaveChangesAsync();
                 await ctx.EditResponseAsync(message);
+                await ctx.User.SendMessageAsync($"favorite team {teamName} has been set!");
             }
             else
             {

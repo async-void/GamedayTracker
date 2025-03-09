@@ -9,6 +9,8 @@ using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Commands.Processors.SlashCommands.Localization;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Extensions;
 using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
@@ -20,7 +22,6 @@ namespace GamedayTracker.SlashCommands.NFL
     [Description("Draft group commands")]
     public class DraftSlashCommands(ITeamData _teamData)
     {
-        //TODO: convert int to TeamName
         [Command("get")]
         [Description("Get supplied draft season")]
         public async Task GetDraftSeason(CommandContext ctx, [SlashChoiceProvider<ConferenceChoiceProvider>] int conference)
@@ -48,30 +49,10 @@ namespace GamedayTracker.SlashCommands.NFL
                         .AddComponents(nfcDropDown);
                     await ctx.EditResponseAsync(optionEmbed);
                     break;
+                case 2:
+                    var drafts = await _teamData.GetDraftResultsAsync(2024);
+                    break;
             }
-               
-
-                //no results found..... notify the user!
-                //if (draft.Count == 0)
-                //{
-                //    await ctx.EditResponseAsync($"no results found for **test** in season **{season}**");
-                //    return;
-                //}
-
-                //var msgBuilder = new StringBuilder();
-
-                ////results found...notify the user!
-                //foreach (var draftEntity in draft)
-                //{
-                //    msgBuilder.Append($"round **{draftEntity.Round}** | **{draftEntity.PlayerName}** | position **{draftEntity.Pos}** | college **{draftEntity.College}**\r\n");
-                //}
-                //var draftMessage = new DiscordMessageBuilder()
-                //    .AddEmbed(new DiscordEmbedBuilder()
-                //        .WithTitle($"test {season} Draft Results")
-                //        .WithDescription(msgBuilder.ToString()));
-
-                //await ctx.EditResponseAsync(draftMessage);
-            
         }
     }
 }

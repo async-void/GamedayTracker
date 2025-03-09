@@ -10,6 +10,7 @@ namespace GamedayTracker.Enums
     {
         Console,
         File,
-        Debug
+        Debug,
+        Guild
     }
 }

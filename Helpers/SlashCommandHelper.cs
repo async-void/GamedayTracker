@@ -15,6 +15,12 @@ namespace GamedayTracker.Helpers
     public class SlashCommandHelper : ICommandHelper
     {
         #region BUILDLEADERBOARD
+        /// <summary>
+        /// Build a leaderboard based on the Guild or Global scope
+        /// </summary>
+        /// <param name="guildId"></param>
+        /// <param name="scope"></param>
+        /// <returns>a list of guild members</returns>
         public Result<List<GuildMember>, SystemError<SlashCommandHelper>> BuildLeaderboard(string guildId, int scope)
         {
             var leaderboard = new List<GuildMember>();

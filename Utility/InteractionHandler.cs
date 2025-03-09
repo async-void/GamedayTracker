@@ -22,30 +22,47 @@ namespace GamedayTracker.Utility
                     switch (eventArgs.Interaction.Data.CustomId)
                         {
                             case "afcDropdown":
-                                {
-                                    var tName = eventArgs.Interaction.Data.Values[0];
-                                    var draftResult = await teamData.GetDraftResultForTeamAsync(2024, tName);
-                                    var msgBuilder = new StringBuilder();
+                            {
+                                var tName = eventArgs.Interaction.Data.Values[0];
+                                var draftResult = await teamData.GetDraftResultForTeamAsync(2024, tName);
+                                var msgBuilder = new StringBuilder();
 
-                                    //results found...notify the user!
-                                    foreach (var draftEntity in draftResult.Value)
-                                    {
-                                        msgBuilder.Append($"round **{draftEntity.Round}** | **{draftEntity.PlayerName}** | position **{draftEntity.Pos}** | college **{draftEntity.College}**\r\n");
-                                    }
-                                    var draftMessage = new DiscordEmbedBuilder()
-                                            .WithTitle($"2024 Draft Results")
-                                            .WithDescription(msgBuilder.ToString());
-                                    await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(draftMessage));
-                                    break;
+                                foreach (var draftEntity in draftResult.Value)
+                                {
+                                    msgBuilder.Append($"round **{draftEntity.Round}** | **{draftEntity.PlayerName}** | position **{draftEntity.Pos}** | college **{draftEntity.College}**\r\n");
                                 }
+                                var draftMessage = new DiscordEmbedBuilder()
+                                        .WithTitle($"2024 Draft Results for {tName}")
+                                        .WithDescription(msgBuilder.ToString());
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(draftMessage));
+                                break;
+                            }
                             case "nfcDropdown":
                             {
                                 var tName = eventArgs.Interaction.Data.Values[0];
-                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent($"NFC Option Selected: {tName}"));
-                                //Build the response with team name and client ctx
-                                var draftResult = await teamData.GetDraftResultForTeamAsync(2020, tName);
+                                var draftResult = await teamData.GetDraftResultForTeamAsync(2024, tName);
+                                var msgBuilder = new StringBuilder();
+
+                                foreach (var draftEntity in draftResult.Value)
+                                {
+                                    msgBuilder.Append($"round **{draftEntity.Round}** | **{draftEntity.PlayerName}** | position **{draftEntity.Pos}** | college **{draftEntity.College}**\r\n");
+                                }
+                                var draftMessage = new DiscordEmbedBuilder()
+                                    .WithTitle($"2024 Draft Results for {tName}")
+                                    .WithDescription(msgBuilder.ToString());
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(draftMessage));
                                     break;
                             }
+                            case "scoreboardBtn": //TODO: here I would like to abstract this code to a method call to build the embed. not sure if it will make a difference in readability?
+                                {
+                                    var scoreboardMessage = new DiscordEmbedBuilder()
+                                        .WithTitle("Scoreboard")
+                                        .WithDescription("Scoreboard is in development, the devs are hard at work implementing this feature!")
+                                        .WithTimestamp(DateTimeOffset.UtcNow)
+                                        .WithFooter("Gameday Tracker \u00a9 ");
+                                    await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(scoreboardMessage));
+                                    break;
+                                }
                             default:
                                 {
                                     break;

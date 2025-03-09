@@ -11,6 +11,8 @@ namespace GamedayTracker.Models
     {
         public int Id { get; set; }
         public required string LogMessage { get; set; }
+        public string? GuildId { get; set; }
+        public string? LogChannelId { get; set; }
         public DateTime Timestamp { get; set; }
         public LogType LogType { get; set; }
         public LogTarget LogTarget { get; set; }

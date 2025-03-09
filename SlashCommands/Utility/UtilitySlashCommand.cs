@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
+using System.Text;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Entities;
@@ -45,13 +46,13 @@ namespace GamedayTracker.SlashCommands.Utility
                     .WithFooter("Gameday Tracker")
                     .WithTimestamp(DateTimeOffset.UtcNow)
                     ).AddComponents(buttons);
-            
+            _loggerService.Log(LogTarget.Console, LogType.Information, DateTimeOffset.UtcNow, "Help slash command was called!");
             await ctx.EditResponseAsync(message);
         }
 
         [Command("ping")]
         [RequirePermissions(permissions: DiscordPermission.ManageGuild)]
-        [Description("get the client latency [must have 'mod' or higher role]")]
+        [Description("get the client latency [must have mod or higher roles]")]
         public async ValueTask Ping(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
@@ -65,10 +66,9 @@ namespace GamedayTracker.SlashCommands.Utility
             var message = new DiscordMessageBuilder().AddEmbed(
                 new DiscordEmbedBuilder()
                     .WithTitle("Latency")
-                    .WithDescription("Total Connection Latency")
-                    .AddField("Db Latency", $"{ sw.Elapsed.Humanize()}", true)
-                    .AddField("Gateway Latency", $"{connectionLat.Humanize()}", true)
-                    .AddField("Uptime", $"{uptime.Duration().Humanize(3, CultureInfo.CurrentCulture, minUnit: TimeUnit.Minute)}", true)
+                    .AddField("Db", sw.Elapsed.Humanize(), true)
+                    .AddField("Discord", connectionLat.Humanize(), true)
+                    .AddField("Lifetime", uptime.Humanize(), true)
                     .WithColor(DiscordColor.Teal)
                     .WithTimestamp(DateTimeOffset.UtcNow));
 
