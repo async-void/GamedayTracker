@@ -14,7 +14,17 @@ namespace GamedayTracker.Services
     public class GameDataService : IGameData
     {
         private readonly AppDbContextFactory _dbFactory = new AppDbContextFactory();
-        
+
+        public string GetCurWeek()
+        {
+            const string link = "https://www.footballdb.com/scores/index.html";
+            var web = new HtmlWeb();
+            var doc = web.Load(link);
+            var weekNode = doc.DocumentNode.SelectSingleNode(".//h2");
+
+            return weekNode is not null ? weekNode.InnerText : "";
+        }
+
         /// <summary>
         /// Get Scoreboard for season and week
         /// </summary>

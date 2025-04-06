@@ -39,6 +39,7 @@ namespace GamedayTracker
                 services.AddSingleton<ITeamData, TeamDataService>();
                 services.AddScoped<ITimerService, TimerService>();
                 services.AddScoped<ILogger, LoggerService>();
+                services.AddScoped<IGameData, GameDataService>();
                 services.AddScoped<IConfigurationData, ConfigurationDataService>();
                 services.AddScoped<ICommandHelper, SlashCommandHelper>();
             });

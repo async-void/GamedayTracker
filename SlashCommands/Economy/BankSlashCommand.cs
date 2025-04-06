@@ -106,7 +106,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 {
                     var message = new DiscordMessageBuilder()
                         .AddEmbed(new DiscordEmbedBuilder() 
-                            .WithDescription($"you can use daily again in ``{timeRemaining.Humanize(3, minUnit: TimeUnit.Minute)}`` from now")
+                            .WithDescription($"you can use daily again in ``{timeRemaining.Humanize(4, minUnit: TimeUnit.Second)}`` from now")
                             .WithTimestamp(DateTime.UtcNow));
                     Console.WriteLine(
                         $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray($"[Daily was attempted use in {ctx.Guild!.Name}]")}");
