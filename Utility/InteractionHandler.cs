@@ -53,7 +53,7 @@ namespace GamedayTracker.Utility
                                 await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(draftMessage));
                                     break;
                             }
-                            case "scoreboardBtn": //TODO: here I would like to abstract this code to a method call to build the embed. not sure if it will make a difference in readability?
+                            case "scoreboardHelpBtn": //TODO: here I would like to abstract this code to a method call to build the embed. not sure if it will make a difference in readability?
                                 {
                                     var scoreboardMessage = new DiscordEmbedBuilder()
                                         .WithTitle("Scoreboard")

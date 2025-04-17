@@ -32,11 +32,11 @@ namespace GamedayTracker.SlashCommands.Utility
 
             var buttons = new DiscordComponent[]
             {
-                new DiscordButtonComponent(DiscordButtonStyle.Primary, "scoreboardBtn", "Scoreboard"),
-                new DiscordButtonComponent(DiscordButtonStyle.Primary, "standingsBtn", "Standings"),
-                new DiscordButtonComponent(DiscordButtonStyle.Primary, "draftBtn", "Draft"),
-                new DiscordButtonComponent(DiscordButtonStyle.Primary, "userSettingsBtn", "User Settings"),
-                new DiscordButtonComponent(DiscordButtonStyle.Primary, "newsBtn", "News")
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "scoreboardHelpBtn", "Scoreboard"),
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "standingsHelpBtn", "Standings"),
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "draftHelpBtn", "Draft"),
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "userSettingsHelpBtn", "User Settings"),
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "newsHelpBtn", "News")
             };
 
             var message = new DiscordMessageBuilder()

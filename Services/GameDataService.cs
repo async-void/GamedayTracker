@@ -15,6 +15,7 @@ namespace GamedayTracker.Services
     {
         private readonly AppDbContextFactory _dbFactory = new AppDbContextFactory();
 
+        #region GET CURRENT WEEK
         public string GetCurWeek()
         {
             const string link = "https://www.footballdb.com/scores/index.html";
@@ -24,6 +25,8 @@ namespace GamedayTracker.Services
 
             return weekNode is not null ? weekNode.InnerText : "";
         }
+
+        #endregion
 
         /// <summary>
         /// Get Scoreboard for season and week
@@ -185,6 +188,49 @@ namespace GamedayTracker.Services
                 };
                 return Result<Matchup, SystemError<GameDataService>>.Err(error);
             }
+        }
+
+        #endregion
+
+        #region GET MATCHUP COUNT
+        public string GetMatchupCount()
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+
+        #region GET TEAM SCHEDULE
+
+        public Result<List<Matchup>, SystemError<GameDataService>> GetTeamSchedule(string teamName)
+        {
+            var scheduleList = new List<Matchup>();
+            var teamLinkName = teamName.ToTeamLinkName();
+            var scheduleLink = $"https://www.footballdb.com/teams/nfl/{teamLinkName}/results";
+            var web = new HtmlWeb();
+            var doc = web.Load(scheduleLink);
+            var scheduleNodes = doc.DocumentNode.SelectNodes(".//div[@class='lngame']//table");
+
+            if (scheduleNodes is not null)
+            {
+                for (int i = 3; i < scheduleNodes.Count; i++)
+                {
+                    var curNode = scheduleNodes[i];
+                    if (!curNode.HasChildNodes)
+                        continue;
+                    var awayNameNode = curNode.ChildNodes[3].ChildNodes[1].ChildNodes[1].InnerText;
+                    var test = "";
+                }
+                
+            }
+
+            return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
+            {
+                ErrorMessage = $"no schedule found for {teamName}",
+                ErrorType = ErrorType.INFORMATION,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = this
+            });
         }
 
         #endregion

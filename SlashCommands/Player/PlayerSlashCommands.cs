@@ -41,10 +41,11 @@ namespace GamedayTracker.SlashCommands.Player
         [Command("picks")]
         [Description("add player picks")]
         public async Task AddPlayerPicks(SlashCommandContext ctx,
-            [Parameter("member")] DiscordUser user, [Parameter("picks")] string[] picks)
+            [Parameter("member")] DiscordUser user, [Parameter("picks")] string picks)
         {
             await ctx.Interaction.DeferAsync();
-            //var curWeek = gameData.GetCurWeek();
+            var teamSchedule = gameData.GetTeamSchedule("Buffalo");
+            var playerPicks = picks.Split(" ").ToList();
 
             await using var db = new AppDbContextFactory().CreateDbContext();
             var matchups = db.Matchups.Where(x => x.Season == 2024 && x.Week == 1)
@@ -53,10 +54,26 @@ namespace GamedayTracker.SlashCommands.Player
                 .Include(x => x.Opponents.HomeTeam)
                 .ToList();
 
+            var curWeek = gameData.GetCurWeek();
+           //var matchupCount = gameData.GetMatchupCount();
+
+            var isValid = playerPicks.Count > 1;
+
+            if (!isValid)
+            {
+                var errMessage = new DiscordMessageBuilder()
+                    .AddEmbed(new DiscordEmbedBuilder()
+                        .WithTitle($"Error")
+                        .WithDescription($"picks must match game count ``[{matchups.Count}]``\r\nplease choose a team from every game")
+                        .WithTimestamp(DateTime.UtcNow));
+                await ctx.EditResponseAsync(errMessage);
+                return;
+            }
+            
             var message = new DiscordMessageBuilder()
                 .AddEmbed(new DiscordEmbedBuilder()
                     .WithTitle($"Week {matchups[0].Week} Scoreboard")
-                    .WithDescription($"picks have been added")
+                    .WithDescription($"player {user.Username} picks have been added")
                     .WithTimestamp(DateTime.UtcNow));
             await ctx.EditResponseAsync(message);
         }
