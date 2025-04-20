@@ -11,7 +11,7 @@ namespace GamedayTracker.Interfaces
     public interface IGameData
     {
         Result<List<Matchup>, SystemError<GameDataService>> GetScoreboard(int season, int week);
-        Result<List<Matchup>, SystemError<GameDataService>> GetTeamSchedule(string teamName);
+        Task<Result<List<string>, SystemError<GameDataService>>> GetTeamSchedule(string teamName, int season);
         string GetCurWeek();
         string GetMatchupCount();
     }

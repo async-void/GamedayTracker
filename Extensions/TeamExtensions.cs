@@ -15,38 +15,39 @@ namespace GamedayTracker.Extensions
         {
             var result = name switch
             {
-                "Buffalo" => "buffalo-bills",
-                "NY Giants" => "new-york-giants",
-                "Miami" => "miami-dolphins",
-                "New England" => "new-england-patriots",
-                "NY Jets" => "new-york-jets",
-                "Baltimore" => "baltimore-ravens",
-                "Cincinnati" => "cincinnati-bengals",
-                "Cleveland" => "cleveland-browns",
-                "Pittsburgh" => "pittsburgh-steelers",
-                "Houston" => "houston-texans",
-                "Indianapolis" => "indianapolis-colts",
-                "Jacksonville" => "jacksonville-jaguars",
-                "Tennessee" => "tennessee-titans",
-                "Denver" => "denver-broncos",
-                "Kansas City" => "kansas-city-chiefs",
-                "Las Vegas" => "las-vegas-raiders",
-                "Los Angeles" => "los-angeles-chargers",
-                "Dallas" => "dallas-cowboys",
-                "Philadelphia" => "philadelphia-eagles",
-                "Washington" => "washington-commanders",
-                "Chicago" => "chicago-bears",
-                "Detroit" => "detroit-lions",
-                "Green Bay" => "green-bay-packers",
-                "Minnesota" => "minnesota-vikings",
-                "Atlanta" => "atlanta-falcons",
-                "Carolina" => "carolina-panthers",
-                "New Orleans" => "new-orleans-saints",
-                "Tampa Bay" => "tampa-bay-buccaneers",
-                "Arizona" => "arizona-cardinals",
-                "LA Rams" => "los-angeles-rams",
-                "San Francisco" => "san-francisco-49ers",
-                "Seattle" => "seattle-seahawks",
+                "buffalo" => "buffalo-bills",
+                "ny giants" => "new-york-giants",
+                "miami" => "miami-dolphins",
+                "patriots" => "new-england-patriots",
+                "ny jets" => "new-york-jets",
+                "ravens" => "baltimore-ravens",
+                "bengals" => "cincinnati-bengals",
+                "browns" => "cleveland-browns",
+                "pittsburgh" => "pittsburgh-steelers",
+                "steelers" => "pittsburgh-steelers",
+                "texans" => "houston-texans",
+                "cults" => "indianapolis-colts",
+                "jaguars" => "jacksonville-jaguars",
+                "titans" => "tennessee-titans",
+                "broncos" => "denver-broncos",
+                "chiefs" => "kansas-city-chiefs",
+                "raiders" => "las-vegas-raiders",
+                "chargers" => "los-angeles-chargers",
+                "cowboys" => "dallas-cowboys",
+                "eagles" => "philadelphia-eagles",
+                "washington" => "washington-commanders",
+                "bears" => "chicago-bears",
+                "lions" => "detroit-lions",
+                "green bay" => "green-bay-packers",
+                "vikings" => "minnesota-vikings",
+                "falcons" => "atlanta-falcons",
+                "carolina" => "carolina-panthers",
+                "saints" => "new-orleans-saints",
+                "tampa bay" => "tampa-bay-buccaneers",
+                "arizona" => "arizona-cardinals",
+                "rams" => "los-angeles-rams",
+                "san fran" => "san-francisco-49ers",
+                "seahawks" => "seattle-seahawks",
                 _ => "UNKNOWN"
             };
 
@@ -152,10 +153,9 @@ namespace GamedayTracker.Extensions
 
             var jsonNodes = JsonNode.Parse(jsonFile)!.GetValue<List<TeamJson>>();
 
-            foreach (var jsonNode in jsonNodes)
+            foreach (var jsonNode in jsonNodes.Where(jsonNode => jsonNode.FullName!.Equals(name)))
             {
-                if (jsonNode.FullName!.Equals(name))
-                    return jsonNode.FullName;
+                return jsonNode.FullName!;
             }
 
             return "Not Found";

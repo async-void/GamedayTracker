@@ -44,7 +44,7 @@ namespace GamedayTracker.SlashCommands.Player
             [Parameter("member")] DiscordUser user, [Parameter("picks")] string picks)
         {
             await ctx.Interaction.DeferAsync();
-            var teamSchedule = gameData.GetTeamSchedule("Buffalo");
+           
             var playerPicks = picks.Split(" ").ToList();
 
             await using var db = new AppDbContextFactory().CreateDbContext();

@@ -38,6 +38,7 @@ namespace GamedayTracker
             {
                 services.AddSingleton<ITeamData, TeamDataService>();
                 services.AddScoped<ITimerService, TimerService>();
+                services.AddScoped<NflEmojiService>();
                 services.AddScoped<ILogger, LoggerService>();
                 services.AddScoped<IGameData, GameDataService>();
                 services.AddScoped<IConfigurationData, ConfigurationDataService>();

@@ -202,35 +202,40 @@ namespace GamedayTracker.Services
 
         #region GET TEAM SCHEDULE
 
-        public Result<List<Matchup>, SystemError<GameDataService>> GetTeamSchedule(string teamName)
+        public async Task<Result<List<string>, SystemError<GameDataService>>> GetTeamSchedule(string teamName, int season)
         {
-            var scheduleList = new List<Matchup>();
-            var teamLinkName = teamName.ToTeamLinkName();
-            var scheduleLink = $"https://www.footballdb.com/teams/nfl/{teamLinkName}/results";
+            var scheduleList = new List<string>();
+            var teamLinkName = teamName.ToLower().ToTeamLinkName();
+            var scheduleLink = $"https://www.footballdb.com/teams/nfl/{teamLinkName}/results/{season}";
             var web = new HtmlWeb();
             var doc = web.Load(scheduleLink);
-            var scheduleNodes = doc.DocumentNode.SelectNodes(".//div[@class='lngame']//table");
+            var scheduleNodes = doc.DocumentNode.SelectNodes(".//div[@class='games-container']");
 
-            if (scheduleNodes is not null)
-            {
-                for (int i = 3; i < scheduleNodes.Count; i++)
+            if (scheduleNodes is null)
+                return Result<List<string>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
                 {
-                    var curNode = scheduleNodes[i];
-                    if (!curNode.HasChildNodes)
-                        continue;
-                    var awayNameNode = curNode.ChildNodes[3].ChildNodes[1].ChildNodes[1].InnerText;
-                    var test = "";
-                }
-                
+                    ErrorMessage = $"no schedule found for ``{teamName}``",
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = this
+                });
+
+            var curNode = scheduleNodes[1];
+            for ( var i = 1; i < curNode.ChildNodes.Count; i+= 2)
+            {
+                var date = curNode.ChildNodes[i].ChildNodes[1].ChildNodes[1].ChildNodes[1].ChildNodes[1].ChildNodes[1].InnerText;
+                var awayName = curNode.ChildNodes[i].ChildNodes[1].ChildNodes[1].ChildNodes[3].ChildNodes[1].ChildNodes[1].ChildNodes[0].InnerText;
+                var homeName = curNode.ChildNodes[i].ChildNodes[1].ChildNodes[1].ChildNodes[3].ChildNodes[3].ChildNodes[1].ChildNodes[0].InnerText;
+                if (awayName != teamName)
+                    scheduleList.Add($"{awayName} - {date}");
+                if (homeName != teamName)
+                    scheduleList.Add($"{homeName} - {date}");
             }
 
-            return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
-            {
-                ErrorMessage = $"no schedule found for {teamName}",
-                ErrorType = ErrorType.INFORMATION,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = this
-            });
+            
+            var test = "";
+
+            return Result<List<string>, SystemError<GameDataService>>.Ok(scheduleList);
         }
 
         #endregion
