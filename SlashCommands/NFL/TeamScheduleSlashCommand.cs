@@ -3,19 +3,29 @@ using System.Text;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
+using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
-    public class TeamScheduleSlashCommand(IGameData gameData)
+    public class TeamScheduleSlashCommand(IGameData gameData, ITeamData teamData, ILogger logger)
     {
         [Command("schedule")]
         [Description("Get Team Schedule")]
         public async Task GetTeamSchedule(SlashCommandContext ctx, [Parameter("team")] string teamName, [Parameter("season")] int season)
         {
+            
             await ctx.DeferResponseAsync();
+
+            if (!teamData.IsValidTeamName(teamName.ToLower()))
+            {
+                await ctx.EditResponseAsync(new DiscordMessageBuilder()
+                        .WithContent($"Invalid team name: {teamName}. Please use a valid team name."))
+                    .ConfigureAwait(false);
+                return;
+            }
             var sb = new StringBuilder();
             var teamSchedule = await gameData.GetTeamSchedule(teamName, season);
 
@@ -30,11 +40,12 @@ namespace GamedayTracker.SlashCommands.NFL
                 }
                 var message = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle($"Team Schedule for {teamName} in {season}")
+                        .WithTitle($"{season} Schedule for {teamName}")
                         .WithDescription(sb.ToString())
                         .WithColor(DiscordColor.Blurple)
                         .WithTimestamp(DateTimeOffset.UtcNow));
                 await ctx.EditResponseAsync(message);
+                logger.Log(LogTarget.Console, LogType.Information, DateTimeOffset.UtcNow, $"[Get Team Schedule] method ran in debug mode. |server [{ctx.Guild!.Name}]| user: [{ctx.Member!.Username}]");
             }
             else
             {

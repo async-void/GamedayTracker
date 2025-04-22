@@ -199,5 +199,47 @@ namespace GamedayTracker.Services
             return Result<string, SystemError<TeamDataService>>.Ok(result);
         }
         #endregion
+
+        #region IS VALID TEAM NAME
+        public bool IsValidTeamName(string name)
+        {
+            var teams = new List<string>
+            {
+                "arizona", 
+                "atlanta", 
+                "baltimore",
+                "buffalo", 
+                "carolina",
+                "chicago", 
+                "cincinnati", 
+                "cleveland",
+                "dallas", 
+                "denver", 
+                "detroit",
+                "green bay",
+                "houston",
+                "indianapolis",
+                "jacksonville", 
+                "kansas city", 
+                "las vegas", 
+                "la chargers",
+                "la rams", 
+                "miami", 
+                "minnesota", 
+                "New england", 
+                "new Orleans",
+                "ny giants", 
+                "ny jets", 
+                "philadelphia",
+                "pittsburgh", 
+                "san francisco", 
+                "seattle",
+                "tampa bay",
+                "tennessee", 
+                "washington"
+            };
+            return teams.Contains(name);
+        }
+        #endregion
     }
 }

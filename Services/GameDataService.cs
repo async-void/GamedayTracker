@@ -193,7 +193,7 @@ namespace GamedayTracker.Services
         #endregion
 
         #region GET MATCHUP COUNT
-        public string GetMatchupCount()
+        public string GetMatchupCount(int season, int week)
         {
             throw new NotImplementedException();
         }
@@ -220,21 +220,20 @@ namespace GamedayTracker.Services
                     CreatedBy = this
                 });
 
-            var curNode = scheduleNodes[1];
+            HtmlNode? curNode = null;
+
+            curNode = scheduleNodes.Count == 2 ? scheduleNodes[0] : scheduleNodes[1];
+
             for ( var i = 1; i < curNode.ChildNodes.Count; i+= 2)
             {
                 var date = curNode.ChildNodes[i].ChildNodes[1].ChildNodes[1].ChildNodes[1].ChildNodes[1].ChildNodes[1].InnerText;
                 var awayName = curNode.ChildNodes[i].ChildNodes[1].ChildNodes[1].ChildNodes[3].ChildNodes[1].ChildNodes[1].ChildNodes[0].InnerText;
                 var homeName = curNode.ChildNodes[i].ChildNodes[1].ChildNodes[1].ChildNodes[3].ChildNodes[3].ChildNodes[1].ChildNodes[0].InnerText;
-                if (awayName != teamName)
+                if (!string.Equals(awayName.ToLower(), teamName.ToLower(), StringComparison.Ordinal))
                     scheduleList.Add($"{awayName} - {date}");
-                if (homeName != teamName)
+                if (!string.Equals(homeName.ToLower(), teamName.ToLower(), StringComparison.Ordinal))
                     scheduleList.Add($"{homeName} - {date}");
             }
-
-            
-            var test = "";
-
             return Result<List<string>, SystemError<GameDataService>>.Ok(scheduleList);
         }
 
