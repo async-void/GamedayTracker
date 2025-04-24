@@ -30,22 +30,29 @@ namespace GamedayTracker.SlashCommands.Utility
         {
             await ctx.DeferResponseAsync();
 
-            var buttons = new DiscordComponent[]
-            {
+            DiscordComponent[] buttons =
+            [
                 new DiscordButtonComponent(DiscordButtonStyle.Primary, "scoreboardHelpBtn", "Scoreboard"),
                 new DiscordButtonComponent(DiscordButtonStyle.Primary, "standingsHelpBtn", "Standings"),
                 new DiscordButtonComponent(DiscordButtonStyle.Primary, "draftHelpBtn", "Draft"),
                 new DiscordButtonComponent(DiscordButtonStyle.Primary, "userSettingsHelpBtn", "User Settings"),
                 new DiscordButtonComponent(DiscordButtonStyle.Primary, "newsHelpBtn", "News")
-            };
+            ];
 
+            DiscordComponent[] components =
+            [
+                new DiscordTextDisplayComponent("Help Section"),
+                new DiscordSeparatorComponent(true),
+                new DiscordTextDisplayComponent("below is a list of buttons where you will select a button to get the desired help section."),
+                new DiscordActionRowComponent(buttons)
+                
+            ];
+
+            var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
             var message = new DiscordMessageBuilder()
-                .AddEmbed(new DiscordEmbedBuilder()
-                    .WithColor(DiscordColor.Blurple)
-                    .WithTitle("Help")
-                    .WithFooter("Gameday Tracker")
-                    .WithTimestamp(DateTimeOffset.UtcNow)
-                    ).AddComponents(buttons);
+                .EnableV2Components()
+                .AddContainerComponent(container);
+
             _loggerService.Log(LogTarget.Console, LogType.Information, DateTimeOffset.UtcNow, "Help slash command was called!");
             await ctx.EditResponseAsync(message);
         }
@@ -63,14 +70,19 @@ namespace GamedayTracker.SlashCommands.Utility
             var guildId = ctx.Guild!.Id;
             var connectionLat = ctx.Client.GetConnectionLatency(guildId);
             var uptime = _timerService.CalculateRunningTime();
-            var message = new DiscordMessageBuilder().AddEmbed(
-                new DiscordEmbedBuilder()
-                    .WithTitle("Latency")
-                    .AddField("Db", sw.Elapsed.Humanize(), true)
-                    .AddField("Discord", connectionLat.Humanize(), true)
-                    .AddField("Lifetime", uptime.Humanize(), true)
-                    .WithColor(DiscordColor.Teal)
-                    .WithTimestamp(DateTimeOffset.UtcNow));
+            
+            DiscordComponent[] components =
+            [
+                new DiscordTextDisplayComponent($"DB **{sw.Elapsed.Humanize()}**"),
+                new DiscordTextDisplayComponent($"Discord **{connectionLat.Humanize()}**"),
+                new DiscordTextDisplayComponent($"Lifetime **{uptime.Humanize()}**")
+            ];
+            DiscordContainerComponent container = new(components, false, DiscordColor.Blurple);
+
+            var message = new DiscordMessageBuilder()
+                .EnableV2Components()
+                .AddContainerComponent(container);
+                
 
             //TODO: finish me.
             _loggerService.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, "Ping Command Executed");

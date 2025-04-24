@@ -7,8 +7,6 @@ using GamedayTracker.Interfaces;
 
 namespace GamedayTracker.SlashCommands.Settings.Moderation
 {
-    [Command("mod-settings")]
-    [Description("moderation settings")]
     public class ModerationSettingsSlashCommands(IConfigurationData configService)
     {
         [Command("notification-channel")]

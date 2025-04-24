@@ -36,7 +36,7 @@ namespace GamedayTracker
             #region CONFIGURE SERVICES
             dBuilder.ConfigureServices(services =>
             {
-                services.AddSingleton<ITeamData, TeamDataService>();
+                services.AddScoped<ITeamData, TeamDataService>();
                 services.AddScoped<ITimerService, TimerService>();
                 services.AddScoped<NflEmojiService>();
                 services.AddScoped<ILogger, LoggerService>();

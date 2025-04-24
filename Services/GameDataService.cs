@@ -193,9 +193,14 @@ namespace GamedayTracker.Services
         #endregion
 
         #region GET MATCHUP COUNT
-        public string GetMatchupCount(int season, int week)
+        public int GetMatchupCount(int season, int week)
         {
-            throw new NotImplementedException();
+            var mainLink = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=reg&wk={week}";
+            var web = new HtmlWeb();
+            var doc = web.Load(mainLink);
+            var scoreNodes = doc.DocumentNode.SelectNodes(".//div[@class='lngame']//table");
+
+            return scoreNodes?.Count ?? 0;
         }
 
         #endregion

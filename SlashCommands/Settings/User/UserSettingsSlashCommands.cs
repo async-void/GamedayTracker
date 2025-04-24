@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -6,7 +7,10 @@ using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
+using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Factories;
 
 namespace GamedayTracker.SlashCommands.Settings.User
@@ -15,27 +19,42 @@ namespace GamedayTracker.SlashCommands.Settings.User
     [Description("set user settings")]
     public class UserSettingsSlashCommands
     {
+        #region FAVORITE TEAM
         [Command("favorite-team")]
         [Description("set's the user's favorite NFL team.")]
-        public async Task SetFavoriteTeam(CommandContext ctx,
-            [Parameter("team")] string teamName)
+        public async Task SetFavoriteTeam(SlashCommandContext ctx, [Parameter("team")] string teamName)
         {
             await ctx.DeferResponseAsync();
+            
             var userName = ctx.Member!.Username;
             await using var db = new BotDbContextFactory().CreateDbContext();
             var dbMember = db.Members.Where(x => x.MemberName.Equals(userName))!.FirstOrDefault();
             if (dbMember is not null)
             {
                 dbMember.FavoriteTeam = teamName;
+
+                DiscordComponent[] components =
+                [
+                    
+                    new DiscordTextDisplayComponent("User Settings - Favorite Team"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Favorite Team set to: {teamName}"),
+                        new DiscordButtonComponent(DiscordButtonStyle.Primary, label: "this is a button!", customId: "bT")),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent("this is a thumbnail"),
+                        new DiscordThumbnailComponent("https://i.imgur.com/SP3WvWe.png"))
+                ];
+
+                var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
                 var message = new DiscordMessageBuilder()
-                    .AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle($"User Setting - Favorite Team Command ")
-                        .WithDescription("WIP: member is in db, favorite-team command was run....")
-                        .WithTimestamp(DateTime.UtcNow));
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
+
+
+                await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
 
                 db.Members.Update(dbMember);
                 await db.SaveChangesAsync();
-                await ctx.EditResponseAsync(message);
                 await ctx.User.SendMessageAsync($"favorite team {teamName} has been set!");
             }
             else
@@ -49,5 +68,31 @@ namespace GamedayTracker.SlashCommands.Settings.User
                 await ctx.EditResponseAsync(message);
             }
         }
+        #endregion
+
+        #region ENABLE UPDATES
+        [Command("enable-updates")]
+        [Description("enables updates.")]
+        public async Task EnableUpdates(SlashCommandContext ctx, [SlashChoiceProvider<UserSettingsChoiceProvider>] int choice)
+        {
+            await ctx.DeferResponseAsync();
+            switch (choice)
+            {
+                case 0:
+                    var userName = ctx.Member!.Username;
+                    break;
+                case 1:
+                    break;
+                default:
+                    var message = new DiscordMessageBuilder()
+                        .AddEmbed(new DiscordEmbedBuilder()
+                            .WithTitle($"User Setting - Enable Updates Command ")
+                            .WithDescription("Unknown Command!")
+                            .WithTimestamp(DateTime.UtcNow));
+                    await ctx.EditResponseAsync(message);
+                    break;
+            }
+        }
+        #endregion
     }
 }

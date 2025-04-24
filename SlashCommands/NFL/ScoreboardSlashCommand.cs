@@ -4,12 +4,14 @@ using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
+using GamedayTracker.Enums;
+using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
-    public class ScoreboardSlashCommand
+    public class ScoreboardSlashCommand(ILogger logger)
     {
         private readonly GameDataService _gameService = new();
 
@@ -39,9 +41,19 @@ namespace GamedayTracker.SlashCommands.NFL
                     var homeRecord = scoreBoardResult.Value[i].Opponents.HomeTeam.Record;
                     var homeEmoji = scoreBoardResult.Value[i].Opponents.HomeTeam.Emoji;
 
-                    sBuilder.Append(
-                        $"{awayEmoji} **{awayScore}** -" +
-                        $"**{homeScore}** {homeEmoji}\t\t\\|| FINAL\r\n" );
+                    if (awayScore > homeScore)
+                    {
+                        sBuilder.Append(
+                            $"{awayEmoji} **{awayScore}** -" +
+                            $"{homeScore} {homeEmoji.PadRight(8)} - **FINAL**\r\n");
+                    }
+                    else
+                    {
+                        sBuilder.Append(
+                            $"{awayEmoji} {awayScore} -" +
+                            $"**{homeScore}** {homeEmoji.PadRight(8)} - **FINAL**\r\n");
+                    }
+                       
                 }
                 
                 var message = new DiscordMessageBuilder()
@@ -49,8 +61,9 @@ namespace GamedayTracker.SlashCommands.NFL
                         .WithTitle($"Gameday Tracker Scoreboard")
                         .WithDescription(sBuilder.ToString())
                         .WithThumbnail("https://i.imgur.com/jj94UiI.png", 64, 64)
+                        .WithFooter("Gameday Tracker ")
                         .WithTimestamp(DateTimeOffset.UtcNow));
-
+                logger.Log(LogTarget.Console, LogType.Debug, DateTimeOffset.UtcNow, $"Scoreboard command used | {ctx.Guild!.Name} | user: {ctx.User.Username}");
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
             }
             else

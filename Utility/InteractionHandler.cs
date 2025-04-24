@@ -23,7 +23,8 @@ namespace GamedayTracker.Utility
                         {
                             case "afcDropdown":
                             {
-                                var tName = eventArgs.Interaction.Data.Values[0];
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+                                    var tName = eventArgs.Interaction.Data.Values[0];
                                 var draftResult = await teamData.GetDraftResultForTeamAsync(2024, tName);
                                 var msgBuilder = new StringBuilder();
 
@@ -31,13 +32,23 @@ namespace GamedayTracker.Utility
                                 {
                                     msgBuilder.Append($"round **{draftEntity.Round}** | **{draftEntity.PlayerName}** | position **{draftEntity.Pos}** | college **{draftEntity.College}**\r\n");
                                 }
-                                var draftMessage = new DiscordEmbedBuilder()
-                                        .WithTitle($"2024 Draft Results for {tName}")
-                                        .WithDescription(msgBuilder.ToString());
-                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(draftMessage));
+
+                                DiscordComponent[] components =
+                                [
+                                    new DiscordTextDisplayComponent($"Draft Results for {tName}"),
+                                    new DiscordSeparatorComponent(true),
+                                    new DiscordTextDisplayComponent(msgBuilder.ToString())
+                                ];
+                                var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
+
+                                var message = new DiscordMessageBuilder()
+                                .EnableV2Components()
+                                .AddContainerComponent(container)
+                                .SendAsync(eventArgs.Interaction.Channel);
+
                                 break;
                             }
-                            case "nfcDropdown":
+                            case "nfcDropdown"://TODO: fix V2 component message
                             {
                                 var tName = eventArgs.Interaction.Data.Values[0];
                                 var draftResult = await teamData.GetDraftResultForTeamAsync(2024, tName);

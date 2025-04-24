@@ -18,7 +18,6 @@ namespace GamedayTracker.SlashCommands.NFL
         {
             
             await ctx.DeferResponseAsync();
-
             if (!teamData.IsValidTeamName(teamName.ToLower()))
             {
                 await ctx.EditResponseAsync(new DiscordMessageBuilder()
