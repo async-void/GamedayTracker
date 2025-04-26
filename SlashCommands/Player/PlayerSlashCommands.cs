@@ -61,20 +61,33 @@ namespace GamedayTracker.SlashCommands.Player
 
             if (!isValid)
             {
-                var errMessage = new DiscordMessageBuilder()
-                    .AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle($"Error")
-                        .WithDescription($"picks must match game count ``[{matchups.Count}]``\r\nplease choose a team from every game")
-                        .WithTimestamp(DateTime.UtcNow));
+                DiscordComponent[] components =
+                [
+                    new DiscordTextDisplayComponent("Error"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"something went terrible wrong\r\nplayer picks did not match [**{matchups.Count}**] matchups")
+                ];
+
+                var container = new DiscordContainerComponent(components, false, DiscordColor.DarkRed);
+                var errMessage = new DiscordInteractionResponseBuilder()
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
                 await ctx.EditResponseAsync(errMessage);
                 return;
             }
+
+            DiscordComponent[] msgComponents =
+            [
+                new DiscordTextDisplayComponent($"Week {matchups[0].Week} Scoreboard"),
+                new DiscordSeparatorComponent(true),
+                new DiscordTextDisplayComponent($"player {user.Username} picks have been added"),
+                new DiscordSeparatorComponent(true),
+                new DiscordTextDisplayComponent($"Gameday Tracker {DateTime.UtcNow.ToUniversalTime()}")
+            ];
+            var message = new DiscordInteractionResponseBuilder()
+                .EnableV2Components()
+                .AddContainerComponent(new DiscordContainerComponent(msgComponents, true, DiscordColor.Blue));
             
-            var message = new DiscordMessageBuilder()
-                .AddEmbed(new DiscordEmbedBuilder()
-                    .WithTitle($"Week {matchups[0].Week} Scoreboard")
-                    .WithDescription($"player {user.Username} picks have been added")
-                    .WithTimestamp(DateTime.UtcNow));
             await ctx.EditResponseAsync(message);
         }
 

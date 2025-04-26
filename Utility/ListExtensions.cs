@@ -9,6 +9,7 @@ namespace GamedayTracker.Utility
     public static class ListExtensions
     {
         private static Random rng = new Random();
+
         #region SHUFFLE LIST
 
         public static List<T> Shuffle<T>(this List<T> list)

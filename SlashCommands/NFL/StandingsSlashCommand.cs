@@ -32,7 +32,6 @@ namespace GamedayTracker.SlashCommands.NFL
             else
             {
                 var sBuilder = new StringBuilder();
-                sBuilder.Append($"__``Team\tW\tL\t Pct``__\r\n");
 
                 foreach (var standing in standings)
                 {
@@ -42,12 +41,21 @@ namespace GamedayTracker.SlashCommands.NFL
                         sBuilder.Append($"``{standing.Abbr.PadLeft(2)}\t{standing.Wins.PadLeft(2)}\t{standing.Loses}\t{standing.Pct}``\r\n");
                 }
 
-                var message = new DiscordMessageBuilder()
-                    .AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle($"Season {season} Standings")
-                        .WithDescription(sBuilder.ToString()));
-
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
+                DiscordComponent[] components =
+                [
+                    new DiscordTextDisplayComponent($"**Standings for Season {season}**"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"__``Team\tW\tL\t Pct``__\r\n"),
+                    new DiscordTextDisplayComponent(sBuilder.ToString()),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}")
+                ];
+                var container = new DiscordContainerComponent(components, false, DiscordColor.Cyan);
+                var message = new DiscordInteractionResponseBuilder()
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
+                    
+                await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
             }
 
         }

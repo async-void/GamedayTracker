@@ -35,15 +35,25 @@ namespace GamedayTracker.SlashCommands.NFL
                     var vsName = team.Split("-")[0].Trim().ToAbbr();
                     var date = team.Split("-")[1].Trim();
                     var emoji = NflEmojiService.GetEmoji(vsName);
-                    sb.AppendLine($"{date}: {vsName} {emoji}\r");
+                    sb.AppendLine($"{date}: {vsName} {emoji}");
                 }
+
+                DiscordComponent[] components =
+                [
+                    new DiscordTextDisplayComponent($"Schedule {season} for {teamName}"),
+                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                    new DiscordTextDisplayComponent(sb.ToString()),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}:{DateTime.Now.ToShortTimeString()}")
+                ];
+
+                var container = new DiscordContainerComponent(components);
+
                 var message = new DiscordMessageBuilder()
-                    .AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle($"{season} Schedule for {teamName}")
-                        .WithDescription(sb.ToString())
-                        .WithColor(DiscordColor.Blurple)
-                        .WithTimestamp(DateTimeOffset.UtcNow));
-                await ctx.EditResponseAsync(message);
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
+
+                await ctx.RespondAsync(message);
                 logger.Log(LogTarget.Console, LogType.Information, DateTimeOffset.UtcNow, $"[Get Team Schedule] method ran in debug mode. |server [{ctx.Guild!.Name}]| user: [{ctx.Member!.Username}]");
             }
             else

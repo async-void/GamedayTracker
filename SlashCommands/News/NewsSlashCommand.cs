@@ -15,6 +15,8 @@ namespace GamedayTracker.SlashCommands.News
         [Description("Gets the most recent NFL News and Updates.")]
         public async Task GetNewOrUpdates(CommandContext ctx)
         {
+            await ctx.DeferResponseAsync();
+
             var rnd = new Random();
             var articles = _newsService.GetNews();
             var imgList = new List<string>();
@@ -22,27 +24,32 @@ namespace GamedayTracker.SlashCommands.News
             {
                 var sBuilder = new StringBuilder();
                 var count = articles.Value.Count;
-                var embedTitle = $"**Latest NFL News {DateTime.UtcNow}**";
-                sBuilder.Append($"<:newspaper:1331763576150425620> {embedTitle}\r\n\r\n");
+                var embedTitle = $"**Latest NFL News {DateTime.UtcNow.ToLongDateString()}**";
+                
+                DiscordComponent[] components =
+                [
+                    new DiscordTextDisplayComponent($"<:newspaper:1331763576150425620> {embedTitle}"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"1. **{articles.Value[0].Title}**\r\n{articles.Value[0].Content}"),
+                        new DiscordButtonComponent(DiscordButtonStyle.Primary, "art1Id", "Read More")),
+                  
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"2. **{articles.Value[1].Title}**\r\n{articles.Value[1].Content}"),
+                        new DiscordButtonComponent(DiscordButtonStyle.Primary, "art1Id1", "Read More")),
+                  
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"3. **{articles.Value[2].Title}**\r\n{articles.Value[2].Content}"),
+                        new DiscordButtonComponent(DiscordButtonStyle.Primary, "art1Id2", "Read More")),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem(articles!.Value[rnd.Next(1, 3)]!.ImgUrl!, "news", false)),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}")
+                ];
 
-                for (int i = 0; i < count; i++)
-                {
-                    var title = articles.Value[i].Title;
-                    var content = articles.Value[i].Content;
-                    imgList.Add(articles!.Value[i]!.ImgUrl!);
-
-                    sBuilder.Append($"**{i + 1}) {title}**\r\n{content}\r\n\r\n");
-                }
-
-                imgList.Shuffle();
-                await ctx.DeferResponseAsync();
-                var message = new DiscordMessageBuilder()
-                    .AddEmbed(new DiscordEmbedBuilder()
-                        .WithDescription(sBuilder.ToString())
-                        .WithImageUrl(imgList[rnd.Next(1, 3)])
-                        .WithTimestamp(DateTime.UtcNow));
+                var container = new DiscordContainerComponent(components, false, DiscordColor.Gold);
+                var message = new DiscordInteractionResponseBuilder()
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
                
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
+                await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
             }
             else
             {

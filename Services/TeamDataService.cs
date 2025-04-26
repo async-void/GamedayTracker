@@ -241,5 +241,6 @@ namespace GamedayTracker.Services
             return teams.Contains(name);
         }
         #endregion
+
     }
 }

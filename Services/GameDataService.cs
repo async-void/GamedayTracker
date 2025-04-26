@@ -192,7 +192,14 @@ namespace GamedayTracker.Services
 
         #endregion
 
+        /// <summary>
+        /// get the matchup count for a specific week
+        /// </summary>
+        /// <param name="season"></param>
+        /// <param name="week"></param>
+        /// <returns>int</returns>
         #region GET MATCHUP COUNT
+
         public int GetMatchupCount(int season, int week)
         {
             var mainLink = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=reg&wk={week}";
@@ -205,8 +212,13 @@ namespace GamedayTracker.Services
 
         #endregion
 
+        /// <summary>
+        /// get the team schedule
+        /// </summary>
+        /// <param name="teamName"></param>
+        /// <param name="season"></param>
+        /// <returns>Task</returns>
         #region GET TEAM SCHEDULE
-
         public async Task<Result<List<string>, SystemError<GameDataService>>> GetTeamSchedule(string teamName, int season)
         {
             var scheduleList = new List<string>();

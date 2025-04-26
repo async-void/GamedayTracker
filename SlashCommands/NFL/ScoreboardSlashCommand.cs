@@ -28,7 +28,6 @@ namespace GamedayTracker.SlashCommands.NFL
 
             if (scoreBoardResult.IsOk)
             {
-                sBuilder.Append($"**Season {season}: Week {week}**\r\n\r\n");
                 for (int i = 0; i < scoreBoardResult.Value.Count; i++)
                 {
                     var awayName = scoreBoardResult.Value[i].Opponents.AwayTeam.Name;
@@ -55,26 +54,30 @@ namespace GamedayTracker.SlashCommands.NFL
                     }
                        
                 }
-                
-                var message = new DiscordMessageBuilder()
-                    .AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle($"Gameday Tracker Scoreboard")
-                        .WithDescription(sBuilder.ToString())
-                        .WithThumbnail("https://i.imgur.com/jj94UiI.png", 64, 64)
-                        .WithFooter("Gameday Tracker ")
-                        .WithTimestamp(DateTimeOffset.UtcNow));
+
+                var components = new DiscordComponent[]
+                {
+                    new DiscordTextDisplayComponent($"**Season {season}: Week {week}**\r\n\r\n"),
+                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                    new DiscordTextDisplayComponent(sBuilder.ToString()),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}")
+                };
+
+                var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
+                var message = new DiscordInteractionResponseBuilder()
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
                 logger.Log(LogTarget.Console, LogType.Debug, DateTimeOffset.UtcNow, $"Scoreboard command used | {ctx.Guild!.Name} | user: {ctx.User.Username}");
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
+                await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
             }
             else
             {
-                var message = new DiscordMessageBuilder()
-                    .AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle("Gameday Tracker")
-                        .WithDescription($"{scoreBoardResult.Error.ErrorMessage}")
-                        .WithTimestamp(DateTime.UtcNow));
-
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
+                var message = new DiscordInteractionResponseBuilder()
+                    .EnableV2Components()
+                    .AddTextDisplayComponent($"unable to fetch scoreboard for season: {season} week: {week}");
+                
+                await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
             }
             
         }

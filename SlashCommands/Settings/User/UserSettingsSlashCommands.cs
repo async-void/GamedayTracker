@@ -11,7 +11,9 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
+using GamedayTracker.Extensions;
 using GamedayTracker.Factories;
+using GamedayTracker.Services;
 
 namespace GamedayTracker.SlashCommands.Settings.User
 {
@@ -25,7 +27,8 @@ namespace GamedayTracker.SlashCommands.Settings.User
         public async Task SetFavoriteTeam(SlashCommandContext ctx, [Parameter("team")] string teamName)
         {
             await ctx.DeferResponseAsync();
-            
+            var abbr = teamName.ToAbbr();
+            var logoPath = LogoPathService.GetLogoPath(abbr);
             var userName = ctx.Member!.Username;
             await using var db = new BotDbContextFactory().CreateDbContext();
             var dbMember = db.Members.Where(x => x.MemberName.Equals(userName))!.FirstOrDefault();
@@ -42,7 +45,7 @@ namespace GamedayTracker.SlashCommands.Settings.User
                         new DiscordButtonComponent(DiscordButtonStyle.Primary, label: "this is a button!", customId: "bT")),
                     new DiscordSeparatorComponent(true),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent("this is a thumbnail"),
-                        new DiscordThumbnailComponent("https://i.imgur.com/SP3WvWe.png"))
+                        new DiscordThumbnailComponent(logoPath))
                 ];
 
                 var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
