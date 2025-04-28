@@ -11,13 +11,14 @@ using Humanizer;
 using Humanizer.Localisation;
 using GamedayTracker.Utility;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace GamedayTracker.SlashCommands.Economy
 {
       
     [Command("bank")]
     [Description("bank group commands")]
-    public class BankSlashCommand(ILogger logger)
+    public class BankSlashCommand(ILogger logger, IGuildMemberService memberService)
     {
         #region BALANCE
         [Command("balance")]
@@ -35,18 +36,21 @@ namespace GamedayTracker.SlashCommands.Economy
                 .FirstOrDefault();
 
             var member = ctx.Member;
+            DiscordComponent[] buttons =
+            [
+                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")
+            ];
 
             if (dbUser != null)
             {
                 var balance = dbUser.Bank!.Balance.ToString("C");
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent($"Balance for Member: **{user.GlobalName!}**"),
-                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"<:money:1337795714855600188> Balance - {balance}\r<:bank:1366390018423390360> Last Deposit - {dbUser!.Bank!.DepositTimestamp.ToShortDateString()}"),
-                        new DiscordThumbnailComponent(member.AvatarUrl.ToString())),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"**Member: {user.GlobalName!}**\r\n\r\n<:money:1337795714855600188> Balance - {balance}\r<:bank:1366390018423390360> Last Deposit - {dbUser!.Bank!.DepositTimestamp.ToShortDateString()}"),
+                        new DiscordThumbnailComponent(member!.AvatarUrl.ToString())),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"Gameday Tracker - {DateTime.UtcNow.ToLongDateString()}")
+                    new DiscordTextDisplayComponent($"Gameday Tracker - {DateTime.UtcNow.ToLongDateString()}"),
+                    new DiscordActionRowComponent(buttons)
                    
                 ];
 
@@ -56,14 +60,21 @@ namespace GamedayTracker.SlashCommands.Economy
                     .AddContainerComponent(container);
 
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
-                logger.Log(LogTarget.Console, LogType.Debug, DateTimeOffset.UtcNow, $"Get Member Balance was used in {ctx.Guild!.Name} by member: [{Chalk.Yellow(ctx.Member!.GlobalName!)}]");
+                logger.Log(LogTarget.Console, LogType.Debug, DateTimeOffset.UtcNow, $"Get Member Balance was used in {ctx.Guild!.Name} by member: {Chalk.Yellow(ctx.Member!.GlobalName!)}");
                 return;
             }
+
+            DiscordComponent[] msgComp =
+            [
+                new DiscordTextDisplayComponent("the member requested was not found in the database, if you ask nicely maybe a ``mod`` will add the requested member! :man_shrugging:"),
+                new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                new DiscordTextDisplayComponent($"Gameday Tracker - {DateTime.UtcNow.ToLongDateString()}"),
+                new DiscordActionRowComponent(buttons)
+            ];
+            var msgContainer = new DiscordContainerComponent(msgComp, false, DiscordColor.DarkGray);
             var message1 = new DiscordMessageBuilder()
-                .AddEmbed(new DiscordEmbedBuilder()
-                    .WithTitle($"member **{user.Username}** not found!")
-                    .WithDescription("the member requested was not found in the database, if you ask nicely maybe a ``mod`` will add the requested member! :man_shrugging:")
-                    .WithTimestamp(DateTime.UtcNow));
+                .EnableV2Components()
+                .AddContainerComponent(msgContainer);
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder(message1));
         }
@@ -79,33 +90,29 @@ namespace GamedayTracker.SlashCommands.Economy
             await using var db = new BotDbContextFactory().CreateDbContext();
 
             // check if user is in the db. consider making a util function to do the following.
-            var dbUser = db.Members.Where(x => x.MemberName.Equals(member!.Username) &&
-                                               x.GuildId == ctx.Guild!.Id.ToString())!
-                                               .Include(x => x.Bank)
-                                               .Include(x => x.PlayerPicks)
-                                               .FirstOrDefault();
+            var dbUser = await memberService.GetGuildMemberAsync(ctx.Guild!.Id.ToString(), member!.Username!);
             //user is in db, run daily command.
-            if (dbUser is not null)
+            if (dbUser.IsOk)
             {
-                var dailyTimeStamp = dbUser.Bank!.DepositTimestamp;
+                var dailyTimeStamp = dbUser.Value.Bank!.DepositTimestamp;
                 var currentTime = DateTime.UtcNow;
                 var timeElapsed = currentTime - dailyTimeStamp;
                 var timeRemaining = TimeSpan.FromHours(24) - timeElapsed;
 
                 if (timeElapsed.Days >= 1)
                 {
-                    var balance = dbUser.Bank!.Balance + 5.00;
+                    var balance = dbUser.Value.Bank!.Balance + 5.00;
                     timeRemaining = TimeSpan.FromHours(24);
 
                     var message = new DiscordMessageBuilder()
                         .AddEmbed(new DiscordEmbedBuilder()
                             .WithTitle($"Daily Command")
-                            .WithDescription($"Done!  **{dbUser.MemberName}'s** balance is <:money:1337795714855600188> ${balance:#.##}\r\nyou can use daily again in ``{timeRemaining.Humanize(3, minUnit: TimeUnit.Minute)}`` from now")
+                            .WithDescription($"Done!  **{dbUser.Value.MemberName}'s** balance is <:money:1337795714855600188> ${balance:#.##}\r\nyou can use daily again in ``{timeRemaining.Humanize(3, minUnit: TimeUnit.Minute)}`` from now")
                             .WithTimestamp(DateTime.UtcNow));
 
-                    dbUser.Bank.Balance = balance;
-                    dbUser.Bank.DepositTimestamp = DateTime.UtcNow;
-                    db.Members.Update(dbUser);
+                    dbUser.Value.Bank.Balance = balance;
+                    dbUser.Value.Bank.DepositTimestamp = DateTime.UtcNow;
+                    db.Members.Update(dbUser.Value);
                     await db.SaveChangesAsync();
 
                     Console.WriteLine(

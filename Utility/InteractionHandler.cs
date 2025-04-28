@@ -82,18 +82,21 @@ namespace GamedayTracker.Utility
                             }
                             #endregion
 
+                            #region SCOREBOARD
                             case "scoreboardHelpBtn": //TODO: here I would like to abstract this code to a method call to build the embed. not sure if it will make a difference in readability?
                             {
                                 DiscordComponent[] buttons =
                                 [
-                                    new DiscordButtonComponent(DiscordButtonStyle.Primary, "donateId", "Donate", false),
-                                    new DiscordButtonComponent(DiscordButtonStyle.Success, "donateId1", "Donate", false),
-                                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId2", "Donate", false),
+                                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")
                                 ];
 
                                 DiscordComponent[] components =
                                 [
-                                new DiscordTextDisplayComponent("Scoreboard is in development, the devs are hard at work implementing this feature!"),
+                                new DiscordTextDisplayComponent("Scoreboard Help Section"),
+                                new DiscordSeparatorComponent(true),
+                                new DiscordTextDisplayComponent("1. Select the Season\r2.Select the Week"),
+                                new DiscordSeparatorComponent(true),
+                                new DiscordTextDisplayComponent("this slash command will fetch ``All`` the game totals for the selected ``Season`` and ``Week``"),
                                 new DiscordSeparatorComponent(true),
                                 new DiscordActionRowComponent(buttons)
                                 ];
@@ -105,13 +108,32 @@ namespace GamedayTracker.Utility
 
                                 await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder(scoreboardMessage));
                                 break;
-                                }
+                            }
+                            #endregion
+
+                            #region SCOREBOARD BUTTONS
+                            case "donateId":
+                                DiscordComponent[] bComponent =
+                                [
+                                    new DiscordTextDisplayComponent(
+                                        "Donate is in development, the devs are hard at work implementing this feature!")
+                                ];
+                                var cContainer =
+                                    new DiscordContainerComponent(bComponent, false, DiscordColor.LightGray);
+                                var bMsg = new DiscordInteractionResponseBuilder()
+                                    .EnableV2Components()
+                                    .AddContainerComponent(cContainer);
+                                await eventArgs.Interaction.CreateResponseAsync(
+                                    DiscordInteractionResponseType.UpdateMessage,
+                                    new DiscordInteractionResponseBuilder(bMsg));
+                                break;
+                            #endregion
                             default:
                                 {
                                     break;
                                 }
                         }
-                        break;
+                    break;
                 }
                 case DiscordInteractionType.Ping:
                     await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Ping is in development, the devs are hard at work implementing this feature!"));

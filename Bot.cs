@@ -44,6 +44,7 @@ namespace GamedayTracker
                 services.AddScoped<IGameData, GameDataService>();
                 services.AddScoped<IConfigurationData, ConfigurationDataService>();
                 services.AddScoped<ICommandHelper, SlashCommandHelper>();
+                services.AddScoped<IGuildMemberService, GuildMemberService>();
             });
             #endregion
 
