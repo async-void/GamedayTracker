@@ -29,10 +29,11 @@ namespace GamedayTracker.Helpers
             switch (scope)
             {
                 case 0:
-                    leaderboard = db.Members
+                    leaderboard = db.Members.Where(x => x.GuildId == guildId)
                         .Include(x => x.Bank)
                         .OrderBy(x => x.Bank!.Balance)
                         .ToList();
+                    
                     if (leaderboard.Count > 0)
                     {
                         return Result<List<GuildMember>, SystemError<SlashCommandHelper>>.Ok(leaderboard);
@@ -49,7 +50,7 @@ namespace GamedayTracker.Helpers
                     }
 
                 case 1:
-                    leaderboard = db.Members.Where(x => x.GuildId == guildId)
+                    leaderboard = db.Members
                         .Include(x => x.Bank)
                         .OrderBy(x => x.Bank!.Balance)
                         .ToList();

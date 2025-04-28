@@ -39,6 +39,8 @@ namespace GamedayTracker.Services
         {
             var matchups = new List<Matchup>();
             var db = _dbFactory.CreateDbContext();
+            const string seasonType = "reg";
+            var link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type={seasonType}&wk={week}";
             var sw = new Stopwatch();
             sw.Start();
             var weeklyMatchups = db.Matchups?
@@ -54,64 +56,87 @@ namespace GamedayTracker.Services
 
             if (weeklyMatchups!.Any())
             {
-                return Result<List<Matchup>, SystemError<GameDataService>>.Ok(weeklyMatchups.ToList());
+                return Result<List<Matchup>, SystemError<GameDataService>>.Ok(weeklyMatchups!.ToList());
             }
 
             Console.WriteLine($"no matchups in database for Season {season} : Week {week}\r\nAttempting to collect data from website!");
-            var seasonType = "reg";
+            
 
-            var link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type={seasonType}&wk={week}";
+            if (week > 18)
+            {
+                switch (week)
+                {
+                    case 19:
+                        link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=post&wk=1";
+                        break;
+                    case 20:
+                        link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=post&wk=2";
+                        break;
+                    case 21:
+                        link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=post&wk=3";
+                        break;
+                    case 22:
+                        link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=post&wk=4";
+                        break;
+                    default:
+                        return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
+                        {
+                            ErrorMessage = $"no results for season: {season} week: {week}",
+                            ErrorType = ErrorType.INFORMATION,
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedBy = this
+                        });
+                }
+                
+            }
+            
             var web = new HtmlWeb();
             var doc = web.Load(link);
 
             var scoreboardNodes = doc.DocumentNode.SelectNodes(".//div[@class='lngame']//table");
 
-            if (scoreboardNodes is not null)
-            {
-                for (var i = 0; i <= scoreboardNodes.Count - 1; i++)
+            if (scoreboardNodes is null)
+                return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
                 {
-                    var node = scoreboardNodes[i].ChildNodes[3];
-                    if (node.HasChildNodes)
-                    {
-                        try
-                        {
-                            var matchup = ParseMatchup(node, season, week);
+                    ErrorMessage = $"no matchups found for Season [{season}] Week [{week}]",
+                    ErrorType = ErrorType.WARNING,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = this
+                });
+            for (var i = 0; i <= scoreboardNodes.Count - 1; i++)
+            {
+                var node = scoreboardNodes[i].ChildNodes[3];
+                if (!node.HasChildNodes) continue;
+                try
+                {
+                    var matchup = ParseMatchup(node, season, week);
 
-                            if (matchup.IsOk)
-                                matchups.Add(matchup.Value);
-                            else
-                            {
-                                Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.DarkGray(matchup.Error.ErrorMessage!)}");
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            var error = new SystemError<GameDataService>()
-                            {
-                                ErrorMessage = e.Message,
-                                CreatedBy = this,
-                                CreatedAt = DateTime.UtcNow,
-                                ErrorType = Enums.ErrorType.INFORMATION,
-                            };
-                            Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.DarkGray(error.ErrorMessage)}");
-                        }
+                    if (matchup.IsOk)
+                        matchups.Add(matchup.Value);
+                    else
+                    {
+                        Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.DarkGray(matchup.Error.ErrorMessage!)}");
                     }
                 }
-                Console.WriteLine($"{Chalk.Green("Week [")}{Chalk.Yellow($"{week}")}{Chalk.Green("] Complete...")}");
-
-                //db.AddRange(matchups);
-                //db.SaveChanges();
-
-                return Result<List<Matchup>, SystemError<GameDataService>>.Ok(matchups);
+                catch (Exception e)
+                {
+                    var error = new SystemError<GameDataService>()
+                    {
+                        ErrorMessage = e.Message,
+                        CreatedBy = this,
+                        CreatedAt = DateTime.UtcNow,
+                        ErrorType = Enums.ErrorType.INFORMATION,
+                    };
+                    Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.DarkGray(error.ErrorMessage)}");
+                }
             }
+            Console.WriteLine($"{Chalk.Green("Week [")}{Chalk.Yellow($"{week}")}{Chalk.Green("] Complete...")}");
 
-            return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
-            {
-                ErrorMessage = $"no matchups found for Season [{season}] Week [{week}]",
-                ErrorType = ErrorType.WARNING,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = this
-            });
+            db.AddRange(matchups);
+            db.SaveChanges();
+
+            return Result<List<Matchup>, SystemError<GameDataService>>.Ok(matchups);
+
         }
         #endregion
 
@@ -255,5 +280,6 @@ namespace GamedayTracker.Services
         }
 
         #endregion
+
     }
 }

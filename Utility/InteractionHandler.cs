@@ -21,11 +21,12 @@ namespace GamedayTracker.Utility
                 {
                     switch (eventArgs.Interaction.Data.CustomId)
                         {
+                            #region AFC DROPDOWN
                             case "afcDropdown":
                             {
                                 
                                 var tName = eventArgs.Interaction.Data.Values[0];
-                                var draftResult = await teamData.GetDraftResultForTeamAsync(2024, tName);
+                                var draftResult = await teamData.GetDraftResultForTeamAsync(2025, tName);
                                 var msgBuilder = new StringBuilder();
 
                                 foreach (var draftEntity in draftResult.Value)
@@ -35,9 +36,11 @@ namespace GamedayTracker.Utility
 
                                 DiscordComponent[] components =
                                 [
-                                    new DiscordTextDisplayComponent($"Draft Results for **{tName}**"),
+                                    new DiscordTextDisplayComponent($"**2025** Draft Results for **{tName}**"),
                                     new DiscordSeparatorComponent(true),
-                                    new DiscordTextDisplayComponent(msgBuilder.ToString())
+                                    new DiscordTextDisplayComponent(msgBuilder.ToString()),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                    new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem("https://i.imgur.com/i6yCh8q.png"))
                                 ];
                                 var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
 
@@ -48,10 +51,13 @@ namespace GamedayTracker.Utility
                                 await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder(message));
                                 break;
                             }
+                            #endregion
+
+                            #region NFC DROPDOWN
                             case "nfcDropdown"://TODO: fix V2 component message
                             {
                                 var tName = eventArgs.Interaction.Data.Values[0];
-                                var draftResult = await teamData.GetDraftResultForTeamAsync(2024, tName);
+                                var draftResult = await teamData.GetDraftResultForTeamAsync(2025, tName);
                                 var msgBuilder = new StringBuilder();
 
                                 foreach (var draftEntity in draftResult.Value)
@@ -60,9 +66,11 @@ namespace GamedayTracker.Utility
                                 }
                                 DiscordComponent[] components =
                                 [
-                                    new DiscordTextDisplayComponent($"Draft Results for **{tName}**"),
+                                    new DiscordTextDisplayComponent($"**2025** Draft Results for **{tName}**"),
                                     new DiscordSeparatorComponent(true),
-                                    new DiscordTextDisplayComponent(msgBuilder.ToString())
+                                    new DiscordTextDisplayComponent(msgBuilder.ToString()),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                    new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem("https://i.imgur.com/i6yCh8q.png"))
                                 ];
                                 var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
 
@@ -72,6 +80,8 @@ namespace GamedayTracker.Utility
                                 await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder(message)); 
                                 break;
                             }
+                            #endregion
+
                             case "scoreboardHelpBtn": //TODO: here I would like to abstract this code to a method call to build the embed. not sure if it will make a difference in readability?
                             {
                                 DiscordComponent[] buttons =

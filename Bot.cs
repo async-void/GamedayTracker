@@ -8,6 +8,7 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Processors.TextCommands.Parsing;
 using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.Net.Gateway;
 using GamedayTracker.Factories;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
@@ -115,7 +116,7 @@ namespace GamedayTracker
                         Console.WriteLine(
                             $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray("Session Started!")}");
                     })
-                #endregion
+                   #endregion
 
                     #region GUILD CREATED
                     .HandleGuildCreated(async (s, e) =>
@@ -141,6 +142,7 @@ namespace GamedayTracker
 
                 );
 
+
             #endregion
 
             var status = new DiscordActivity("Game-Day", DiscordActivityType.Watching);
@@ -150,5 +152,6 @@ namespace GamedayTracker
            
             await Task.Delay(-1);
         }
+
     }
 }

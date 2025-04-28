@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel;
+using System.Globalization;
 using ChalkDotNET;
 using DSharpPlus.Commands;
 using DSharpPlus.Entities;
 using GamedayTracker.Enums;
 using GamedayTracker.Factories;
+using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using Humanizer;
 using Humanizer.Localisation;
@@ -15,7 +17,7 @@ namespace GamedayTracker.SlashCommands.Economy
       
     [Command("bank")]
     [Description("bank group commands")]
-    public class BankSlashCommand
+    public class BankSlashCommand(ILogger logger)
     {
         #region BALANCE
         [Command("balance")]
@@ -36,17 +38,25 @@ namespace GamedayTracker.SlashCommands.Economy
 
             if (dbUser != null)
             {
+                var balance = dbUser.Bank!.Balance.ToString("C");
+                DiscordComponent[] components =
+                [
+                    new DiscordTextDisplayComponent($"Balance for Member: **{user.GlobalName!}**"),
+                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"<:money:1337795714855600188> Balance - {balance}\r<:bank:1366390018423390360> Last Deposit - {dbUser!.Bank!.DepositTimestamp.ToShortDateString()}"),
+                        new DiscordThumbnailComponent(member.AvatarUrl.ToString())),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"Gameday Tracker - {DateTime.UtcNow.ToLongDateString()}")
+                   
+                ];
+
+                var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGreen);
                 var message = new DiscordMessageBuilder()
-                    .AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle($"Balance for member **{user.Username}**")
-                        .WithDescription("WIP: this gets member's bank balance")
-                        .AddField("<:money:1337795714855600188>Balance<:money:1337795714855600188>", $"{dbUser!.Bank!.Balance}", true)
-                        .AddField("Last Deposit", $"{dbUser!.Bank!.DepositTimestamp.ToShortDateString()}", true)
-                        .WithColor(DiscordColor.SpringGreen)
-                        .WithThumbnail(member.AvatarUrl)
-                        .WithTimestamp(DateTime.UtcNow));
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
 
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
+                logger.Log(LogTarget.Console, LogType.Debug, DateTimeOffset.UtcNow, $"Get Member Balance was used in {ctx.Guild!.Name} by member: [{Chalk.Yellow(ctx.Member!.GlobalName!)}]");
                 return;
             }
             var message1 = new DiscordMessageBuilder()

@@ -12,7 +12,7 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
         [Command("notification-channel")]
         [Description("set the notification channel to receive bot notifications")]
         [RequirePermissions(DiscordPermission.ManageGuild)]
-        public async ValueTask SetNotificationChannel(CommandContext ctx, [Description("channel id")] DiscordChannel channel)
+        public async ValueTask SetNotificationChannel(CommandContext ctx, [Description("channel")] DiscordChannel channel)
         {
             await ctx.DeferResponseAsync();
             await using var db = new BotDbContextFactory().CreateDbContext();

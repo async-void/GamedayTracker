@@ -21,11 +21,9 @@ namespace GamedayTracker.SlashCommands.Utility
     [Description("Utility Slash Commands")]
     public class UtilitySlashCommand(ITimerService timerService, ILogger loggerService)
     {
-        private readonly ITimerService _timerService = timerService;
-        private readonly ILogger _loggerService = loggerService;
 
         [Command("help")]
-        [Description("a list of commands and a brief explaination")]
+        [Description("help commands and a brief explaination")]
         public async Task Help(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
@@ -53,10 +51,11 @@ namespace GamedayTracker.SlashCommands.Utility
                 .EnableV2Components()
                 .AddContainerComponent(container);
 
-            _loggerService.Log(LogTarget.Console, LogType.Information, DateTimeOffset.UtcNow, "Help slash command was called!");
+            loggerService.Log(LogTarget.Console, LogType.Information, DateTimeOffset.UtcNow, "Help slash command was called!");
             await ctx.EditResponseAsync(message);
         }
 
+        #region PING
         [Command("ping")]
         [RequirePermissions(permissions: DiscordPermission.ManageGuild)]
         [Description("get the client latency [must have mod or higher roles]")]
@@ -69,11 +68,11 @@ namespace GamedayTracker.SlashCommands.Utility
             sw.Stop();
             var guildId = ctx.Guild!.Id;
             var connectionLat = ctx.Client.GetConnectionLatency(guildId);
-            var uptime = _timerService.CalculateRunningTime();
+            var uptime = timerService.CalculateRunningTime();
             
             DiscordComponent[] components =
             [
-                new DiscordTextDisplayComponent($"DB **{sw.Elapsed.Humanize()}**"),
+                new DiscordTextDisplayComponent($"DB **{sw.Elapsed.Humanize()}** "),
                 new DiscordTextDisplayComponent($"Discord **{connectionLat.Humanize()}**"),
                 new DiscordTextDisplayComponent($"Lifetime **{uptime.Humanize()}**")
             ];
@@ -85,8 +84,9 @@ namespace GamedayTracker.SlashCommands.Utility
                 
 
             //TODO: finish me.
-            _loggerService.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, "Ping Command Executed");
+            loggerService.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, "Ping Command Executed");
             await ctx.EditResponseAsync(message);
         }
+        #endregion
     }
 }

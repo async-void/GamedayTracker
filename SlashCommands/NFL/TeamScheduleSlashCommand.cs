@@ -58,12 +58,19 @@ namespace GamedayTracker.SlashCommands.NFL
             }
             else
             {
+                DiscordComponent[] components =
+                [
+                    new DiscordTextDisplayComponent($"**ERROR**"),
+                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                    new DiscordTextDisplayComponent($"{teamSchedule.Error.ErrorMessage} for season **{season}**"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}:{DateTime.Now.ToShortTimeString()}")
+                ];
+
+                var container = new DiscordContainerComponent(components, false, DiscordColor.IndianRed);
                 var errorEmbed = new DiscordMessageBuilder()
-                    .AddEmbed(new DiscordEmbedBuilder()
-                        .WithAuthor(ctx.Client.CurrentUser.Username)
-                        .WithDescription($"Error\r\n{teamSchedule.Error.ErrorMessage}")
-                        .WithColor(DiscordColor.Blurple)
-                        .WithTimestamp(DateTimeOffset.UtcNow));
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
                 await ctx.EditResponseAsync(errorEmbed);
             }
         }
