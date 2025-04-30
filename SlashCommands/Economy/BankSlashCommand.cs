@@ -27,26 +27,22 @@ namespace GamedayTracker.SlashCommands.Economy
             [Parameter("member")] DiscordUser user)
         {
             await ctx.DeferResponseAsync();
+            var member = ctx.Member;
 
             await using var db = new BotDbContextFactory().CreateDbContext();
+            var dbUser = await memberService.GetGuildMemberAsync(ctx.Guild!.Id.ToString(), member!.Username!);
 
-            // check if user is in the db. consider making a util function to do the following.
-            var dbUser = db.Members.Where(x => x.MemberName.Equals(user!.Username) && x.GuildId == ctx.Guild!.Id.ToString())!
-                .Include(x => x.Bank)
-                .FirstOrDefault();
-
-            var member = ctx.Member;
             DiscordComponent[] buttons =
             [
                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")
             ];
 
-            if (dbUser != null)
+            if (dbUser.IsOk)
             {
-                var balance = dbUser.Bank!.Balance.ToString("C");
+                var balance = dbUser.Value.Bank!.Balance.ToString("C");
                 DiscordComponent[] components =
                 [
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"**Member: {user.GlobalName!}**\r\n\r\n<:money:1337795714855600188> Balance - {balance}\r<:bank:1366390018423390360> Last Deposit - {dbUser!.Bank!.DepositTimestamp.ToShortDateString()}"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"**Member: {user.GlobalName!}**\r\n\r\n<:money:1337795714855600188> Balance - {balance}\r<:bank:1366390018423390360> Last Deposit - {dbUser.Value.Bank!.DepositTimestamp.ToShortDateString()}"),
                         new DiscordThumbnailComponent(member!.AvatarUrl.ToString())),
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"Gameday Tracker - {DateTime.UtcNow.ToLongDateString()}"),
@@ -87,10 +83,10 @@ namespace GamedayTracker.SlashCommands.Economy
         {
             await ctx.DeferResponseAsync();
             var member = ctx.Member;
-            await using var db = new BotDbContextFactory().CreateDbContext();
 
-            // check if user is in the db. consider making a util function to do the following.
+            await using var db = new BotDbContextFactory().CreateDbContext();
             var dbUser = await memberService.GetGuildMemberAsync(ctx.Guild!.Id.ToString(), member!.Username!);
+
             //user is in db, run daily command.
             if (dbUser.IsOk)
             {

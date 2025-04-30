@@ -16,11 +16,11 @@ namespace GamedayTracker.Services
         public async Task<Result<GuildMember, SystemError<GuildMemberService>>> GetGuildMemberAsync(string guildId, string userName)
         {
             await using var db = new BotDbContextFactory().CreateDbContext();
-            var dbUser = db.Members.Where(x => x.MemberName.Equals(userName) &&
+            var dbUser = await db.Members.Where(x => x.MemberName.Equals(userName) &&
                                                x.GuildId == guildId)!
                                                 .Include(x => x.Bank)
                                                 .Include(x => x.PlayerPicks)
-                                                .FirstOrDefault();
+                                                .FirstOrDefaultAsync();
 
             if (dbUser is null)
             {
