@@ -78,6 +78,13 @@ namespace GamedayTracker
                 m => m.HandleMessageCreated(async (s, e) =>
                     {
                         if (e.Message.Author!.IsBot) return;
+
+                        if (e.Message.Channel.Name.Equals("Bot Playground"))
+                        {
+                            var channel = await s.GetChannelAsync(764184337620140065);
+                            await channel.SendMessageAsync("documentation reloaded!");
+                        }
+
                         if (e.Message.Content.Contains("help"))
                         {
                             var user = e.Author;

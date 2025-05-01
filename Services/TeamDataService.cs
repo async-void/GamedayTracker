@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 using DSharpPlus.Entities;
 using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
@@ -246,7 +247,7 @@ namespace GamedayTracker.Services
 
         #region GET ALL TEAM STATS
 
-        public async Task<Result<List<TeamStats>, SystemError<TeamDataService>>> GetStatsAsync(int season)
+        public async Task<Result<List<TeamStats>, SystemError<TeamDataService>>> GetStatsAsync(int choice, int season)
         {
             await using var db = new AppDbContextFactory().CreateDbContext();
             var statList = db.TeamStats.Where(x => x.Season == season).ToList();
@@ -311,21 +312,48 @@ namespace GamedayTracker.Services
 
         #region GET TEAM STATS
 
-        public async Task<Result<TeamStats, SystemError<TeamDataService>>> GetTeamStatsAsync(int season, string teamName)
+        public async Task<Result<TeamStats, SystemError<TeamDataService>>> GetTeamStatsAsync(int choice, int season, string teamName)
         {
             await using var db = new AppDbContextFactory().CreateDbContext();
-            var statList = db.TeamStats.Where(x => x.Season == season && x.TeamName!.Equals(teamName)).ToList();
-            if (statList.Count > 0)
-            {
-                return Result<TeamStats, SystemError<TeamDataService>>.Ok(statList.First());
-            }
-
-            var link = $"https://www.footballdb.com/statistics/nfl/team-stats/offense-totals/{season}/regular-season";
+            HtmlNodeCollection? nodes = null;
+            var link = "";
             var web = new HtmlWeb();
-            var doc = web.Load(link);
-            var stats = new TeamStats();
-            var nodes = doc.DocumentNode.SelectNodes(".//table[contains(@class, 'statistics')]//tbody//tr");
+            HtmlDocument? doc = null;
+            var statList = new List<TeamStats>();
+            var textInfo = CultureInfo.CurrentCulture.TextInfo;
 
+            switch (choice)
+            {
+                case 0:
+                    teamName = textInfo.ToTitleCase(teamName);
+
+                    statList = db.TeamStats.Where(x => x.Season == season && x.TeamName!.Equals(teamName)).ToList();
+                    if (statList.Count > 0)
+                    {
+                        return Result<TeamStats, SystemError<TeamDataService>>.Ok(statList.First());
+                    }
+
+                    link = $"https://www.footballdb.com/statistics/nfl/team-stats/offense-totals/{season}/regular-season?sort=ydsgm";
+                    doc = web.Load(link);
+                    nodes = doc.DocumentNode.SelectNodes(".//table[contains(@class, 'statistics')]//tbody//tr");
+                    break;
+                case 1:
+                    teamName = textInfo.ToTitleCase(teamName);
+
+                    statList = db.TeamStats.Where(x => x.Season == season && x.TeamName!.Equals(teamName)).ToList();
+                    if (statList.Count > 0)
+                    {
+                        return Result<TeamStats, SystemError<TeamDataService>>.Ok(statList.First());
+                    }
+
+                    link = $"https://www.footballdb.com/statistics/nfl/team-stats/defense-totals/{season}/regular-season?sort=ydsgm";
+                    doc = web.Load(link);
+                    nodes = doc.DocumentNode.SelectNodes(".//table[contains(@class, 'statistics')]//tbody//tr");
+                    break;
+                default:
+                    break;
+            }
+            
             if (nodes is null) return Result<TeamStats, SystemError<TeamDataService>>.Err(new SystemError<TeamDataService>()
             {
                 ErrorMessage = $"No stats found for {teamName}",
@@ -351,7 +379,7 @@ namespace GamedayTracker.Services
                 var totalYards = curNode.ChildNodes[8].InnerText.Replace(",", string.Empty).ToInt();
                 var yardsPerGame = curNode.ChildNodes[9].InnerText.Replace(",", string.Empty).ToDouble();
 
-                stats = new TeamStats()
+                var stats = new TeamStats()
                 {
                     TeamName = name,
                     Season = season,

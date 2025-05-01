@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -145,19 +146,45 @@ namespace GamedayTracker.Extensions
 
         #region TO TEAM FULL NAME
 
-        public static string ToTeamFullName(this string name)
+        public static string ToFullName(this string name)
         {
-            var jsonFile = File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Json",
-                "team_names.json"));
-
-            var jsonNodes = JsonNode.Parse(jsonFile)!.GetValue<List<TeamJson>>();
-
-            foreach (var jsonNode in jsonNodes.Where(jsonNode => jsonNode.FullName!.Equals(name)))
+            var result = name switch
             {
-                return jsonNode.FullName!;
-            }
-
-            return "Not Found";
+                "Arizona" => "Arizona Cardinals",
+                "Buffalo" => "Buffalo Bills",
+                "Miami" => "Miami Dolphins",
+                "New England" => "New England Patriots",
+                "NY Jets" => "NY Jets",
+                "Baltimore" => "Baltimore Ravens",
+                "Cincinnati" => "Cincinnati Bengals",
+                "Cleveland" => "Cleveland Browns",
+                "Pittsburgh" => "Pittsburgh Steelers",
+                "Houston" => "Houston Texans",
+                "Indianapolis" => "Indianapolis Colts",
+                "Jacksonville" => "Jacksonville Jaguars",
+                "Tennessee" => "Tennessee Titans",
+                "Denver" => "Denver Broncos",
+                "Kansas City" => "Kansas City Chiefs",
+                "Las Vegas" => "Las Vegas Raiders",
+                "LA Chargers" => "Los Angeles Chargers",
+                "Dallas" => "Dallas Cowboys",
+                "NY Giants" => "NY Giants",
+                "Philadelphia" => "Philadelphia Eagles",
+                "Washington" => "Washington Commanders",
+                "Chicago" => "Chicago Bears",
+                "Detroit" => "Detroit Lions",
+                "Green Bay" => "Green Bay Packers",
+                "Minnesota" => "Minnesota Vikings",
+                "Atlanta" => "Atlanta Falcons",
+                "Carolina" => "Carolina Panthers",
+                "New Orleans" => "New Orleans Saints",
+                "Tampa Bay" => "Tampa Bay Buccaneers",
+                "LA Rams" => "Las Angeles Rams",
+                "San Francisco" => "San Francisco 49ers",
+                "Seattle" => "Seattle Seahawks",
+                _ => "UNKNOWN"
+            };
+            return result;
         }
         #endregion
     }
