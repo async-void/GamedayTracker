@@ -14,9 +14,9 @@ namespace GamedayTracker.SlashCommands.Stats
     public class TeamStatsSlashCommand(ITeamData teamDataService)
     {
         [Command("teamstats")]
-        [Description("Get Stats by Team : example [Buffalo, Pittsburgh, Miami]")]
+        [Description("Get [Offense, Defense] Stats")]
         public async Task GetTeamStats(SlashCommandContext ctx, [SlashChoiceProvider<OffenseDefenseChoiceProvider>] int choice, 
-            [Parameter("team"), Description("example: Buffalo or Pittsburgh")] string teamName, [Parameter("season")] int season)
+            [Parameter("team"), Description("example: Buffalo or Pittsburgh")] string teamName, [SlashChoiceProvider<SeasonChoiceProvider>] int season)
         {
             await ctx.DeferResponseAsync();
             var isOffense = "";
@@ -33,7 +33,7 @@ namespace GamedayTracker.SlashCommands.Stats
                     isOffense = "Defense";
                     return;
             }
-            //var s = await teamDataService.GetStatsAsync(choice, season);
+            var s = await teamDataService.GetStatsAsync(choice, season);
             var stats = await teamDataService.GetTeamStatsAsync(choice, season, teamName);
 
             if (stats.IsOk)
@@ -43,9 +43,9 @@ namespace GamedayTracker.SlashCommands.Stats
                 var logoUrl = LogoPathService.GetLogoPath(teamAbbr);
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent($"{teamEmoji} **{stats.Value.TeamName!.ToFullName()}**"),
+                    new DiscordTextDisplayComponent($"{teamEmoji} **{stats.Value.TeamName!.ToFullName()}**\r**{stats.Value.Season} {isOffense} Stats**\r\r"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"**{stats.Value.Season} {isOffense} Stats**\r\n``Games: {stats.Value.GamesPlayed}``\r" +
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"``Games: {stats.Value.GamesPlayed}``\r" +
                         $"``Total Pts: {stats.Value.TotalPoints}``\r``Pts/G: {stats.Value.PointsPerGame}``\r``RushYds: {stats.Value.RushYardsTotal:#,##0}``\r" +
                         $"``RYds/G: {stats.Value.RushPerGame}``\r``PassYds: {stats.Value.PassYardsTotal:#,##0}``\r" +
                         $"``PYds/G: {stats.Value.PassYardsPerGame}``\r``Total Yds: {stats.Value.TotalYards:#,##0}``\r" +

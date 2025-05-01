@@ -19,6 +19,7 @@ namespace GamedayTracker.Data
             modelBuilder.ApplyConfiguration(new TeamStandingEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new GuildMemberEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new DraftEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new TeamStatsEntityTypeConfiguration());
         }
     }
 }

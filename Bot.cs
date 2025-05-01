@@ -89,6 +89,8 @@ namespace GamedayTracker
                         if (e.Message.Author!.IsBot && e.Message.Content.Equals("reload"))
                         {
                             await e.Message.RespondAsync("``documentation reloaded``");
+                            Console.WriteLine(
+                                $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkYellow("Documents Reloaded!")}");
                             return;
                         }
                         
@@ -125,7 +127,7 @@ namespace GamedayTracker
                    #endregion
 
                     #region SESSION CREATED
-                    .HandleSessionCreated(async (s, e) =>
+                    .HandleSessionCreated(async (s,e) =>
                     {
                         Console.WriteLine(
                             $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray("shaking hands with discord...")}");

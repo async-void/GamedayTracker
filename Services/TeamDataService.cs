@@ -250,14 +250,25 @@ namespace GamedayTracker.Services
         public async Task<Result<List<TeamStats>, SystemError<TeamDataService>>> GetStatsAsync(int choice, int season)
         {
             await using var db = new AppDbContextFactory().CreateDbContext();
-            var statList = db.TeamStats.Where(x => x.Season == season).ToList();
+            var lineType = choice == 0 ? LineType.Offense : LineType.Defense;
+            var statList = db.TeamStats.Where(x => x.Season == season && x.LineType.Equals(lineType)).ToList();
             if (statList.Count > 0)
             {
                 return Result<List<TeamStats>, SystemError<TeamDataService>>.Ok(statList);
             }
 
-            var link = $"https://www.footballdb.com/statistics/nfl/team-stats/offense-totals/{season}/regular-season";
+            var link = "";
             var web = new HtmlWeb();
+
+            link = choice switch
+            {
+                0 =>
+                    $"https://www.footballdb.com/statistics/nfl/team-stats/offense-totals/{season}/regular-season?sort=ydsgm",
+                1 =>
+                    $"https://www.footballdb.com/statistics/nfl/team-stats/defense-totals/{season}/regular-season?sort=ydsgm",
+                _ => link
+            };
+
             var doc = web.Load(link);
             var stats = new List<TeamStats>();
             var nodes = doc.DocumentNode.SelectNodes(".//table[contains(@class, 'statistics')]//tbody//tr");
@@ -270,7 +281,7 @@ namespace GamedayTracker.Services
                 CreatedBy = this
             });
 
-            for (int i = 0; i < nodes.Count; i++)
+            for (var i = 0; i < nodes.Count; i++)
             {
                 var curNode = nodes[i];
                 if (!curNode.HasChildNodes) continue;
@@ -288,6 +299,7 @@ namespace GamedayTracker.Services
 
                 stats.Add(new TeamStats()
                 {
+                    LineType = lineType,
                     TeamName = name,
                     Season = season,
                     GamesPlayed = gamesPlayed,
@@ -317,6 +329,7 @@ namespace GamedayTracker.Services
             await using var db = new AppDbContextFactory().CreateDbContext();
             HtmlNodeCollection? nodes = null;
             var link = "";
+            var lineType = choice == 0 ? LineType.Offense : LineType.Defense;
             var web = new HtmlWeb();
             HtmlDocument? doc = null;
             var statList = new List<TeamStats>();
@@ -327,7 +340,7 @@ namespace GamedayTracker.Services
                 case 0:
                     teamName = textInfo.ToTitleCase(teamName);
 
-                    statList = db.TeamStats.Where(x => x.Season == season && x.TeamName!.Equals(teamName)).ToList();
+                    statList = db.TeamStats.Where(x => x.Season == season && x.TeamName!.Equals(teamName) && x.LineType.Equals(lineType)).ToList();
                     if (statList.Count > 0)
                     {
                         return Result<TeamStats, SystemError<TeamDataService>>.Ok(statList.First());
@@ -340,7 +353,7 @@ namespace GamedayTracker.Services
                 case 1:
                     teamName = textInfo.ToTitleCase(teamName);
 
-                    statList = db.TeamStats.Where(x => x.Season == season && x.TeamName!.Equals(teamName)).ToList();
+                    statList = db.TeamStats.Where(x => x.Season == season && x.TeamName!.Equals(teamName) && x.LineType.Equals(lineType)).ToList();
                     if (statList.Count > 0)
                     {
                         return Result<TeamStats, SystemError<TeamDataService>>.Ok(statList.First());
@@ -362,7 +375,7 @@ namespace GamedayTracker.Services
                 CreatedBy = this
             });
 
-            for (int i = 0; i < nodes.Count; i++)
+            for (var i = 0; i < nodes.Count; i++)
             {
                 var curNode = nodes[i];
                 if (!curNode.HasChildNodes) continue;
@@ -382,6 +395,7 @@ namespace GamedayTracker.Services
                 var stats = new TeamStats()
                 {
                     TeamName = name,
+                    LineType = lineType,
                     Season = season,
                     GamesPlayed = gamesPlayed,
                     TotalYards = totalYards,

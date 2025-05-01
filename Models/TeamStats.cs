@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using GamedayTracker.Enums;
 
 namespace GamedayTracker.Models
 {
@@ -10,6 +11,7 @@ namespace GamedayTracker.Models
     {
         public int Id { get; set; }
         public int Season { get; set; }
+        public LineType LineType { get; set; }
         public string? TeamName { get; set; }
         public int GamesPlayed { get; set; }
         public int TotalPoints { get; set; }
