@@ -79,7 +79,7 @@ namespace GamedayTracker
                     {
                         if (e.Message.Author!.IsBot) return;
 
-                        if (e.Message.Channel.Name.Equals("Bot Playground"))
+                        if (e.Guild.Id.Equals(764184337620140062) && e.Message!.Channel!.Id.Equals(1076279102841045093))
                         {
                             var channel = await s.GetChannelAsync(764184337620140065);
                             await channel.SendMessageAsync("documentation reloaded!");
