@@ -82,21 +82,20 @@ namespace GamedayTracker
                             if (e.Guild.Id.Equals(764184337620140062) && e.Message!.Channel!.Id.Equals(1076279102841045093))
                             {
                                 var channel = await s.GetChannelAsync(764184469380661289); 
-                                await channel.SendMessageAsync("documentation reloaded!");
+                                await channel.SendMessageAsync("reload!");
                             }
                         }
-                        else
-                        {
-                            if (e.Message.Author!.IsBot) return;
 
-                            if (e.Message.Content.Contains("help"))
-                            {
-                                var user = e.Author;
-                                await e.Channel.SendMessageAsync(
-                                    "I noticed you needed some help.....please use the ``/help`` command to see a list of help topics");
-                            }
+                        if (e.Message.Author!.IsBot && e.Message.Content.Contains("reload"))
+                            await e.Channel.SendMessageAsync("``documentation reloaded!``");
+                        else return;
+
+                        if (e.Message.Content.Contains("help"))
+                        {
+                            var user = e.Author;
+                            await e.Channel.SendMessageAsync(
+                                "I noticed you needed some help.....please use the ``/help`` command to see a list of help topics");
                         }
-                        
                     })
                     
                     #region CHANNEL CREATED
