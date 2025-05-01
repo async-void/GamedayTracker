@@ -88,7 +88,7 @@ namespace GamedayTracker
 
                         if (e.Message.Author!.IsBot && e.Message.Content.Equals("reload"))
                         {
-                            await e.Channel.SendMessageAsync("``documentation reloaded!``");
+                            await e.Message.RespondAsync("``documentation reloaded``");
                             return;
                         }
                         
