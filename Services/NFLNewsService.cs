@@ -10,7 +10,7 @@ namespace GamedayTracker.Services
 
         public Result<List<NewsArticle>, SystemError<NFLNewsService>> GetNews()
         {
-            var baseLink = "https://www.espn.com/nfl";
+            const string baseLink = "https://www.espn.com/nfl";
             var web = new HtmlWeb();
             var doc = web.Load(baseLink);
             var newsArticles = new List<NewsArticle>();
@@ -40,17 +40,17 @@ namespace GamedayTracker.Services
                     var imgNode = curArticle.ChildNodes[i].ChildNodes[0].ChildNodes[0].ChildNodes[0].ChildNodes[0];
                     var title = "";
                     var titleNode = cNode.ChildNodes[0];
-                    if (titleNode is not null)
+                    if (titleNode.InnerText != "")
                         title = titleNode.InnerText;
 
                     var content = "";
                     var contentNode = cNode.ChildNodes[1];
-                    if (contentNode is not null)
+                    if (contentNode.InnerText != "")
                         content = contentNode.InnerText;
 
                     var imgUrlNode = imgNode.ChildNodes[2].Attributes["data-default-src"];
                     var imgUrl = "";
-                    if (imgUrlNode is not null)
+                    if (imgUrlNode.Value != "")
                         imgUrl = imgUrlNode.Value;
 
                     var newsArticle = new NewsArticle

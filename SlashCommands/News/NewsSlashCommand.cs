@@ -32,16 +32,21 @@ namespace GamedayTracker.SlashCommands.News
                     new DiscordSeparatorComponent(true),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"1. **{articles.Value[0].Title}**\r\n{articles.Value[0].Content}"),
                         new DiscordButtonComponent(DiscordButtonStyle.Primary, "art1Id", "Read More")),
+                    new DiscordSeparatorComponent(true),
                   
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"2. **{articles.Value[1].Title}**\r\n{articles.Value[1].Content}"),
                         new DiscordButtonComponent(DiscordButtonStyle.Primary, "art1Id1", "Read More")),
-                  
+                    new DiscordSeparatorComponent(true),
+
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"3. **{articles.Value[2].Title}**\r\n{articles.Value[2].Content}"),
                         new DiscordButtonComponent(DiscordButtonStyle.Primary, "art1Id2", "Read More")),
                     new DiscordSeparatorComponent(true),
+
                     new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem(articles!.Value[rnd.Next(1, 3)]!.ImgUrl!, "news", false)),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}")
+                    new DiscordSectionComponent( new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}"),
+                        new DiscordButtonComponent(DiscordButtonStyle.Success, "donateId", "Donate"))
+                   
                 ];
 
                 var container = new DiscordContainerComponent(components, false, DiscordColor.Gold);

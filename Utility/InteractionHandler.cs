@@ -111,7 +111,7 @@ namespace GamedayTracker.Utility
                             }
                             #endregion
 
-                            #region SCOREBOARD BUTTONS
+                            #region BUTTONS
                             case "donateId":
                                 DiscordComponent[] bComponent =
                                 [
@@ -127,7 +127,23 @@ namespace GamedayTracker.Utility
                                     DiscordInteractionResponseType.UpdateMessage,
                                     new DiscordInteractionResponseBuilder(bMsg));
                                 break;
+                            case "art1Id": 
+                                bComponent =
+                                [
+                                    new DiscordTextDisplayComponent(
+                                        "Read More is in development, the devs are hard at work implementing this feature!")
+                                ];
+                                 cContainer =
+                                    new DiscordContainerComponent(bComponent, false, DiscordColor.LightGray);
+                                 bMsg = new DiscordInteractionResponseBuilder()
+                                    .EnableV2Components()
+                                    .AddContainerComponent(cContainer);
+                                await eventArgs.Interaction.CreateResponseAsync(
+                                    DiscordInteractionResponseType.UpdateMessage,
+                                    new DiscordInteractionResponseBuilder(bMsg));
+                                break;
                             #endregion
+
                             default:
                                 {
                                     break;
