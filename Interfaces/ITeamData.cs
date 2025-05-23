@@ -18,6 +18,7 @@ namespace GamedayTracker.Interfaces
         Result<string, SystemError<TeamDataService>> GetTeamNameFromInt(int input);
         Result<List<DiscordSelectComponentOption>, SystemError<TeamDataService>> BuildSelectOptionForAfc();
         Result<List<DiscordSelectComponentOption>, SystemError<TeamDataService>> BuildSelectOptionForNfc();
+        Result<List<DiscordSelectComponentOption>, SystemError<TeamDataService>> BuildSelectOptionForUserPicks();
         bool IsValidTeamName(string name);
     }
 }

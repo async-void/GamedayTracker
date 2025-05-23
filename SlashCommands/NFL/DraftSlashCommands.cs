@@ -36,7 +36,7 @@ namespace GamedayTracker.SlashCommands.NFL
 
                     DiscordComponent[] components =
                     [
-                        new DiscordTextDisplayComponent("AFC Draft Results"),
+                        new DiscordTextDisplayComponent("# AFC Draft Results"),
                         new DiscordSeparatorComponent(true),
                         new DiscordActionRowComponent([afcDropDown])
                     ];
@@ -52,7 +52,7 @@ namespace GamedayTracker.SlashCommands.NFL
                     var nfcDropDown = new DiscordSelectComponent("nfcDropdown", "NFC Options", nfcOptions.Value); 
                     components =
                     [
-                        new DiscordTextDisplayComponent("AFC Draft Results"),
+                        new DiscordTextDisplayComponent("# AFC Draft Results"),
                         new DiscordSeparatorComponent(true),
                         new DiscordActionRowComponent([nfcDropDown])
                     ];

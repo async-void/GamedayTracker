@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace GamedayTracker.Models
 {
-    public class PlayerPicks
+    public class PoolPlayer
     {
         public int Id { get; set; }
-        public int Season { get; set; }
-        public int Week { get; set; }
+        public string? PlayerName { get; set; }
+        public string? Company { get; set; }
     }
 }

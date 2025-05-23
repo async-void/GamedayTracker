@@ -8,14 +8,12 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Processors.TextCommands.Parsing;
 using DSharpPlus.Interactivity.Extensions;
-using DSharpPlus.Net.Gateway;
 using GamedayTracker.Factories;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Utility;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using ILogger = GamedayTracker.Interfaces.ILogger;
 
 namespace GamedayTracker
@@ -25,8 +23,7 @@ namespace GamedayTracker
         private readonly TimerService timerService = new TimerService();
 
         public async Task RunAsync()
-        {
-            
+        { 
             var configService = new ConfigurationDataService();
             
             var token = configService.GetBotToken();
@@ -47,6 +44,7 @@ namespace GamedayTracker
                 services.AddScoped<IGuildMemberService, GuildMemberService>();
             });
             #endregion
+
 
             dBuilder.UseInteractivity();
 
@@ -163,6 +161,7 @@ namespace GamedayTracker
 
             #endregion
 
+            
             var status = new DiscordActivity("Game-Day", DiscordActivityType.Watching);
             var client = dBuilder.Build();
             dBuilder.SetReconnectOnFatalGatewayErrors();

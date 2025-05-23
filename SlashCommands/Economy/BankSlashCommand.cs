@@ -8,10 +8,6 @@ using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using Humanizer;
-using Humanizer.Localisation;
-using GamedayTracker.Utility;
-using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
 
 namespace GamedayTracker.SlashCommands.Economy
 {
@@ -27,7 +23,7 @@ namespace GamedayTracker.SlashCommands.Economy
             [Parameter("member")] DiscordUser user)
         {
             await ctx.DeferResponseAsync();
-            var member = ctx.Member;
+            var member = await ctx.Channel.Guild.GetMemberAsync(user.Id);
 
             await using var db = new BotDbContextFactory().CreateDbContext();
             var dbUser = await memberService.GetGuildMemberAsync(ctx.Guild!.Id.ToString(), member!.Username!);
@@ -142,7 +138,6 @@ namespace GamedayTracker.SlashCommands.Economy
                 {
                     Season = 0,
                     Week = 0,
-                    Picks = new List<string>()
                 };
 
                 var dbMember = new GuildMember()

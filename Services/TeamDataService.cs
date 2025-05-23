@@ -67,6 +67,51 @@ namespace GamedayTracker.Services
         }
         #endregion
 
+        #region USER PICKS SELECT OPTIONS
+
+        public Result<List<DiscordSelectComponentOption>, SystemError<TeamDataService>> BuildSelectOptionForUserPicks()
+        {
+            var options = new List<DiscordSelectComponentOption>()
+            {
+                new DiscordSelectComponentOption("Buffalo Bills", "Buffalo Bills"),
+                new DiscordSelectComponentOption("Miami Dolphins", "Miami Dolphins"),
+                new DiscordSelectComponentOption("New England Patriots", "New England Patriots"),
+                new DiscordSelectComponentOption("New York Jets", "New York Jets"),
+                new DiscordSelectComponentOption("Baltimore Ravens", "Baltimore Ravens"),
+                new DiscordSelectComponentOption("Cincinnati Bengals", "Cincinnati Bengals"),
+                new DiscordSelectComponentOption("Cleveland Browns", "Cleveland Browns"),
+                new DiscordSelectComponentOption("Pittsburgh Steelers", "Pittsburgh Steelers"),
+                new DiscordSelectComponentOption("Houston Texans", "Houston Texans"),
+                new DiscordSelectComponentOption("Indianapolis Colts", "Indianapolis Colts"),
+                new DiscordSelectComponentOption("Jacksonville Jaguars", "Jacksonville Jaguars"),
+                new DiscordSelectComponentOption("Tennessee Titans", "Tennessee Titans"),
+                new DiscordSelectComponentOption("Denver Broncos", "Denver Broncos"),
+                new DiscordSelectComponentOption("Kansas City Chiefs", "Kansas City Chiefs"),
+                new DiscordSelectComponentOption("Las Vegas Raiders", "Las Vegas Raiders"),
+                new DiscordSelectComponentOption("Los Angeles Chargers", "Los Angeles Chargers"),
+                new DiscordSelectComponentOption("Dallas Cowboys", "Dallas Cowboys"),
+                new DiscordSelectComponentOption("New York Giants", "New York Giants"),
+                new DiscordSelectComponentOption("Philadelphia Eagles", "Philadelphia Eagles"),
+                new DiscordSelectComponentOption("Washington Commanders", "Washington Commanders"),
+                new DiscordSelectComponentOption("Chicago Bears", "Chicago Bears"),
+                new DiscordSelectComponentOption("Detroit Lions", "Detroit Lions"),
+                new DiscordSelectComponentOption("Green Bay Packers", "Green Bay Packers"),
+                new DiscordSelectComponentOption("Minnesota Vikings", "Minnesota Vikings"),
+                new DiscordSelectComponentOption("Atlanta Falcons", "Atlanta Falcons"),
+                new DiscordSelectComponentOption("Carolina Panthers", "Carolina Panthers"),
+                new DiscordSelectComponentOption("New Orleans Saints", "New Orleans Saints"),
+                new DiscordSelectComponentOption("Tampa Bay Buccaneers", "Tampa Bay Buccaneers"),
+                new DiscordSelectComponentOption("Arizona Cardinals", "Arizona Cardinals"),
+                new DiscordSelectComponentOption("Los Angeles Rams", "Los Angeles Rams"),
+                new DiscordSelectComponentOption("San Francisco 49ers", "San Francisco 49ers"),
+                new DiscordSelectComponentOption("Seattle Seahawks", "Seattle Seahawks"),
+            };
+
+            return Result<List<DiscordSelectComponentOption>, SystemError<TeamDataService>>.Ok(options);
+        }
+
+        #endregion
+
         #region GET DRAFT RESULT FOR TEAM
         public async Task<Result<List<DraftEntity>, SystemError<TeamDataService>>> GetDraftResultForTeamAsync(int year, string tName)
         {

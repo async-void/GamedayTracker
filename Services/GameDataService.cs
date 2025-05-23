@@ -16,14 +16,26 @@ namespace GamedayTracker.Services
         private readonly AppDbContextFactory _dbFactory = new AppDbContextFactory();
 
         #region GET CURRENT WEEK
-        public string GetCurWeek()
+        public Result<int, SystemError<GameDataService>> GetCurWeek()
         {
             const string link = "https://www.footballdb.com/scores/index.html";
             var web = new HtmlWeb();
             var doc = web.Load(link);
             var weekNode = doc.DocumentNode.SelectSingleNode(".//h2");
+            var week = weekNode?.InnerText;
+            var weekResult = int.TryParse(week, out var wResult);
 
-            return weekNode is not null ? weekNode.InnerText : "";
+            if (weekResult)
+            {
+                return Result<int, SystemError<GameDataService>>.Ok(wResult);
+            }
+            return Result<int, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
+            {
+                ErrorMessage = "Unable to get current week",
+                ErrorType = ErrorType.INFORMATION,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = this
+            });
         }
 
         #endregion

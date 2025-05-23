@@ -12,7 +12,7 @@ namespace GamedayTracker.Interfaces
     {
         Result<List<Matchup>, SystemError<GameDataService>> GetScoreboard(int season, int week);
         Task<Result<List<string>, SystemError<GameDataService>>> GetTeamSchedule(string teamName, int season);
-        string GetCurWeek();
+        Result<int, SystemError<GameDataService>> GetCurWeek();
         int GetMatchupCount(int season, int week);
     }
 }

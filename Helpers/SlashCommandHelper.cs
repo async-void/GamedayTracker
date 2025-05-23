@@ -23,15 +23,15 @@ namespace GamedayTracker.Helpers
         /// <returns>a list of guild members</returns>
         public Result<List<GuildMember>, SystemError<SlashCommandHelper>> BuildLeaderboard(string guildId, int scope)
         {
-            var leaderboard = new List<GuildMember>();
-            var db = new BotDbContextFactory().CreateDbContext();
+            List<GuildMember> leaderboard;
+           using var db = new BotDbContextFactory().CreateDbContext();
 
             switch (scope)
             {
                 case 0:
                     leaderboard = db.Members.Where(x => x.GuildId == guildId)
                         .Include(x => x.Bank)
-                        .OrderBy(x => x.Bank!.Balance)
+                        .OrderByDescending(x => x.Bank!.Balance)
                         .ToList();
                     
                     if (leaderboard.Count > 0)
@@ -52,7 +52,7 @@ namespace GamedayTracker.Helpers
                 case 1:
                     leaderboard = db.Members
                         .Include(x => x.Bank)
-                        .OrderBy(x => x.Bank!.Balance)
+                        .OrderByDescending(x => x.Bank!.Balance)
                         .ToList();
                     if (leaderboard.Count > 0)
                     {

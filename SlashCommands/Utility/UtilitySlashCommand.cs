@@ -12,7 +12,6 @@ using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
 using Humanizer;
-using Humanizer.Localisation;
 
 namespace GamedayTracker.SlashCommands.Utility
 {

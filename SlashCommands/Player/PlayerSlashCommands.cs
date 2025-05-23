@@ -5,10 +5,13 @@ using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
+using GamedayTracker.ChoiceProviders;
+using GamedayTracker.Data;
 using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace GamedayTracker.SlashCommands.Player
 {
@@ -21,76 +24,42 @@ namespace GamedayTracker.SlashCommands.Player
         [Command("add")]
         [Description("add player to the pool")]
         public async Task AddPlayer(CommandContext ctx,
-            [Parameter("member")] DiscordUser user)
+            [Parameter("member")] string playerName, [Parameter("company")] string company)
         {
             await ctx.DeferResponseAsync();
-
-            var message = new DiscordMessageBuilder()
-                .AddEmbed(new DiscordEmbedBuilder()
-                    .WithTitle("Not Implemented Yet!")
-                    .WithDescription(
-                        "add player is not yet implemented. the bot devs are hard at work with the next update.")
-                    .WithTimestamp(DateTime.UtcNow));
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
-        }
-
-        #endregion
-
-        #region ADD PLAYER PICKS
-
-        [Command("picks")]
-        [Description("add player picks")]
-        public async Task AddPlayerPicks(SlashCommandContext ctx,
-            [Parameter("member")] DiscordUser user, [Parameter("picks")] string picks)
-        {
-            await ctx.Interaction.DeferAsync();
-           
-            var playerPicks = picks.Split(" ").ToList();
-
-            await using var db = new AppDbContextFactory().CreateDbContext();
-            var matchups = db.Matchups.Where(x => x.Season == 2024 && x.Week == 1)
-                .Include(x => x.Opponents)
-                .Include(x => x.Opponents.AwayTeam)
-                .Include(x => x.Opponents.HomeTeam)
-                .ToList();
-
-            var curWeek = gameData.GetCurWeek();
-           //var matchupCount = gameData.GetMatchupCount();
-
-            var isValid = playerPicks.Count > 1;
-
-            if (!isValid)
+            await using var db = new BotDbContextFactory().CreateDbContext();
+            
+            var player = db.Players.FirstOrDefault(x => x.PlayerName!.Equals(playerName));
+            if (player is null)
             {
+
+                var newPlayer = new PoolPlayer
+                {
+                    PlayerName = playerName,
+                    Company = company,
+                };
+                db.Players.Add(newPlayer);
+                await db.SaveChangesAsync();
+
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent("Error"),
+                    new DiscordTextDisplayComponent($"Player Added {playerName} Successfully"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"something went terrible wrong\r\nplayer picks did not match [**{matchups.Count}**] matchups")
+                    new DiscordTextDisplayComponent($"run command again to add more players to the pool!"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}"), 
+                        new DiscordButtonComponent(DiscordButtonStyle.Primary, "donateId", "Donate", false, new DiscordComponentEmoji("\ud83d\udcb5")))
                 ];
 
-                var container = new DiscordContainerComponent(components, false, DiscordColor.DarkRed);
-                var errMessage = new DiscordInteractionResponseBuilder()
+                var message = new DiscordMessageBuilder()
                     .EnableV2Components()
-                    .AddContainerComponent(container);
-                await ctx.EditResponseAsync(errMessage);
-                return;
+                    .AddContainerComponent(new DiscordContainerComponent(components, true, DiscordColor.Green));
+                await ctx.EditResponseAsync(message);
             }
 
-            DiscordComponent[] msgComponents =
-            [
-                new DiscordTextDisplayComponent($"Week {matchups[0].Week} Scoreboard"),
-                new DiscordSeparatorComponent(true),
-                new DiscordTextDisplayComponent($"player {user.Username} picks have been added"),
-                new DiscordSeparatorComponent(true),
-                new DiscordTextDisplayComponent($"Gameday Tracker {DateTime.UtcNow.ToUniversalTime()}")
-            ];
-            var message = new DiscordInteractionResponseBuilder()
-                .EnableV2Components()
-                .AddContainerComponent(new DiscordContainerComponent(msgComponents, true, DiscordColor.Blue));
             
-            await ctx.EditResponseAsync(message);
         }
 
         #endregion
+
     }
 }
