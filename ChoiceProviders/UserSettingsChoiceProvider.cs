@@ -15,6 +15,7 @@ namespace GamedayTracker.ChoiceProviders
         [
             new DiscordApplicationCommandOptionChoice("Favorite Team", 0),
             new DiscordApplicationCommandOptionChoice("Enable Updates", 1),
+            new DiscordApplicationCommandOptionChoice("Enable Notifications", 2),
 
         ];
         public ValueTask<IEnumerable<DiscordApplicationCommandOptionChoice>> ProvideAsync(CommandParameter parameter)

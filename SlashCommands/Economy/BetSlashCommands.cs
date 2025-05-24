@@ -7,6 +7,7 @@ using System.Runtime.InteropServices.JavaScript;
 using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
@@ -18,13 +19,21 @@ namespace GamedayTracker.SlashCommands.Economy
 {
     [Command("betting")]
     [Description("betting slash commands")]
-    public class BetSlashCommands(ICommandHelper slashCmdHelper)
+    public class BetSlashCommands(ICommandHelper slashCmdHelper, IGameData gameData)
     {
         [Command("bet")]
-        [Description("make a bet on a matchup")]
-        public async Task Bet(CommandContext ctx, [Description("The team you are betting on to win the game")] string team, [Description("The amount you are betting")] int amount)
+        [Description("place bet on a matchup")]
+        public async Task Bet(SlashCommandContext ctx, [Parameter("amount")] int amount, [Parameter("team")] string teamName)
         {
-            await ctx.RespondAsync($"You bet {amount} on {team}");
+            await ctx.DeferResponseAsync();
+            var games = gameData.GetCurrentScoreboard();
+
+            if (games.IsOk)
+                await ctx.RespondAsync($"You bet {amount} on {teamName}");
+            else
+            {
+                await ctx.RespondAsync(games.Error.ErrorMessage!);
+            }
         }
 
         #region LEADERBOARD

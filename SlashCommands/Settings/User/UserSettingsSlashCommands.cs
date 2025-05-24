@@ -17,8 +17,6 @@ using GamedayTracker.Services;
 
 namespace GamedayTracker.SlashCommands.Settings.User
 {
-    [Command("user-settings")]
-    [Description("set user settings")]
     public class UserSettingsSlashCommands
     {
         #region FAVORITE TEAM
@@ -41,11 +39,13 @@ namespace GamedayTracker.SlashCommands.Settings.User
                     
                     new DiscordTextDisplayComponent("User Settings - Favorite Team"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Favorite Team set to: {teamName}"),
-                        new DiscordButtonComponent(DiscordButtonStyle.Primary, label: "this is a button!", customId: "bT")),
+                    new DiscordTextDisplayComponent($"Favorite Team set to: {teamName}"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent("this is a thumbnail"),
-                        new DiscordThumbnailComponent(logoPath))
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"{teamName}"),
+                        new DiscordThumbnailComponent(logoPath)),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToShortDateString()}"),
+                        new DiscordButtonComponent(DiscordButtonStyle.Primary, label: "Donate", customId: "donateId"))
                 ];
 
                 var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
@@ -74,9 +74,9 @@ namespace GamedayTracker.SlashCommands.Settings.User
         #endregion
 
         #region ENABLE UPDATES
-        [Command("enable-updates")]
-        [Description("enables updates.")]
-        public async Task EnableUpdates(SlashCommandContext ctx, [SlashChoiceProvider<UserSettingsChoiceProvider>] int choice)
+        [Command("user-settings")]
+        [Description("user settings")]
+        public async Task UserSettings(SlashCommandContext ctx, [SlashChoiceProvider<UserSettingsChoiceProvider>] int choice)
         {
             await ctx.DeferResponseAsync();
             switch (choice)
@@ -85,6 +85,8 @@ namespace GamedayTracker.SlashCommands.Settings.User
                     var userName = ctx.Member!.Username;
                     break;
                 case 1:
+                    break;
+                case 2:
                     break;
                 default:
                     var message = new DiscordMessageBuilder()

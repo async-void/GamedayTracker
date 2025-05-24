@@ -8,6 +8,7 @@ using HtmlAgilityPack;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 using ChalkDotNET;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace GamedayTracker.Services
 {
@@ -38,6 +39,42 @@ namespace GamedayTracker.Services
             });
         }
 
+        #endregion
+
+        #region GET CURRENT SCOREBOARD
+        public Result<List<Matchup>, SystemError<GameDataService>> GetCurrentScoreboard()
+        {
+            const string scoreboardLink = "https://www.footballdb.com/scores/index.html";
+            var web = new HtmlWeb();
+            var doc = web.Load(scoreboardLink);
+            var gameNodes = doc.DocumentNode.SelectNodes(".//div[@class='lngame']//table//tbody/tr");
+
+            if (gameNodes is null)
+                return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
+                {
+                    ErrorMessage = "Unable to get current scoreboard",
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = this
+                });
+            var matchups = new List<Matchup>();
+
+            foreach (var node in gameNodes)
+            {
+                if (node is not { HasChildNodes: true, ChildNodes.Count: 4 }) continue;
+                var score = node.ChildNodes[3].InnerText;
+                if (score.Equals("--"))
+                    return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>()
+                    {
+                        ErrorMessage = "games have not finished!",
+                        ErrorType = ErrorType.INFORMATION,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = this
+                    });
+            }
+
+            return Result<List<Matchup>, SystemError<GameDataService>>.Ok(matchups);
+        }
         #endregion
 
         /// <summary>
