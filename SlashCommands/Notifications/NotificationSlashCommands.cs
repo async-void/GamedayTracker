@@ -1,8 +1,8 @@
-﻿using DSharpPlus.Commands;
+﻿using System.ComponentModel;
+using System.Text;
+using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Entities;
-using System.ComponentModel;
-using System.Text;
 
 namespace GamedayTracker.SlashCommands.Notifications
 {

@@ -2,6 +2,7 @@
 using System.Globalization;
 using ChalkDotNET;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.MessageCommands;
 using DSharpPlus.Entities;
 using GamedayTracker.Enums;
 using GamedayTracker.Factories;
@@ -14,31 +15,33 @@ namespace GamedayTracker.SlashCommands.Economy
       
     [Command("bank")]
     [Description("bank group commands")]
-    public class BankSlashCommand(ILogger logger, IGuildMemberService memberService)
+    public class BankSlashCommand(ILogger logger, IGuildMemberService memberService, IPlayerData playerDataService)
     {
         #region BALANCE
         [Command("balance")]
         [Description("Get User Bank Balance")]
-        public async Task GetUserBalance(CommandContext ctx,
+        public async Task GetUserBalance(MessageCommandContext ctx,
             [Parameter("member")] DiscordUser user)
         {
             await ctx.DeferResponseAsync();
             var member = await ctx.Channel.Guild.GetMemberAsync(user.Id);
 
-            await using var db = new BotDbContextFactory().CreateDbContext();
-            var dbUser = await memberService.GetGuildMemberAsync(ctx.Guild!.Id.ToString(), member!.Username!);
+            //await using var db = new BotDbContextFactory().CreateDbContext();
+            //var dbUser = await memberService.GetGuildMemberAsync(ctx.Guild!.Id.ToString(), member!.Username!);
+            var player = await playerDataService.GetPlayerFromXmlAsync(member.DisplayName);
 
             DiscordComponent[] buttons =
             [
+                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "btnAddPlayer", "Add Player"),
                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")
             ];
 
-            if (dbUser.IsOk)
+            if (player.IsOk)
             {
-                var balance = dbUser.Value.Bank!.Balance.ToString("C");
+                var balance = player.Value.Balance!.ToString("C");
                 DiscordComponent[] components =
                 [
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"**Member: {user.GlobalName!}**\r\n\r\n<:money:1337795714855600188> Balance - {balance}\r<:bank:1366390018423390360> Last Deposit - {dbUser.Value.Bank!.DepositTimestamp.ToShortDateString()}"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"**Member: {user.GlobalName!}**\r\n\r\n<:money:1337795714855600188> Balance - {balance}\r<:bank:1366390018423390360> Last Deposit - {player.Value.DepositTimestamp.ToShortDateString()}"),
                         new DiscordThumbnailComponent(member!.AvatarUrl.ToString())),
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"Gameday Tracker - {DateTime.UtcNow.ToLongDateString()}"),
@@ -58,7 +61,7 @@ namespace GamedayTracker.SlashCommands.Economy
 
             DiscordComponent[] msgComp =
             [
-                new DiscordTextDisplayComponent("the member requested was not found in the database, if you ask nicely maybe a ``mod`` will add the requested member! :man_shrugging:"),
+                new DiscordTextDisplayComponent(player.Error.ErrorMessage!),
                 new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                 new DiscordTextDisplayComponent($"Gameday Tracker - {DateTime.UtcNow.ToLongDateString()}"),
                 new DiscordActionRowComponent(buttons)

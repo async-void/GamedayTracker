@@ -150,8 +150,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Data\Json\" />
     <Folder Include="Data\Migrations\AppDb\" />
     <Folder Include="Data\Migrations\BotDb\" />
+    <Folder Include="Data\XML\" />
   </ItemGroup>
 
 </Project>

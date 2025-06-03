@@ -15,6 +15,7 @@ namespace GamedayTracker.Interfaces
         Task <Result<List<DraftEntity>, SystemError<TeamDataService>>> GetDraftResultForTeamAsync(int year, string tName);
         Task<Result<List<TeamStats>, SystemError<TeamDataService>>> GetStatsAsync(int choice, int season);
         Task<Result<TeamStats, SystemError<TeamDataService>>> GetTeamStatsAsync(int choice, int season, string teamName);
+        Task<Result<List<TeamStanding>, SystemError<TeamDataService>>> GetAllTeamStandings(int season);
         Result<string, SystemError<TeamDataService>> GetTeamNameFromInt(int input);
         Result<List<DiscordSelectComponentOption>, SystemError<TeamDataService>> BuildSelectOptionForAfc();
         Result<List<DiscordSelectComponentOption>, SystemError<TeamDataService>> BuildSelectOptionForNfc();

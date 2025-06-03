@@ -12,22 +12,18 @@ using GamedayTracker.Utility;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
-    public class ScoreboardSlashCommand(ILogger logger)
+    public class ScoreboardSlashCommand(ILogger logger, IGameData gameService)
     {
-        private readonly GameDataService _gameService = new();
 
         [Command("scoreboard")]
         [Description("get the scores for a specified week")]
         public async Task GetScoreboard(CommandContext ctx, [SlashChoiceProvider<SeasonChoiceProvider>] int season,
             [SlashChoiceProvider<WeekChoiceProvider>] int week)
         {
-
-            var sBuilder = new StringBuilder();
-            Result<List<Matchup>, SystemError<GameDataService>> scoreBoardResult;
-
-            scoreBoardResult = _gameService.GetScoreboard(season, week);
-            
             await ctx.DeferResponseAsync();
+            var sBuilder = new StringBuilder();
+            var scoreBoardResult = gameService.GetScoreboard(season, week);
+            
             var newWeek = week.ToString();
             if (scoreBoardResult.IsOk)
             {

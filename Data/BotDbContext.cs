@@ -1,13 +1,6 @@
-﻿using GamedayTracker.Models;
+﻿using GamedayTracker.Configuration.EntityTypeConfiguration;
+using GamedayTracker.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DSharpPlus.Entities;
-using GamedayTracker.Configuration.EntityTypeConfiguration;
 
 namespace GamedayTracker.Data
 {

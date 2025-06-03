@@ -1,65 +1,81 @@
 ﻿using System.ComponentModel;
 using DSharpPlus.Commands;
-using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.MessageCommands;
 using DSharpPlus.Entities;
-using DSharpPlus.Interactivity;
-using DSharpPlus.Interactivity.Enums;
-using DSharpPlus.Interactivity.Extensions;
-using GamedayTracker.ChoiceProviders;
-using GamedayTracker.Data;
-using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace GamedayTracker.SlashCommands.Player
 {
     [Command("player")]
     [Description("Player Commands")]
-    public class PlayerSlashCommands(IGameData gameData)
+    public class PlayerSlashCommands(IPlayerData playerService)
     {
         #region ADD PLAYER TO POOL
 
         [Command("add")]
         [Description("add player to the pool")]
-        public async Task AddPlayer(CommandContext ctx,
-            [Parameter("member")] string playerName, [Parameter("company")] string company)
+        public async Task AddPlayer(MessageCommandContext ctx,
+            [Parameter("Name")] string playerName, [Parameter("Company")] string company, [Parameter("Balance")] string balance)
         {
             await ctx.DeferResponseAsync();
-            await using var db = new BotDbContextFactory().CreateDbContext();
-            
-            var player = db.Players.FirstOrDefault(x => x.PlayerName!.Equals(playerName));
-            if (player is null)
+            var player = new PoolPlayer
             {
-
-                var newPlayer = new PoolPlayer
-                {
-                    PlayerName = playerName,
-                    Company = company,
-                };
-                db.Players.Add(newPlayer);
-                await db.SaveChangesAsync();
+                PlayerName = playerName,
+                Company = company,
+                Balance = double.TryParse(balance, out var bal) ? bal : 0.0,
+                DepositTimestamp = DateTime.UtcNow
+            };
+            var result = await playerService.WritePlayerToXmlAsync(player);
+            
+            if (result.IsOk)
+            {
+                DiscordComponent[] buttons =
+                [
+                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")
+                ];
+                
+                DiscordComponent[] components =
+                [
+                    new DiscordTextDisplayComponent("👍**Player Added Successfully**"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordActionRowComponent(buttons),
+                    new DiscordTextDisplayComponent($"Gameday Tracker - {DateTime.UtcNow.ToLongDateString()}"),
+                    
+                ];
+                var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
+                var msg = new DiscordMessageBuilder()
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
+                
+                await ctx.EditResponseAsync(msg);
+            }
+            else
+            {
+                DiscordComponent[] buttons =
+                [
+                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")
+                ];
 
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent($"Player Added {playerName} Successfully"),
+                    new DiscordTextDisplayComponent("⚠️ **UH-OH**"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"run command again to add more players to the pool!"),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}"), 
-                        new DiscordButtonComponent(DiscordButtonStyle.Primary, "donateId", "Donate", false, new DiscordComponentEmoji("\ud83d\udcb5")))
+                    new DiscordTextDisplayComponent($"{result.Error.ErrorMessage}"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordActionRowComponent(buttons),
+                    new DiscordTextDisplayComponent($"Gameday Tracker - {DateTime.UtcNow.ToLongDateString()}"),
+                   
                 ];
-
-                var message = new DiscordMessageBuilder()
+                var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
+                var msg = new DiscordMessageBuilder()
                     .EnableV2Components()
-                    .AddContainerComponent(new DiscordContainerComponent(components, true, DiscordColor.Green));
-                await ctx.EditResponseAsync(message);
-            }
+                    .AddContainerComponent(container);
 
-            
+                await ctx.EditResponseAsync(msg);
+            }
         }
+    }
 
         #endregion
-
-    }
 }

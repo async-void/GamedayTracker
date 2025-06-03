@@ -1,5 +1,5 @@
-﻿using GamedayTracker.Interfaces;
-using System.Timers;
+﻿using System.Timers;
+using GamedayTracker.Interfaces;
 using Timer = System.Timers.Timer;
 
 namespace GamedayTracker.Services

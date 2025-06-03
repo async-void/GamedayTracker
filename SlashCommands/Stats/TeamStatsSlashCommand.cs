@@ -43,7 +43,7 @@ namespace GamedayTracker.SlashCommands.Stats
                 var logoUrl = LogoPathService.GetLogoPath(teamAbbr);
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent($"{teamEmoji} **{stats.Value.TeamName!.ToFullName()}**\r**{stats.Value.Season} {isOffense} Stats**\r\r"),
+                    new DiscordTextDisplayComponent($"{teamEmoji} **{stats.Value.TeamName!}**\r**{stats.Value.Season} {isOffense} Stats**\r\r"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"``Games: {stats.Value.GamesPlayed}``\r" +
                         $"``Total Pts: {stats.Value.TotalPoints}``\r``Pts/G: {stats.Value.PointsPerGame}``\r``RushYds: {stats.Value.RushYardsTotal:#,##0}``\r" +

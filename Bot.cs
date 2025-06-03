@@ -1,17 +1,17 @@
-﻿using DSharpPlus;
-using DSharpPlus.Entities;
-using GamedayTracker.Services;
-using System.Reflection;
+﻿using System.Reflection;
 using ChalkDotNET;
+using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Processors.TextCommands.Parsing;
+using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using GamedayTracker.Factories;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Services;
 using GamedayTracker.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using ILogger = GamedayTracker.Interfaces.ILogger;
@@ -39,6 +39,8 @@ namespace GamedayTracker
                 services.AddScoped<NflEmojiService>();
                 services.AddScoped<ILogger, LoggerService>();
                 services.AddScoped<IGameData, GameDataService>();
+                services.AddScoped<IXmlDataService, XmlDataServiceProvider>();
+                services.AddScoped<IPlayerData, PlayerDataServiceProvider>();
                 services.AddScoped<IConfigurationData, ConfigurationDataService>();
                 services.AddScoped<ICommandHelper, SlashCommandHelper>();
                 services.AddScoped<IGuildMemberService, GuildMemberService>();
@@ -47,7 +49,7 @@ namespace GamedayTracker
 
 
             dBuilder.UseInteractivity();
-
+            
             #region USE COMMANDS
             dBuilder.UseCommands((IServiceProvider serviceProvider, CommandsExtension extension) =>
             {

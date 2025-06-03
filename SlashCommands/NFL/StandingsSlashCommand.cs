@@ -1,12 +1,14 @@
 ﻿using System.ComponentModel;
+using System.Linq;
 using System.Text;
 using DSharpPlus.Commands;
 using DSharpPlus.Entities;
 using GamedayTracker.Factories;
+using GamedayTracker.Interfaces;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
-    public class StandingsSlashCommand
+    public class StandingsSlashCommand(ITeamData teamDataService)
     {
         [Command("standings")]
         [Description("get season Team Standings")]
@@ -15,25 +17,30 @@ namespace GamedayTracker.SlashCommands.NFL
         {
             await ctx.DeferResponseAsync();
 
-            await using var db = new AppDbContextFactory().CreateDbContext();
-            var standings = db.TeamStandings
-                .Where(s => s.Season == int.Parse(season))
-                .ToList()
-                .OrderByDescending(x => int.Parse(x.Wins)).ToList();
+            var standings = await teamDataService.GetAllTeamStandings(int.Parse(season));
 
-            if (standings.Count < 1)
+            if (!standings.IsOk)
             {
+                DiscordComponent[] components =
+                [
+                    new DiscordTextDisplayComponent($"ERROR"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent(standings.Error.ErrorMessage!),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}")
+                ];
+                var container = new DiscordContainerComponent(components, false, DiscordColor.Cyan);
                 var message = new DiscordMessageBuilder()
-                    .AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle($"no standing found for season {season}"));
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
 
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
+                await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
             }
             else
             {
-                var sBuilder = new StringBuilder();
-
-                foreach (var standing in standings)
+                var sBuilder = new StringBuilder(); 
+                var sorted = standings.Value.OrderByDescending(x => int.Parse(x.Wins)).ToList();
+                foreach (var standing in sorted)
                 {
                     if (standing.Abbr.Length == 2)
                         sBuilder.Append($"``{standing.Abbr.PadLeft(2).PadRight(2)}\t{standing.Wins.PadLeft(3)}\t{standing.Loses}\t{standing.Pct}``\r\n");

@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices.JavaScript;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
@@ -13,7 +6,8 @@ using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Query.Internal;
+using GamedayTracker.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace GamedayTracker.SlashCommands.Economy
 {
@@ -26,14 +20,8 @@ namespace GamedayTracker.SlashCommands.Economy
         public async Task Bet(SlashCommandContext ctx, [Parameter("amount")] int amount, [Parameter("team")] string teamName)
         {
             await ctx.DeferResponseAsync();
-            var games = gameData.GetCurrentScoreboard();
 
-            if (games.IsOk)
-                await ctx.RespondAsync($"You bet {amount} on {teamName}");
-            else
-            {
-                await ctx.RespondAsync(games.Error.ErrorMessage!);
-            }
+            await ctx.RespondAsync($"You bet {amount} on {teamName}");
         }
 
         #region LEADERBOARD
@@ -42,8 +30,7 @@ namespace GamedayTracker.SlashCommands.Economy
         public async Task Leaderboard(CommandContext ctx, [SlashChoiceProvider<LeaderboardChoiceProvider>] int choice)
         {
             await ctx.DeferResponseAsync();
-            await using var db = new BotDbContextFactory().CreateDbContext();
-
+            
             var leaderboard = slashCmdHelper.BuildLeaderboard(ctx.Guild!.Id.ToString(), choice);
 
             var title = choice switch

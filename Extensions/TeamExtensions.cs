@@ -16,38 +16,38 @@ namespace GamedayTracker.Extensions
         {
             var result = name switch
             {
-                "buffalo" => "buffalo-bills",
-                "ny giants" => "new-york-giants",
-                "miami" => "miami-dolphins",
-                "new england" => "new-england-patriots",
-                "ny jets" => "new-york-jets",
-                "baltimore" => "baltimore-ravens",
-                "cincinnati" => "cincinnati-bengals",
-                "cleveland" => "cleveland-browns",
-                "pittsburgh" => "pittsburgh-steelers",
-                "texas" => "houston-texans",
-                "indianapolis " => "indianapolis-colts",
-                "jacksonville" => "jacksonville-jaguars",
-                "tennessee" => "tennessee-titans",
-                "denver" => "denver-broncos",
-                "kansas city" => "kansas-city-chiefs",
-                "las vegas" => "las-vegas-raiders",
-                "la chargers" => "los-angeles-chargers",
-                "dallas" => "dallas-cowboys",
-                "philadelphia " => "philadelphia-eagles",
-                "washington" => "washington-commanders",
-                "chicago" => "chicago-bears",
-                "detroit" => "detroit-lions",
-                "green bay" => "green-bay-packers",
-                "minnesota " => "minnesota-vikings",
-                "atlanta" => "atlanta-falcons",
-                "carolina" => "carolina-panthers",
-                "new orleans" => "new-orleans-saints",
-                "tampa bay" => "tampa-bay-buccaneers",
-                "arizona" => "arizona-cardinals",
-                "la rams" => "los-angeles-rams",
-                "san francisco" => "san-francisco-49ers",
-                "seattle" => "seattle-seahawks",
+                "Buffalo" => "buffalo-bills",
+                "NY Giants" => "new-york-giants",
+                "Miami" => "miami-dolphins",
+                "New England" => "new-england-patriots",
+                "NY Jets" => "new-york-jets",
+                "Baltimore" => "baltimore-ravens",
+                "Cincinnati" => "cincinnati-bengals",
+                "Cleveland" => "cleveland-browns",
+                "Pittsburgh" => "pittsburgh-steelers",
+                "Houston" => "houston-texans",
+                "Indianapolis" => "indianapolis-colts",
+                "Jacksonville" => "jacksonville-jaguars",
+                "Tennessee" => "tennessee-titans",
+                "Denver" => "denver-broncos",
+                "Kansas City" => "kansas-city-chiefs",
+                "Las Vegas" => "las-vegas-raiders",
+                "Los Angeles" => "los-angeles-chargers",
+                "Dallas" => "dallas-cowboys",
+                "Philadelphia" => "philadelphia-eagles",
+                "Washington" => "washington-commanders",
+                "Chicago" => "chicago-bears",
+                "Detroit" => "detroit-lions",
+                "Green Bay" => "green-bay-packers",
+                "Minnesota" => "minnesota-vikings",
+                "Atlanta" => "atlanta-falcons",
+                "Carolina" => "carolina-panthers",
+                "New Orleans" => "new-orleans-saints",
+                "Tampa Bay" => "tampa-bay-buccaneers",
+                "Arizona" => "arizona-cardinals",
+                "LA Rams" => "los-angeles-rams",
+                "San Francisco" => "san-francisco-49ers",
+                "Seattle" => "seattle-seahawks",
                 _ => "UNKNOWN"
             };
 
@@ -62,6 +62,7 @@ namespace GamedayTracker.Extensions
             var result = name switch
             {
                 "Arizona" => "ARI",
+                "Louis" => "LAR",
                 "Buffalo" => "BUF",
                 "Miami" => "MIA",
                 "New England" => "NE",
@@ -76,8 +77,10 @@ namespace GamedayTracker.Extensions
                 "Tennessee" => "TEN",
                 "Denver" => "DEN",
                 "Kansas City" => "KC",
-                "Las Vegas" => "LAR",
+                "Las Vegas" => "LV",
+                "Oakland" => "LV",
                 "LA Chargers" => "LAC",
+                "San Diego" => "LAC",
                 "Dallas" => "DAL",
                 "NY Giants" => "NYG",
                 "Philadelphia" => "PHI",
@@ -120,7 +123,9 @@ namespace GamedayTracker.Extensions
                 "Denver" => "AFC WEST",
                 "Kansas City" => "AFC WEST",
                 "Las Vegas" => "AFC WEST",
+                "Oakland" => "AFC WEST",
                 "LA Chargers" => "AFC WEST",
+                "San Diego" => "AFC WEST",
                 "Dallas" => "NFC EAST",
                 "NY Giants" => "NFC EAST",
                 "Philadelphia" => "NFC EAST",
@@ -134,6 +139,7 @@ namespace GamedayTracker.Extensions
                 "New Orleans" => "NFC SOUTH",
                 "Tampa Bay" => "NFC SOUTH",
                 "Arizona" => "NFC WEST",
+                " Louis" => "NFC WEST",
                 "LA Rams" => "NFC WEST",
                 "San Francisco" => "NFC WEST",
                 "Seattle" => "NFC WEST",
@@ -146,44 +152,64 @@ namespace GamedayTracker.Extensions
 
         #region TO TEAM FULL NAME
 
-        public static string ToFullName(this string name)
+        public static string ToTeamFullName(this string name)
+        {
+            var jsonFile = File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Json",
+                "team_names.json"));
+
+            var jsonNodes = JsonNode.Parse(jsonFile)!.GetValue<List<TeamJson>>();
+
+            foreach (var jsonNode in jsonNodes)
+            {
+                if (jsonNode.FullName!.Equals(name))
+                    return jsonNode.FullName;
+            }
+
+            return "Not Found";
+        }
+        #endregion
+
+        #region TO TEAM SHORT NAME
+
+        public static string ToShortName(this string name)
         {
             var result = name switch
             {
-                "Arizona" => "Arizona Cardinals",
-                "Buffalo" => "Buffalo Bills",
-                "Miami" => "Miami Dolphins",
-                "New England" => "New England Patriots",
+                "Buffalo Bills" => "Buffalo",
+                "Miami Dolphins" => "Miami",
                 "NY Jets" => "NY Jets",
-                "Baltimore" => "Baltimore Ravens",
-                "Cincinnati" => "Cincinnati Bengals",
-                "Cleveland" => "Cleveland Browns",
-                "Pittsburgh" => "Pittsburgh Steelers",
-                "Houston" => "Houston Texans",
-                "Indianapolis" => "Indianapolis Colts",
-                "Jacksonville" => "Jacksonville Jaguars",
-                "Tennessee" => "Tennessee Titans",
-                "Denver" => "Denver Broncos",
-                "Kansas City" => "Kansas City Chiefs",
-                "Las Vegas" => "Las Vegas Raiders",
-                "LA Chargers" => "Los Angeles Chargers",
-                "Dallas" => "Dallas Cowboys",
+                "New England Patriots" => "New England",
+                "Baltimore Ravens" => "Baltimore",
+                "Pittsburgh Steelers" => "Pittsburgh",
+                "Cincinnati Bengals" => "Cincinnati",
+                "Cleveland Browns" => "Cleveland",
+                "Houston Texans" => "Houston",
+                "Indianapolis Colts" => "Indianapolis",
+                "Jacksonville Jaguars" => "Jacksonville",
+                "Tennessee Titans" => "Tennessee",
+                "Kansas City Chiefs" => "Kansas City",
+                "Los Angeles Chargers" => "LA Chargers",
+                "Denver Broncos" => "Denver",
+                "Las Vegas Raiders" => "Las Vegas",
+                "Philadelphia Eagles" => "Philadelphia",
+                "Washington Commanders" => "Washington",
+                "Dallas Cowboys" => "Dallas",
                 "NY Giants" => "NY Giants",
-                "Philadelphia" => "Philadelphia Eagles",
-                "Washington" => "Washington Commanders",
-                "Chicago" => "Chicago Bears",
-                "Detroit" => "Detroit Lions",
-                "Green Bay" => "Green Bay Packers",
-                "Minnesota" => "Minnesota Vikings",
-                "Atlanta" => "Atlanta Falcons",
-                "Carolina" => "Carolina Panthers",
-                "New Orleans" => "New Orleans Saints",
-                "Tampa Bay" => "Tampa Bay Buccaneers",
-                "LA Rams" => "Las Angeles Rams",
-                "San Francisco" => "San Francisco 49ers",
-                "Seattle" => "Seattle Seahawks",
-                _ => "UNKNOWN"
+                "Detroit Lions" => "Detroit",
+                "Minnesota Vikings" => "Minnesota",
+                "Green Bay Packers" => "Green Bay",
+                "Chicago Bears" => "Chicago",
+                "Tampa Bay Buccaneers" => "Tampa Bay",
+                "Atlanta Falcons" => "Atlanta",
+                "Carolina Panthers" => "Carolina",
+                "New Orleans Saints" => "New Orleans",
+                "Los Angeles Rams" => "LA Rams",
+                "Seattle Seahawks" => "Seattle",
+                "Arizona Cardinals" => "Arizona",
+                "San Francisco 49ers" => "San Francisco",
+                _ => name
             };
+
             return result;
         }
         #endregion

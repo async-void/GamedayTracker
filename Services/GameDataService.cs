@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+﻿using ChalkDotNET;
 using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
 using GamedayTracker.Factories;
@@ -6,13 +6,13 @@ using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using HtmlAgilityPack;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
-using ChalkDotNET;
-using Microsoft.EntityFrameworkCore.Design;
+using System.Xml.Linq;
 
 namespace GamedayTracker.Services
 {
-    public class GameDataService : IGameData
+    public class GameDataService(IXmlDataService xmlData) : IGameData
     {
         private readonly AppDbContextFactory _dbFactory = new AppDbContextFactory();
 
@@ -71,6 +71,7 @@ namespace GamedayTracker.Services
                         CreatedAt = DateTime.UtcNow,
                         CreatedBy = this
                     });
+
             }
 
             return Result<List<Matchup>, SystemError<GameDataService>>.Ok(matchups);
@@ -87,104 +88,99 @@ namespace GamedayTracker.Services
         public Result<List<Matchup>, SystemError<GameDataService>> GetScoreboard(int season, int week)
         {
             var matchups = new List<Matchup>();
-            var db = _dbFactory.CreateDbContext();
-            const string seasonType = "reg";
-            var link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type={seasonType}&wk={week}";
             var sw = new Stopwatch();
-            sw.Start();
-            var weeklyMatchups = db.Matchups?
-                .Where(x => x.Season == season && x.Week == week)
-                .Include(x => x.Opponents)
-                .Include(x => x.Opponents.AwayTeam)
-                .Include(x => x.Opponents.HomeTeam)
-                .AsSplitQuery()
-            .AsQueryable();
-            sw.Stop();
 
-            Console.WriteLine($"Query Time: {sw.ElapsedMilliseconds}ms");
-
-            if (weeklyMatchups!.Any())
-            {
-                return Result<List<Matchup>, SystemError<GameDataService>>.Ok(weeklyMatchups!.ToList());
-            }
-
-            Console.WriteLine($"no matchups in database for Season {season} : Week {week}\r\nAttempting to collect data from website!");
+            var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "XML", $"game_data_{season}.xml");
             
-
-            if (week > 18)
+            if (File.Exists(filePath))
             {
-                switch (week)
-                {
-                    case 19:
-                        link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=post&wk=1";
-                        break;
-                    case 20:
-                        link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=post&wk=2";
-                        break;
-                    case 21:
-                        link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=post&wk=3";
-                        break;
-                    case 22:
-                        link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=post&wk=4";
-                        break;
-                    default:
-                        return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
-                        {
-                            ErrorMessage = $"no results for season: {season} week: {week}",
-                            ErrorType = ErrorType.INFORMATION,
-                            CreatedAt = DateTime.UtcNow,
-                            CreatedBy = this
-                        });
-                }
-                
-            }
-            
-            var web = new HtmlWeb();
-            var doc = web.Load(link);
+                sw.Start();
+                var xmlFound = xmlData.GetWeekMatchupDataAsync(season.ToString(), week.ToString()).Result;
+                sw.Stop();
+                Console.WriteLine($"Xml Fetch took: {sw.ElapsedMilliseconds}ms");
 
-            var scoreboardNodes = doc.DocumentNode.SelectNodes(".//div[@class='lngame']//table");
-
-            if (scoreboardNodes is null)
-                return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
+                if (xmlFound.IsOk)
+                    return Result<List<Matchup>, SystemError<GameDataService>>.Ok(xmlFound.Value);
+ 
+                return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>()
                 {
-                    ErrorMessage = $"no matchups found for Season [{season}] Week [{week}]",
-                    ErrorType = ErrorType.WARNING,
+                    ErrorMessage = "Something went wrong while fetching the XML data!",
+                    ErrorType = ErrorType.INFORMATION,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = this
                 });
-            for (var i = 0; i <= scoreboardNodes.Count - 1; i++)
-            {
-                var node = scoreboardNodes[i].ChildNodes[3];
-                if (!node.HasChildNodes) continue;
-                try
-                {
-                    var matchup = ParseMatchup(node, season, week);
+                
+            }
+            sw.Start();
+            Console.WriteLine($"no matchups for Season {season} : Week {week} found\r\nAttempting to collect data from website!");
 
-                    if (matchup.IsOk)
-                        matchups.Add(matchup.Value);
-                    else
+            for (var j = 1; j < 23; j++)
+            {
+                var link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=reg&wk={j}";
+
+                if (j > 18)
+                {
+                    switch (j)
                     {
-                        Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.DarkGray(matchup.Error.ErrorMessage!)}");
+                        case 19:
+                            link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=post&wk=1";
+                            break;
+                        case 20:
+                            link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=post&wk=2";
+                            break;
+                        case 21:
+                            link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=post&wk=3";
+                            break;
+                        case 22:
+                            link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=post&wk=4";
+                            break;
+                        default:
+                            continue;
                     }
                 }
-                catch (Exception e)
+
+                var web = new HtmlWeb();
+                var doc = web.Load(link);
+
+                var scoreboardNodes = doc.DocumentNode.SelectNodes(".//div[@class='lngame']//table");
+
+                if (scoreboardNodes is null) continue;
+                   
+                for (var i = 0; i <= scoreboardNodes.Count - 1; i++)
                 {
-                    var error = new SystemError<GameDataService>()
+                    var node = scoreboardNodes[i].ChildNodes[3];
+                    if (!node.HasChildNodes) continue;
+                    try
                     {
-                        ErrorMessage = e.Message,
-                        CreatedBy = this,
-                        CreatedAt = DateTime.UtcNow,
-                        ErrorType = Enums.ErrorType.INFORMATION,
-                    };
-                    Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.DarkGray(error.ErrorMessage)}");
+                        var matchup = ParseMatchup(node, season, j);
+
+                        if (matchup.IsOk)
+                            matchups.Add(matchup.Value);
+                        else
+                        {
+                            Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.DarkGray(matchup.Error.ErrorMessage!)}");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        var error = new SystemError<GameDataService>()
+                        {
+                            ErrorMessage = e.Message,
+                            CreatedBy = this,
+                            CreatedAt = DateTime.UtcNow,
+                            ErrorType = Enums.ErrorType.INFORMATION,
+                        };
+                        Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.DarkGray(error.ErrorMessage)}");
+                    }
                 }
+                Console.WriteLine($"{Chalk.Green("Week [")}{Chalk.Yellow($"{j}")}{Chalk.Green("] Complete...")}");
             }
-            Console.WriteLine($"{Chalk.Green("Week [")}{Chalk.Yellow($"{week}")}{Chalk.Green("] Complete...")}");
+            
+            xmlData.WriteAllMatchupsToXmlAsync(matchups, season.ToString()).Wait();
 
-            db.AddRange(matchups);
-            db.SaveChanges();
-
-            return Result<List<Matchup>, SystemError<GameDataService>>.Ok(matchups);
+            sw.Stop();
+            Console.WriteLine($"Web Fetch took: {sw.ElapsedMilliseconds}ms");
+            return Result<List<Matchup>, SystemError<GameDataService>>.Ok(matchups.Where(m => m.Week.Equals(week)).ToList());
 
         }
         #endregion

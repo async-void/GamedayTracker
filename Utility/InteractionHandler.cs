@@ -7,7 +7,7 @@ using GamedayTracker.Models;
 
 namespace GamedayTracker.Utility
 {
-    public class InteractionHandler(ITeamData teamData): IEventHandler<InteractionCreatedEventArgs>
+    public class InteractionHandler(ITeamData teamData, IPlayerData playerDataService): IEventHandler<InteractionCreatedEventArgs>
     {
         public async Task HandleEventAsync(DiscordClient sender, InteractionCreatedEventArgs eventArgs)
         {
@@ -17,8 +17,11 @@ namespace GamedayTracker.Utility
                 {
                     break;
                 }
+
+                #region COMPONENTS - BUTTONS
                 case DiscordInteractionType.Component:
                 {
+
                     switch (eventArgs.Interaction.Data.CustomId)
                         {
                             #region AFC DROPDOWN
@@ -142,6 +145,11 @@ namespace GamedayTracker.Utility
                                     DiscordInteractionResponseType.UpdateMessage,
                                     new DiscordInteractionResponseBuilder(bMsg));
                                 break;
+                            case "btnAddPlayer":
+                            {
+                                
+                            } 
+                                break;
                             #endregion
 
                             default:
@@ -151,15 +159,49 @@ namespace GamedayTracker.Utility
                         }
                     break;
                 }
+                #endregion
+
                 case DiscordInteractionType.Ping:
                     await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Ping is in development, the devs are hard at work implementing this feature!"));
                     break;
                 case DiscordInteractionType.AutoComplete:
                     await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Auto Complete is in development, the devs are hard at work implementing this feature!"));
                     break;
+
+                #region MODAL SUBMIT
                 case DiscordInteractionType.ModalSubmit:
-                    await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Modal Submit is in development, the devs are hard at work implementing this feature!"));
+                    //modal submit
+                    switch (eventArgs.Interaction.Data.CustomId)
+                    {
+                        case "modAddPlayer":
+                            var playerName = eventArgs.Interaction.Data.TextInputComponents?[0].Value ?? "--";
+                            var company = eventArgs.Interaction.Data.TextInputComponents?[1].Value ?? "--";
+                            var balance = eventArgs.Interaction.Data.TextInputComponents?[2].Value ?? "0";
+                            var idResult = await playerDataService.GeneratePlayerIdAsync();
+                            var newPlayer = new PoolPlayer()
+                            {
+                                Id = idResult.Value,
+                                PlayerId = playerDataService.GeneratePlayerIdentifier().Value,
+                                PlayerName = playerName,
+                                Company = company,
+                                Balance = double.TryParse(balance, out var result) ? result : 0
+                            };
+                            var pResult = await playerDataService.WritePlayerToXmlAsync(newPlayer);
+
+                            if (pResult.IsOk)
+                            {
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource,
+                                    new DiscordInteractionResponseBuilder().WithContent($"[**{playerName}**] Added Successfully!"));
+                            }
+                            await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource,
+                                new DiscordInteractionResponseBuilder().WithContent($"Add Player is in development, the devs are hard at work implementing this feature!\r\n{playerName}"));
+                            break;
+                    }
+                   
+                    
                     break;
+                #endregion
+                
                 default:
                     await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Unknown command!"));
                     return;

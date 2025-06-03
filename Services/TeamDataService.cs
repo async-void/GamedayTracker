@@ -7,12 +7,11 @@ using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using HtmlAgilityPack;
-using Humanizer;
 using Microsoft.EntityFrameworkCore;
 
 namespace GamedayTracker.Services
 {
-    public class TeamDataService : ITeamData
+    public class TeamDataService(IXmlDataService xmlDataService) : ITeamData
     {
         #region AFC SELECT OPTIONS
         public Result<List<DiscordSelectComponentOption>, SystemError<TeamDataService>> BuildSelectOptionForAfc()
@@ -376,8 +375,8 @@ namespace GamedayTracker.Services
             var link = "";
             var lineType = choice == 0 ? LineType.Offense : LineType.Defense;
             var web = new HtmlWeb();
-            HtmlDocument? doc = null;
-            var statList = new List<TeamStats>();
+            HtmlDocument? doc;
+            List<TeamStats> statList;
             var textInfo = CultureInfo.CurrentCulture.TextInfo;
 
             switch (choice)
@@ -420,9 +419,8 @@ namespace GamedayTracker.Services
                 CreatedBy = this
             });
 
-            for (var i = 0; i < nodes.Count; i++)
+            foreach (var curNode in nodes)
             {
-                var curNode = nodes[i];
                 if (!curNode.HasChildNodes) continue;
                 if (curNode.ChildNodes[0].ChildNodes[1].InnerText != teamName) continue;
 
@@ -469,5 +467,86 @@ namespace GamedayTracker.Services
 
         #endregion
 
+        #region GET ALL TEAM STANDININGS
+        public async Task<Result<List<TeamStanding>, SystemError<TeamDataService>>> GetAllTeamStandings(int season)
+        {
+            var foundStandings = await xmlDataService.GetSeasonStandingsFromXmlAsync(season);
+            if (foundStandings is { IsOk: true, Value.Count: > 0 })
+                return Result<List<TeamStanding>, SystemError<TeamDataService>>.Ok(foundStandings.Value);
+            
+            var link = $"https://www.footballdb.com/standings/index.html?lg=NFL&yr={season}";
+            var web = new HtmlWeb();
+            var doc = web.Load(link);
+
+            var statTableNodes = doc.DocumentNode.SelectNodes(".//table[@class='statistics']");
+
+            if (statTableNodes is null && statTableNodes!.Count != 8)
+            {
+                return Result<List<TeamStanding>, SystemError<TeamDataService>>.Err(new SystemError<TeamDataService>
+                {
+                    ErrorMessage = "No standings found for the given season.",
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = this
+                });
+            }
+
+            var nodeList = statTableNodes.Select(statNode => 
+                ParseStandingNode(statNode, season))
+                .Where(parsedNode => parsedNode.IsOk)
+                .SelectMany(parsedNode => parsedNode.Value).ToList();
+
+            var found = await xmlDataService.WriteSeasonStandingsToXmlAsync(nodeList, season);
+
+            //var aEast = ParseStandingNode(statTableNodes[0], season);
+            //var aNorth = ParseStandingNode(statTableNodes[1], season);
+            //var aSouth = ParseStandingNode(statTableNodes[2], season);
+            //var aWest = ParseStandingNode(statTableNodes[3], season);
+
+            //var nEast = ParseStandingNode(statTableNodes[4], season);
+            //var nNorth = ParseStandingNode(statTableNodes[5], season);
+            //var nSouth = ParseStandingNode(statTableNodes[6], season);
+            //var nWest = ParseStandingNode(statTableNodes[7], season);
+
+            return Result<List<TeamStanding>, SystemError<TeamDataService>>.Ok(nodeList);
+        }
+        #endregion
+
+        #region PARSE STANDING NODE
+        private Result<List<TeamStanding>, SystemError<TeamDataService>> ParseStandingNode(HtmlNode node, int season)
+        {
+            var childNodes = node.SelectNodes(".//tbody//tr");
+            //var pattern = @"^\S+(\s\S+)$";
+            var standingList = (from curNode in childNodes
+                where curNode.HasChildNodes
+                let teamName = curNode.ChildNodes[0].ChildNodes[1].InnerText.ToShortName()
+                let wins = curNode.ChildNodes[1].InnerText
+                let loses = curNode.ChildNodes[2].InnerText
+                let ties = curNode.ChildNodes[3].InnerText
+                let pct = curNode.ChildNodes[4].InnerText
+                select new TeamStanding
+                {
+                    Season = season,
+                    TeamName = teamName,
+                    Abbr = teamName.ToAbbr(),
+                    Division = teamName.ToDivision(),
+                    Wins = wins,
+                    Loses = loses,
+                    Ties = ties,
+                    Pct = pct
+                }).ToList();
+
+            if (standingList.Count == 4)
+                return Result<List<TeamStanding>, SystemError<TeamDataService>>.Ok(standingList);
+
+            return Result<List<TeamStanding>, SystemError<TeamDataService>>.Err(new SystemError<TeamDataService>
+            {
+                ErrorMessage = "could not parse given node.",
+                ErrorType = ErrorType.WARNING,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = this
+            });
+        }
+        #endregion
     }
 }
