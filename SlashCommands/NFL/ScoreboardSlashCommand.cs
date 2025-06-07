@@ -44,12 +44,16 @@ namespace GamedayTracker.SlashCommands.NFL
                         sBuilder.Append(
                             $"{awayEmoji} **{awayScore}** -" +
                             $"{homeScore} {homeEmoji.PadRight(8)} - **FINAL**\r\n");
+                        //Console.WriteLine($"{awayEmoji} {awayScore} -" +
+                        //   $"**{homeScore}** {homeEmoji.PadRight(8)} - **FINAL**\r\n");
                     }
                     else
                     {
                         sBuilder.Append(
                             $"{awayEmoji} {awayScore} -" +
                             $"**{homeScore}** {homeEmoji.PadRight(8)} - **FINAL**\r\n");
+                        //Console.WriteLine($"{awayEmoji} {awayScore} -" +
+                        //    $"**{homeScore}** {homeEmoji.PadRight(8)} - **FINAL**\r\n");
                     }
                        
                 }

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GamedayTracker.Services
 {
-    public class TeamDataService(IXmlDataService xmlDataService) : ITeamData
+    public class TeamDataService(IJsonDataService jsonDataService) : ITeamData
     {
         #region AFC SELECT OPTIONS
         public Result<List<DiscordSelectComponentOption>, SystemError<TeamDataService>> BuildSelectOptionForAfc()
@@ -370,39 +370,31 @@ namespace GamedayTracker.Services
 
         public async Task<Result<TeamStats, SystemError<TeamDataService>>> GetTeamStatsAsync(int choice, int season, string teamName)
         {
-            await using var db = new AppDbContextFactory().CreateDbContext();
+
+            var statList = await jsonDataService.GetTeamStatsFromJsonAsync(choice, season, teamName);
+            if (statList.IsOk)
+            {
+                return Result<TeamStats, SystemError<TeamDataService>>.Ok(statList.Value);
+            }
+
             HtmlNodeCollection? nodes = null;
             var link = "";
             var lineType = choice == 0 ? LineType.Offense : LineType.Defense;
             var web = new HtmlWeb();
             HtmlDocument? doc;
-            List<TeamStats> statList;
+
             var textInfo = CultureInfo.CurrentCulture.TextInfo;
 
             switch (choice)
             {
                 case 0:
                     teamName = textInfo.ToTitleCase(teamName);
-
-                    statList = db.TeamStats.Where(x => x.Season == season && x.TeamName!.Equals(teamName) && x.LineType.Equals(lineType)).ToList();
-                    if (statList.Count > 0)
-                    {
-                        return Result<TeamStats, SystemError<TeamDataService>>.Ok(statList.First());
-                    }
-
                     link = $"https://www.footballdb.com/statistics/nfl/team-stats/offense-totals/{season}/regular-season?sort=ydsgm";
                     doc = web.Load(link);
                     nodes = doc.DocumentNode.SelectNodes(".//table[contains(@class, 'statistics')]//tbody//tr");
                     break;
                 case 1:
                     teamName = textInfo.ToTitleCase(teamName);
-
-                    statList = db.TeamStats.Where(x => x.Season == season && x.TeamName!.Equals(teamName) && x.LineType.Equals(lineType)).ToList();
-                    if (statList.Count > 0)
-                    {
-                        return Result<TeamStats, SystemError<TeamDataService>>.Ok(statList.First());
-                    }
-
                     link = $"https://www.footballdb.com/statistics/nfl/team-stats/defense-totals/{season}/regular-season?sort=ydsgm";
                     doc = web.Load(link);
                     nodes = doc.DocumentNode.SelectNodes(".//table[contains(@class, 'statistics')]//tbody//tr");
@@ -450,8 +442,7 @@ namespace GamedayTracker.Services
                     RushYardsTotal = rushYards,
                     YardsPerGame = yardsPerGame
                 };
-                await db.TeamStats.AddAsync(stats);
-                await db.SaveChangesAsync();
+
                 return Result<TeamStats, SystemError<TeamDataService>>.Ok(stats);
             } 
 
@@ -470,7 +461,7 @@ namespace GamedayTracker.Services
         #region GET ALL TEAM STANDININGS
         public async Task<Result<List<TeamStanding>, SystemError<TeamDataService>>> GetAllTeamStandings(int season)
         {
-            var foundStandings = await xmlDataService.GetSeasonStandingsFromXmlAsync(season);
+            var foundStandings = await jsonDataService.GetStandingsFromJsonAsync(season);
             if (foundStandings is { IsOk: true, Value.Count: > 0 })
                 return Result<List<TeamStanding>, SystemError<TeamDataService>>.Ok(foundStandings.Value);
             
@@ -496,7 +487,8 @@ namespace GamedayTracker.Services
                 .Where(parsedNode => parsedNode.IsOk)
                 .SelectMany(parsedNode => parsedNode.Value).ToList();
 
-            var found = await xmlDataService.WriteSeasonStandingsToXmlAsync(nodeList, season);
+           // var found = await xmlDataService.WriteSeasonStandingsToXmlAsync(nodeList, season);
+            var jsonFound = await jsonDataService.WriteStandingsToJsonAsync(nodeList, season);
 
             //var aEast = ParseStandingNode(statTableNodes[0], season);
             //var aNorth = ParseStandingNode(statTableNodes[1], season);

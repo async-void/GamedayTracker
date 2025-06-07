@@ -2,23 +2,23 @@
 using System.Text;
 using DSharpPlus.Commands;
 using DSharpPlus.Entities;
+using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
 
 namespace GamedayTracker.SlashCommands.News
 {
-    public class NewsSlashCommand
+    public class NewsSlashCommand(INewsService newsService)
     {
-        private readonly NFLNewsService _newsService = new();
-
-        [DSharpPlus.Commands.Command("news")]
+        
+        [Command("news")]
         [Description("Gets the most recent NFL News and Updates.")]
         public async Task GetNewOrUpdates(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
 
             var rnd = new Random();
-            var articles = _newsService.GetNews();
+            var articles = newsService.GetNews();
             var imgList = new List<string>();
             if (articles.IsOk)
             {

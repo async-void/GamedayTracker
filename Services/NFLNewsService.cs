@@ -1,10 +1,11 @@
 ﻿using GamedayTracker.Enums;
+using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using HtmlAgilityPack;
 
 namespace GamedayTracker.Services
 {
-    public class NFLNewsService
+    public class NFLNewsService : INewsService
     {
         #region GET NFL NEWS
 

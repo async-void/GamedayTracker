@@ -7,12 +7,13 @@ using GamedayTracker.Models;
 using HtmlAgilityPack;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 namespace GamedayTracker.Services
 {
-    public class GameDataService(IXmlDataService xmlData) : IGameData
+    public class GameDataService(IXmlDataService xmlData, IJsonDataService jsonDataService) : IGameData
     {
         private readonly AppDbContextFactory _dbFactory = new AppDbContextFactory();
 
@@ -90,17 +91,17 @@ namespace GamedayTracker.Services
             var matchups = new List<Matchup>();
             var sw = new Stopwatch();
 
-            var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "XML", $"game_data_{season}.xml");
+            var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"matchups_{season}.json");
             
             if (File.Exists(filePath))
             {
                 sw.Start();
-                var xmlFound = xmlData.GetWeekMatchupDataAsync(season.ToString(), week.ToString()).Result;
+                var jsonFound = jsonDataService.GetMatchupsAsync(season.ToString(), week.ToString()).Result;
                 sw.Stop();
-                Console.WriteLine($"Xml Fetch took: {sw.ElapsedMilliseconds}ms");
+                Console.WriteLine($"Json Fetch took: {sw.ElapsedMilliseconds}ms");
 
-                if (xmlFound.IsOk)
-                    return Result<List<Matchup>, SystemError<GameDataService>>.Ok(xmlFound.Value);
+                if (jsonFound.IsOk)
+                    return Result<List<Matchup>, SystemError<GameDataService>>.Ok(jsonFound.Value);
  
                 return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>()
                 {
@@ -175,8 +176,14 @@ namespace GamedayTracker.Services
                 }
                 Console.WriteLine($"{Chalk.Green("Week [")}{Chalk.Yellow($"{j}")}{Chalk.Green("] Complete...")}");
             }
+
+            //xmlData.WriteAllMatchupsToXmlAsync(matchups, season.ToString()).Wait();
+            for (int i = 0; i < matchups.Count; i++)
+            {
+                matchups[i].Id = i + 1;
+            }
             
-            xmlData.WriteAllMatchupsToXmlAsync(matchups, season.ToString()).Wait();
+            jsonDataService.WriteAllMatchupsToJson(matchups, season).Wait();
 
             sw.Stop();
             Console.WriteLine($"Web Fetch took: {sw.ElapsedMilliseconds}ms");
@@ -252,7 +259,7 @@ namespace GamedayTracker.Services
                 var error = new SystemError<GameDataService>
                 {
                     ErrorType = ErrorType.INFORMATION,
-                    ErrorMessage = "An Error occured while parsing the matchup data!",
+                    ErrorMessage = "An Error occurred while parsing the matchup data!",
                     CreatedBy = this,
                     CreatedAt = DateTime.UtcNow,
                 };
@@ -289,17 +296,18 @@ namespace GamedayTracker.Services
         /// <param name="season"></param>
         /// <returns>Task</returns>
         #region GET TEAM SCHEDULE
-        public async Task<Result<List<string>, SystemError<GameDataService>>> GetTeamSchedule(string teamName, int season)
+        public async Task<Result<List<Matchup>, SystemError<GameDataService>>> GetTeamSchedule(string teamName)
         {
-            var scheduleList = new List<string>();
-            var teamLinkName = teamName.ToLower().ToTeamLinkName();
-            var scheduleLink = $"https://www.footballdb.com/teams/nfl/{teamLinkName}/results/{season}";
+            var scheduleList = new List<Matchup>();
+            var season = DateTime.UtcNow.Year;
+            var teamLinkName = teamName.ToTeamLinkName();
+            var scheduleLink = $"https://www.footballdb.com/teams/nfl/{teamLinkName}/results";
             var web = new HtmlWeb();
             var doc = web.Load(scheduleLink);
-            var scheduleNodes = doc.DocumentNode.SelectNodes(".//div[@class='games-container']");
+            var scheduleNodes = doc.DocumentNode.SelectNodes(".//div[@class='lngame']//table");
 
             if (scheduleNodes is null)
-                return Result<List<string>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
+                return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
                 {
                     ErrorMessage = $"no schedule found for ``{teamName}``",
                     ErrorType = ErrorType.INFORMATION,
@@ -307,21 +315,63 @@ namespace GamedayTracker.Services
                     CreatedBy = this
                 });
 
-            HtmlNode? curNode = null;
-
-            curNode = scheduleNodes.Count == 2 ? scheduleNodes[0] : scheduleNodes[1];
-
-            for ( var i = 1; i < curNode.ChildNodes.Count; i+= 2)
+            for (var i = 0; i < scheduleNodes.Count; i++)
             {
-                var date = curNode.ChildNodes[i].ChildNodes[1].ChildNodes[1].ChildNodes[1].ChildNodes[1].ChildNodes[1].InnerText;
-                var awayName = curNode.ChildNodes[i].ChildNodes[1].ChildNodes[1].ChildNodes[3].ChildNodes[1].ChildNodes[1].ChildNodes[0].InnerText;
-                var homeName = curNode.ChildNodes[i].ChildNodes[1].ChildNodes[1].ChildNodes[3].ChildNodes[3].ChildNodes[1].ChildNodes[0].InnerText;
-                if (!string.Equals(awayName.ToLower(), teamName.ToLower(), StringComparison.Ordinal))
-                    scheduleList.Add($"{awayName} - {date}");
-                if (!string.Equals(homeName.ToLower(), teamName.ToLower(), StringComparison.Ordinal))
-                    scheduleList.Add($"{homeName} - {date}");
+                var curNode = scheduleNodes[i];
+                var curDate = "";
+                if (!curNode.HasChildNodes) continue;
+         
+                foreach (var childNode in curNode.ChildNodes)
+                {
+                    if (childNode.Name.Equals("thead"))
+                    {
+                        var dateNode = childNode.SelectSingleNode(".//tr/th");
+                        if (dateNode is not null)
+                        {
+                            curDate = dateNode.InnerText.Trim();
+                            curDate = curDate.Replace(" ", "/").Replace(",", string.Empty);
+                            string format = "dddd/MMMM/d/yyyy";
+                            CultureInfo provider = CultureInfo.InvariantCulture;
+
+                            if (DateTime.TryParseExact(curDate, format, provider, DateTimeStyles.None, out DateTime result))
+                            {
+                                curDate = result.ToLongDateString();
+                            }  
+                        }
+                    }
+                    else if (childNode.Name.Equals("tbody"))
+                    {
+                        var bodyNode = childNode;
+                        if (bodyNode.HasChildNodes)
+                        {
+                            var vsAwayName = bodyNode.ChildNodes[1].InnerText.Replace("\n", string.Empty).Replace("(0-0)", string.Empty).Replace("--", string.Empty).Trim(); ;
+                            var vsHomeName = bodyNode.ChildNodes[3].InnerText.Replace("\n", string.Empty).Replace("(0-0)", string.Empty).Replace("--", string.Empty).Trim();
+                            var vsAwayAbbr = vsAwayName.ToAbbr();
+                            var vsHomeAbbr = vsHomeName.ToAbbr();
+                            var awayEmoji = NflEmojiService.GetEmoji(vsAwayAbbr);
+                            var homeEmoji = NflEmojiService.GetEmoji(vsAwayAbbr);
+                            var awayDivision = vsAwayName.ToDivision();
+                            var homeDivision = vsHomeName.ToDivision();
+
+                            var awayTeam = new Team {Division = awayDivision, Record = "(0-0)", Abbreviation = vsAwayAbbr, Name = vsAwayName, Emoji = awayEmoji, LogoPath = "" };
+                            var homeTeam = new Team {Division = homeDivision, Record = "(0-0)", Abbreviation = vsHomeAbbr, Name = vsHomeName, Emoji = homeEmoji, LogoPath = "" };
+                            var matchup = new Matchup
+                            {
+                                Season = season,
+                                GameDate = curDate,
+                                Week = i + 1,
+                                Opponents = new Opponent
+                                {
+                                    AwayTeam = awayTeam,
+                                    HomeTeam = homeTeam
+                                }
+                            };
+                            scheduleList.Add(matchup);
+                        }
+                    } 
+                }             
             }
-            return Result<List<string>, SystemError<GameDataService>>.Ok(scheduleList);
+            return Result<List<Matchup>, SystemError<GameDataService>>.Ok(scheduleList);
         }
 
         #endregion

@@ -14,6 +14,6 @@ namespace GamedayTracker.Models
         public required int Week { get; set; }
         public string? GameTime { get; set; }
         public string? GameDate { get; set; }
-        public Opponent Opponents { get; set; }
+        public Opponent? Opponents { get; set; }
     }
 }

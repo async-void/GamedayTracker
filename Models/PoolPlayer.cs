@@ -14,5 +14,6 @@ namespace GamedayTracker.Models
         public string? Company { get; set; }
         public double Balance { get; set; }
         public DateTime DepositTimestamp { get; set; }
+        public string[]? Picks { get; set; }
     }
 }

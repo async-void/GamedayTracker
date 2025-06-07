@@ -37,7 +37,7 @@ namespace GamedayTracker.Services
             fs.Close();
 
             var player = doc.Descendants("Player")
-                .FirstOrDefault(x => x.Attribute("Name").Value.Equals(playerName));
+                .FirstOrDefault(x => x.Attribute("Name")!.Value.Equals(playerName));
                   
 
             if (player is null)
@@ -140,9 +140,9 @@ namespace GamedayTracker.Services
             var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None);
             var doc = await XDocument.LoadAsync(fs, LoadOptions.None, CancellationToken.None);
             fs.Close();
-            var playerCount = int.TryParse(doc.Descendants("Player").Last().Attribute("Id")!.Value, out var idResult);
+            var lastIdResult = int.TryParse(doc.Descendants("Player").Last().Attribute("Id")!.Value, out var idResult);
             
-            if (playerCount)
+            if (lastIdResult)
                 return Result<int, SystemError<PlayerDataServiceProvider>>.Ok(idResult + 1);
             return Result<int, SystemError<PlayerDataServiceProvider>>.Err(
                 new SystemError<PlayerDataServiceProvider>()

@@ -9,10 +9,8 @@ namespace GamedayTracker.Models
 {
     public class Opponent
     {
-        public int Id { get; set; }
+       // public int Id { get; set; }
         public required Team AwayTeam { get; set; }
         public required Team HomeTeam { get; set; }
-        public int MatchUpId { get; set; }
-        public Matchup Matchup { get; set; }
     }
 }

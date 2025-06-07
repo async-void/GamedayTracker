@@ -40,8 +40,10 @@ namespace GamedayTracker
                 services.AddScoped<ILogger, LoggerService>();
                 services.AddScoped<IGameData, GameDataService>();
                 services.AddScoped<IXmlDataService, XmlDataServiceProvider>();
+                services.AddScoped<IJsonDataService, JsonDataServiceProvider>();
                 services.AddScoped<IPlayerData, PlayerDataServiceProvider>();
                 services.AddScoped<IConfigurationData, ConfigurationDataService>();
+                services.AddScoped<INewsService, NFLNewsService>();
                 services.AddScoped<ICommandHelper, SlashCommandHelper>();
                 services.AddScoped<IGuildMemberService, GuildMemberService>();
             });

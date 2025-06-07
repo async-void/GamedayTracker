@@ -3,6 +3,7 @@ using System.Text;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
+using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
 using GamedayTracker.Interfaces;
@@ -14,7 +15,7 @@ namespace GamedayTracker.SlashCommands.NFL
     {
         [Command("schedule")]
         [Description("Get Team Schedule")]
-        public async Task GetTeamSchedule(SlashCommandContext ctx, [Parameter("team")] string teamName, [Parameter("season")] int season)
+        public async Task GetTeamSchedule(SlashCommandContext ctx, [Parameter("team")] string teamName)
         {
             
             await ctx.DeferResponseAsync();
@@ -26,21 +27,24 @@ namespace GamedayTracker.SlashCommands.NFL
                 return;
             }
             var sb = new StringBuilder();
-            var teamSchedule = await gameData.GetTeamSchedule(teamName, season);
+            var teamSchedule = await gameData.GetTeamSchedule(teamName);
+            var season = DateTime.UtcNow.Year.ToString();
 
             if (teamSchedule.IsOk)
             {
-                foreach (var team in teamSchedule.Value)
+                foreach (var match in teamSchedule.Value)
                 {
-                    var vsName = team.Split("-")[0].Trim().ToAbbr();
-                    var date = team.Split("-")[1].Trim();
-                    var emoji = NflEmojiService.GetEmoji(vsName);
-                    sb.AppendLine($"{date}: {vsName} {emoji}");
+                    var awayName = match.Opponents.AwayTeam.Name.ToAbbr();
+                    var homeName = match.Opponents.HomeTeam.Name.ToAbbr();
+                    var date = match.GameDate;
+                    var awayEmoji = NflEmojiService.GetEmoji(awayName);
+                    var homeEmoji = NflEmojiService.GetEmoji(homeName);
+                    sb.AppendLine($"{awayName}{awayEmoji} at {homeName}{homeEmoji} : {date}");
                 }
 
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent($"Schedule {season} for {teamName}"),
+                    new DiscordTextDisplayComponent($"{season} Schedule for {teamName}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent(sb.ToString()),
                     new DiscordSeparatorComponent(true),
