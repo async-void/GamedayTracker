@@ -1,23 +1,27 @@
-﻿using System;
+﻿using ChalkDotNET;
+using GamedayTracker.Enums;
+using GamedayTracker.Extensions;
+using GamedayTracker.Interfaces;
+using GamedayTracker.Models;
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using GamedayTracker.Enums;
-using GamedayTracker.Interfaces;
-using GamedayTracker.Models;
 
 namespace GamedayTracker.Services
 {
-    public class JsonDataServiceProvider : IJsonDataService
+    public class JsonDataServiceProvider(ILogger logger) : IJsonDataService
     {
         #region GET MATCHUPS
         public async Task<Result<List<Matchup>, SystemError<JsonDataServiceProvider>>> GetMatchupsAsync(string season, string week)
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"matchups_{season}.json");
-
+            var timeStamp = DateTimeOffset.UtcNow;
             if (!File.Exists(path))
             {
                 var notFound = new SystemError<JsonDataServiceProvider>
@@ -27,13 +31,17 @@ namespace GamedayTracker.Services
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
                 };
+                logger.Log(LogTarget.Console, LogType.Error, DateTimeOffset.UtcNow, $"{notFound.ErrorMessage}");
                 return Result<List<Matchup>, SystemError<JsonDataServiceProvider>>.Err(notFound);
             }
             var json = await File.ReadAllTextAsync(path);
             var matchups = JsonSerializer.Deserialize<List<Matchup>>(json)!
                 .Where(m => m.Season.ToString() == season && m.Week.ToString() == week).ToList();
 
-            if (matchups is not null) return Result<List<Matchup>, SystemError<JsonDataServiceProvider>>.Ok(matchups);
+            if (matchups is not null)
+            {
+                return Result<List<Matchup>, SystemError<JsonDataServiceProvider>>.Ok(matchups);
+            }
             var error = new SystemError<JsonDataServiceProvider>
             {
                 ErrorMessage = "Failed to fetch matchup data.",
@@ -52,6 +60,7 @@ namespace GamedayTracker.Services
 
             if (!File.Exists(path))
             {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 var json = JsonSerializer.Serialize(matchup, options);
                 await File.WriteAllTextAsync(path, json);
@@ -76,6 +85,7 @@ namespace GamedayTracker.Services
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"matchups_{season}.json");
             if (!File.Exists(path))
             {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 var options = new JsonSerializerOptions { WriteIndented = true};
                 var json = JsonSerializer.Serialize(matchups, options);
                 await File.WriteAllTextAsync(path, json);
@@ -129,6 +139,7 @@ namespace GamedayTracker.Services
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"standings_{season}.json");
             if (!File.Exists(path))
             {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 var json = JsonSerializer.Serialize(standings, options);
                 await File.WriteAllTextAsync(path, json);
@@ -137,7 +148,7 @@ namespace GamedayTracker.Services
             else
             {
                 var file = await File.ReadAllTextAsync(path);
-                var existingStandings = JsonSerializer.Deserialize<List<TeamStanding>>(file) ?? new List<TeamStanding>();
+                var existingStandings = JsonSerializer.Deserialize<List<TeamStanding>>(file) ?? [];
                 existingStandings.AddRange(standings);
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 var updatedJson = JsonSerializer.Serialize(existingStandings, options);
@@ -154,6 +165,7 @@ namespace GamedayTracker.Services
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "players.json");
             if (!File.Exists(path))
             {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 var json = JsonSerializer.Serialize(player, options);
                 await File.WriteAllTextAsync(path, json);
@@ -162,7 +174,7 @@ namespace GamedayTracker.Services
             else
             {
                 var file = await File.ReadAllTextAsync(path);
-                var players = JsonSerializer.Deserialize<List<PoolPlayer>>(file) ?? new List<PoolPlayer>();
+                var players = JsonSerializer.Deserialize<List<PoolPlayer>>(file) ?? [];
                 players.Add(player);
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 var updatedJson = JsonSerializer.Serialize(players, options);
@@ -185,7 +197,7 @@ namespace GamedayTracker.Services
             else
             {
                 var file = await File.ReadAllTextAsync(path);
-                var players = JsonSerializer.Deserialize<List<PoolPlayer>>(file) ?? new List<PoolPlayer>();
+                var players = JsonSerializer.Deserialize<List<PoolPlayer>>(file) ?? [];
                 var maxId = players.Max(p => p.Id);
                 return Result<int, SystemError<JsonDataServiceProvider>>.Ok(maxId + 1);
             }
@@ -275,13 +287,14 @@ namespace GamedayTracker.Services
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"team_stats_{season}.json");
             if (!File.Exists(path))
             {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 var json = JsonSerializer.Serialize(source, options);
                 await File.WriteAllTextAsync(path, json);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
             }
             var file = await File.ReadAllTextAsync(path);
-            var stats = JsonSerializer.Deserialize<List<TeamStats>>(file) ?? new List<TeamStats>();
+            var stats = JsonSerializer.Deserialize<List<TeamStats>>(file) ?? [];
            
             if (stats is not null && stats.Count > 0)
             {
@@ -307,6 +320,7 @@ namespace GamedayTracker.Services
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"team_stats_{stats.Season}.json");
             if (!File.Exists(path))
             {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 var json = JsonSerializer.Serialize(stats, options);
                 await File.WriteAllTextAsync(path, json);
@@ -315,7 +329,7 @@ namespace GamedayTracker.Services
             else
             {
                 var file = await File.ReadAllTextAsync(path);
-                var existingStats = JsonSerializer.Deserialize<List<TeamStats>>(file) ?? new List<TeamStats>();
+                var existingStats = JsonSerializer.Deserialize<List<TeamStats>>(file) ?? [];
                 existingStats.Add(stats);
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 var updatedJson = JsonSerializer.Serialize(existingStats, options);
@@ -324,5 +338,108 @@ namespace GamedayTracker.Services
             }
         }
         #endregion
+
+        #region WRITE SEASON SCHEDULE FOR TEAM
+        public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteSeasonScheduleToJson(List<Matchup> matchups, string teamName)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"{teamName}_schedule_{matchups[0].Season}.json");
+            if (!File.Exists(path))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                var json = JsonSerializer.Serialize(matchups, options);
+                await File.WriteAllTextAsync(path, json);
+                return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
+            }
+            return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+            {
+                ErrorMessage = "schedule data already exists",
+                ErrorType = ErrorType.INFORMATION,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = this
+            });
+        }
+        #endregion
+
+        #region GET SEASON SCHEDULE FOR TEAM
+        public async Task<Result<List<Matchup>, SystemError<JsonDataServiceProvider>>> GetSeasonScheduleFromJsonAsync(int season, string teamName)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"{teamName}_schedule_{season}.json");
+            if (!File.Exists(path))
+            {
+                return Result<List<Matchup>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                {
+                    ErrorMessage = "Schedule data file not found.",
+                    CreatedAt = DateTime.UtcNow,
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedBy = this
+                });
+            }
+            var json = await File.ReadAllTextAsync(path);
+            var schedule = JsonSerializer.Deserialize<List<Matchup>>(json)!;
+            if (schedule is not null) return Result<List<Matchup>, SystemError<JsonDataServiceProvider>>.Ok(schedule);
+            return Result<List<Matchup>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+            {
+                ErrorMessage = "Failed to fetch schedule data.",
+                CreatedAt = DateTime.UtcNow,
+                ErrorType = ErrorType.INFORMATION,
+                CreatedBy = this
+            });
+        }
+        #endregion
+
+        #region GET DRAFT FROM JSON
+        public async Task<Result<List<DraftEntity>, SystemError<JsonDataServiceProvider>>> GetDraftFromJsonAsync(int season, string teamName)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"{teamName}_{season}_draft.json");
+            if (!File.Exists(path))
+            {
+                return Result<List<DraftEntity>, SystemError <JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                {
+                    ErrorMessage = "draft data file not found.",
+                    CreatedAt = DateTime.UtcNow,
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedBy = this
+                });
+            }
+
+            var json = await File.ReadAllTextAsync(path);
+            var drafts = JsonSerializer.Deserialize<List<DraftEntity>>(json)!.Where(x => x.TeamName.Equals(teamName.ToTeamFullName())).ToList();
+            if (drafts is not null) return Result<List<DraftEntity>, SystemError<JsonDataServiceProvider>>.Ok(drafts);
+            return Result<List<DraftEntity>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+            {
+                ErrorMessage = "Failed to fetch schedule data.",
+                CreatedAt = DateTime.UtcNow,
+                ErrorType = ErrorType.INFORMATION,
+                CreatedBy = this
+            });
+        }
+        #endregion
+
+        #region WRITE DRAFT TO JSON
+        public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteDraftToJsonAsync(List<DraftEntity> source, int season)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"{season}_draftResults.json");
+            if (!File.Exists(path))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                var json = JsonSerializer.Serialize(source, options);
+                await File.WriteAllTextAsync(path, json);
+                return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
+            }
+            else
+            {
+                return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                {
+                    ErrorMessage = "Draft data already exists.",
+                    CreatedAt = DateTime.UtcNow,
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedBy = this
+                });
+            }
+        }
+        #endregion
+
     }
 }

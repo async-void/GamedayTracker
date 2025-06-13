@@ -8,7 +8,6 @@ namespace GamedayTracker.Models
 {
     public class DraftEntity
     {
-        public int Id { get; set; }
         public int Season { get; set; }
         public required string Round { get; set; }
         public required string PickPosition { get; set; }

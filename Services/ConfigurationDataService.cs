@@ -15,6 +15,7 @@ namespace GamedayTracker.Services
 {
     public class ConfigurationDataService : IConfigurationData
     {
+        
         public Result<bool, SystemError<ConfigurationDataService>> GuildExists(DiscordGuild guild)
         {
             using var db = new BotDbContextFactory().CreateDbContext();

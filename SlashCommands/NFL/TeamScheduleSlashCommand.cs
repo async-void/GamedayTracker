@@ -14,7 +14,7 @@ namespace GamedayTracker.SlashCommands.NFL
     public class TeamScheduleSlashCommand(IGameData gameData, ITeamData teamData, ILogger logger)
     {
         [Command("schedule")]
-        [Description("Get Team Schedule")]
+        [Description("Get Current Season Team Schedule")]
         public async Task GetTeamSchedule(SlashCommandContext ctx, [Parameter("team")] string teamName)
         {
             
@@ -29,24 +29,24 @@ namespace GamedayTracker.SlashCommands.NFL
             var sb = new StringBuilder();
             var teamSchedule = await gameData.GetTeamSchedule(teamName);
             var season = DateTime.UtcNow.Year.ToString();
-
+            var homeEmoji = NflEmojiService.GetEmoji(teamName.ToAbbr());
             if (teamSchedule.IsOk)
             {
                 foreach (var match in teamSchedule.Value)
                 {
-                    var awayName = match.Opponents.AwayTeam.Name.ToAbbr();
+                    var awayName = match.Opponents!.AwayTeam.Name.ToAbbr();
                     var homeName = match.Opponents.HomeTeam.Name.ToAbbr();
                     var date = match.GameDate;
                     var awayEmoji = NflEmojiService.GetEmoji(awayName);
-                    var homeEmoji = NflEmojiService.GetEmoji(homeName);
-                    sb.AppendLine($"{awayName}{awayEmoji} at {homeName}{homeEmoji} : {date}");
+                    homeEmoji = NflEmojiService.GetEmoji(homeName);
+                    sb.AppendLine($"{awayEmoji} at {homeEmoji} `{date!}`");
                 }
 
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent($"{season} Schedule for {teamName}"),
+                    new DiscordTextDisplayComponent($"{season} Schedule for {teamName}{homeEmoji}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordTextDisplayComponent(sb.ToString()),
+                    new DiscordTextDisplayComponent($"{sb}"),
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}:{DateTime.Now.ToShortTimeString()}")
                 ];

@@ -64,7 +64,7 @@ namespace GamedayTracker.SlashCommands.NFL
 
                     break;
                 case 2:
-                    var drafts = await teamData.GetDraftResultsAsync(2025);
+                    var drafts = await teamData.GetDraftResultsAsync("", 2025);
                     break;
             }
         }

@@ -114,13 +114,12 @@ namespace GamedayTracker.Services
         #region GET DRAFT RESULT FOR TEAM
         public async Task<Result<List<DraftEntity>, SystemError<TeamDataService>>> GetDraftResultForTeamAsync(int year, string tName)
         {
-            await using var db = new AppDbContextFactory().CreateDbContext();
+            var draftList = await jsonDataService.GetDraftFromJsonAsync(year, tName);
+            if (draftList.IsOk)
+                return Result<List<DraftEntity>, SystemError<TeamDataService>>.Ok(draftList.Value);
+
             var entityList = new List<DraftEntity>();
-            var dbList = await db.DraftEntities.Where(x => x.Season == year && x.TeamName.Equals(tName)).ToListAsync();
-
-            if (dbList.Count > 0)
-                return Result<List<DraftEntity>, SystemError<TeamDataService>>.Ok(dbList);
-
+           
             for (var i = 1; i < 8; i++)
             {
                 var link = $"https://www.footballdb.com/draft/draft.html?lg=NFL&yr={year}&rnd={i}";
@@ -157,6 +156,8 @@ namespace GamedayTracker.Services
                 }
             }
 
+            await jsonDataService.WriteDraftToJsonAsync(entityList, year);
+
             if (entityList.Count == 0)
             {
                 return Result<List<DraftEntity>, SystemError<TeamDataService>>.Err(new SystemError<TeamDataService>()
@@ -167,25 +168,23 @@ namespace GamedayTracker.Services
                     CreatedBy = this
                 });
             }
-            db.DraftEntities.AddRange(entityList);
-            await db.SaveChangesAsync();
-            return Result<List<DraftEntity>, SystemError<TeamDataService>>.Ok(entityList);
+            var chosen = entityList.Where(x => x.TeamName.Equals(tName.ToTeamFullName())).ToList();
+            return Result<List<DraftEntity>, SystemError<TeamDataService>>.Ok(chosen);
         }
         #endregion
 
         #region GET DRAFT RESULTS
-        public async Task<Result<List<DraftEntity>, SystemError<TeamDataService>>> GetDraftResultsAsync(int year)
+        public async Task<Result<List<DraftEntity>, SystemError<TeamDataService>>> GetDraftResultsAsync(string teamName, int season)
         {
-            await using var db = new AppDbContextFactory().CreateDbContext();
+            var draft = await jsonDataService.GetDraftFromJsonAsync(season, teamName);
+            if (draft.IsOk)
+                return Result<List<DraftEntity>, SystemError<TeamDataService>>.Ok(draft.Value);
+
             var entityList = new List<DraftEntity>();
-            var dbList = await db.DraftEntities.Where(x => x.Season == year).ToListAsync();
-
-            if (dbList.Count > 0) 
-                return Result<List<DraftEntity>, SystemError<TeamDataService>>.Ok(dbList);
-
+            
             for (var i = 1; i < 8; i++)
             {
-                var link = $"https://www.footballdb.com/draft/draft.html?lg=NFL&yr={year}&rnd={i}";
+                var link = $"https://www.footballdb.com/draft/draft.html?lg=NFL&yr={season}&rnd={i}";
                 var web = new HtmlWeb();
                 var doc = web.Load(link);
 
@@ -196,18 +195,18 @@ namespace GamedayTracker.Services
                 {
                     var curNode = nodes[j];
                     if (!curNode.HasChildNodes) continue;
-                    if (curNode.ChildNodes.Count != 7) continue;
+                    if (curNode.ChildNodes.Count !>= 7) continue;
 
                     var round = curNode.ChildNodes[0].InnerText.Split(" ")[0];
                     var pick = curNode.ChildNodes[1].InnerText;
-                    var teamName = curNode.ChildNodes[2].ChildNodes[0].ChildNodes[0].InnerText;
+                    var name = curNode.ChildNodes[2].ChildNodes[0].ChildNodes[0].InnerText;
                     var playerName = curNode.ChildNodes[3].InnerText;
                     var pos = curNode.ChildNodes[4].InnerText;
                     var college = curNode.ChildNodes[5].InnerText;
 
                     var de = new DraftEntity()
                     {
-                        Season = year,
+                        Season = season,
                         College = college,
                         PickPosition = pick,
                         PlayerName = playerName,
@@ -218,6 +217,7 @@ namespace GamedayTracker.Services
                     entityList.Add(de);
                 }
             }
+            await jsonDataService.WriteDraftToJsonAsync(entityList, season);
 
             if (entityList.Count == 0)
             {
@@ -229,8 +229,7 @@ namespace GamedayTracker.Services
                     CreatedBy = this
                 });
             }
-            db.DraftEntities.AddRange(entityList);
-            await db.SaveChangesAsync();
+            
             return Result<List<DraftEntity>, SystemError<TeamDataService>>.Ok(entityList);
         }
         #endregion
@@ -273,7 +272,7 @@ namespace GamedayTracker.Services
                 "la rams", 
                 "miami", 
                 "minnesota", 
-                "New england", 
+                "new england", 
                 "new Orleans",
                 "ny giants", 
                 "ny jets", 

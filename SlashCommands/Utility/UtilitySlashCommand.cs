@@ -18,7 +18,7 @@ namespace GamedayTracker.SlashCommands.Utility
    
     [Command("utility")]
     [Description("Utility Slash Commands")]
-    public class UtilitySlashCommand(ITimerService timerService, ILogger loggerService)
+    public class UtilitySlashCommand(IBotTimer botTimer, ILogger loggerService)
     {
 
         [Command("help")]
@@ -63,28 +63,39 @@ namespace GamedayTracker.SlashCommands.Utility
             await ctx.DeferResponseAsync();
             var sw = new Stopwatch();
             sw.Start();
-            await using var db = new AppDbContextFactory().CreateDbContext();
-            sw.Stop();
+            
             var guildId = ctx.Guild!.Id;
             var connectionLat = ctx.Client.GetConnectionLatency(guildId);
-            var uptime = timerService.CalculateRunningTime();
-            
-            DiscordComponent[] components =
-            [
-                new DiscordTextDisplayComponent($"DB **{sw.Elapsed.Humanize()}** "),
-                new DiscordTextDisplayComponent($"Discord **{connectionLat.Humanize()}**"),
-                new DiscordTextDisplayComponent($"Lifetime **{uptime.Humanize()}**")
-            ];
-            DiscordContainerComponent container = new(components, false, DiscordColor.Blurple);
+            var timestamp = DateTime.UtcNow;
+            var savedTimeStamp = await botTimer.GetTimestampFromTextAsync();
+            sw.Stop();
+            if (savedTimeStamp.IsOk)
+            {
+                var uptime = timestamp - savedTimeStamp.Value;
+                DiscordComponent[] components =
+                [
+                    new DiscordTextDisplayComponent($"Latency **{sw.Elapsed.Humanize()}** "),
+                    new DiscordTextDisplayComponent($"Discord **{connectionLat.Humanize()}**"),
+                    new DiscordTextDisplayComponent($"Uptime **{uptime.Humanize()}**")
+                ];
+                DiscordContainerComponent container = new(components, false, DiscordColor.Blurple);
 
-            var message = new DiscordMessageBuilder()
-                .EnableV2Components()
-                .AddContainerComponent(container);
-                
+                var message = new DiscordMessageBuilder()
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
 
-            //TODO: finish me.
-            loggerService.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, "Ping Command Executed");
-            await ctx.EditResponseAsync(message);
+
+                //TODO: finish me.
+                loggerService.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, "Ping Command Executed");
+                await ctx.EditResponseAsync(message);
+            }
+            else
+            {
+                await ctx.EditResponseAsync(new DiscordMessageBuilder()
+                    .WithContent(savedTimeStamp.Error.ErrorMessage!));
+
+            }
+  
         }
         #endregion
     }

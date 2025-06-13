@@ -2,8 +2,10 @@
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using GamedayTracker.Extensions;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Services;
 
 namespace GamedayTracker.Utility
 {
@@ -27,7 +29,6 @@ namespace GamedayTracker.Utility
                             #region AFC DROPDOWN
                             case "afcDropdown":
                             {
-                                
                                 var tName = eventArgs.Interaction.Data.Values[0];
                                 var draftResult = await teamData.GetDraftResultForTeamAsync(2025, tName);
                                 var msgBuilder = new StringBuilder();
@@ -36,10 +37,12 @@ namespace GamedayTracker.Utility
                                 {
                                     msgBuilder.Append($"round **{draftEntity.Round}** | **{draftEntity.PlayerName}** | position **{draftEntity.Pos}** | college **{draftEntity.College}**\r\n");
                                 }
+                                var shortName = tName.ToShortName();
+                                var emoji = NflEmojiService.GetEmoji(shortName.ToAbbr());
 
                                 DiscordComponent[] components =
                                 [
-                                    new DiscordTextDisplayComponent($"**2025** Draft Results for **{tName}**"),
+                                    new DiscordTextDisplayComponent($"**2025** Draft Results for **{tName}**{emoji}"),
                                     new DiscordSeparatorComponent(true),
                                     new DiscordTextDisplayComponent(msgBuilder.ToString()),
                                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
@@ -59,6 +62,7 @@ namespace GamedayTracker.Utility
                             #region NFC DROPDOWN
                             case "nfcDropdown"://TODO: fix V2 component message
                             {
+
                                 var tName = eventArgs.Interaction.Data.Values[0];
                                 var draftResult = await teamData.GetDraftResultForTeamAsync(2025, tName);
                                 var msgBuilder = new StringBuilder();
@@ -67,9 +71,11 @@ namespace GamedayTracker.Utility
                                 {
                                     msgBuilder.Append($"round **{draftEntity.Round}** | **{draftEntity.PlayerName}** | position **{draftEntity.Pos}** | college **{draftEntity.College}**\r\n");
                                 }
+                                var shortName = tName.ToShortName();
+                                var emoji = NflEmojiService.GetEmoji(shortName.ToAbbr());
                                 DiscordComponent[] components =
                                 [
-                                    new DiscordTextDisplayComponent($"**2025** Draft Results for **{tName}**"),
+                                    new DiscordTextDisplayComponent($"**2025** Draft Results for **{tName}**{emoji}"),
                                     new DiscordSeparatorComponent(true),
                                     new DiscordTextDisplayComponent(msgBuilder.ToString()),
                                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),

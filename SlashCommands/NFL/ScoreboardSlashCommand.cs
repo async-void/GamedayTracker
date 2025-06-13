@@ -1,6 +1,4 @@
-﻿using System.ComponentModel;
-using System.Text;
-using DSharpPlus.Commands;
+﻿using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
@@ -9,6 +7,9 @@ using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
+using System.ComponentModel;
+using System.IO;
+using System.Text;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
@@ -22,22 +23,22 @@ namespace GamedayTracker.SlashCommands.NFL
         {
             await ctx.DeferResponseAsync();
             var sBuilder = new StringBuilder();
-            var scoreBoardResult = gameService.GetScoreboard(season, week);
-            
+            var scoreBoardResult = await gameService.GetScoreboard(season, week);
+           
             var newWeek = week.ToString();
             if (scoreBoardResult.IsOk)
             {
                 for (int i = 0; i < scoreBoardResult.Value.Count; i++)
                 {
-                    var awayName = scoreBoardResult.Value[i].Opponents.AwayTeam.Name;
-                    var awayScore = scoreBoardResult.Value[i].Opponents.AwayTeam.Score;
-                    var awayRecord = scoreBoardResult.Value[i].Opponents.AwayTeam.Record;
-                    var awayEmoji = scoreBoardResult.Value[i].Opponents.AwayTeam.Emoji;
+                    var awayName = scoreBoardResult.Value[i].Opponents!.AwayTeam.Name;
+                    var awayScore = scoreBoardResult.Value[i].Opponents!.AwayTeam.Score;
+                    var awayRecord = scoreBoardResult.Value[i].Opponents!.AwayTeam.Record;
+                    var awayEmoji = scoreBoardResult.Value[i].Opponents!.AwayTeam.Emoji;
 
-                    var homeName = scoreBoardResult.Value[i].Opponents.HomeTeam.Name;
-                    var homeScore = scoreBoardResult.Value[i].Opponents.HomeTeam.Score;
-                    var homeRecord = scoreBoardResult.Value[i].Opponents.HomeTeam.Record;
-                    var homeEmoji = scoreBoardResult.Value[i].Opponents.HomeTeam.Emoji;
+                    var homeName = scoreBoardResult.Value[i].Opponents!.HomeTeam.Name;
+                    var homeScore = scoreBoardResult.Value[i].Opponents!.HomeTeam.Score;
+                    var homeRecord = scoreBoardResult.Value[i].Opponents!.HomeTeam.Record;
+                    var homeEmoji = scoreBoardResult.Value[i].Opponents!.HomeTeam.Emoji;
 
                     if (awayScore > homeScore)
                     {
@@ -82,6 +83,7 @@ namespace GamedayTracker.SlashCommands.NFL
                     .AddContainerComponent(container);
 
                 logger.Log(LogTarget.Console, LogType.Debug, DateTimeOffset.UtcNow, $"Scoreboard command used | {ctx.Guild!.Name} | user: {ctx.User.Username}");
+                //logger.Log(LogTarget.Debug, LogType.Information, DateTimeOffset.UtcNow, $"Scoreboard command used | Guild ID: {ctx.Guild.Id} | Guild Name: {ctx.Guild!.Name} | Member: {ctx.User.Username}");
 
                 await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
             }
@@ -91,7 +93,7 @@ namespace GamedayTracker.SlashCommands.NFL
                     .EnableV2Components()
                     .AddTextDisplayComponent($"unable to fetch scoreboard for season: {season} {newWeek}");
 
-                logger.Log(LogTarget.Console, LogType.Debug, DateTimeOffset.UtcNow, $"Scoreboard command exception | {ctx.Guild!.Name} | Error: {scoreBoardResult.Error.ErrorMessage}");
+                logger.Log(LogTarget.Console, LogType.Debug, DateTimeOffset.UtcNow, $"Scoreboard command exception | Guild ID: {ctx.Guild!.Id} | | {ctx.Guild!.Name} | Error: {scoreBoardResult.Error.ErrorMessage}");
                 await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
             }
             

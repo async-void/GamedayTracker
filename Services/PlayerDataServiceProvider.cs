@@ -39,7 +39,6 @@ namespace GamedayTracker.Services
             var player = doc.Descendants("Player")
                 .FirstOrDefault(x => x.Attribute("Name")!.Value.Equals(playerName));
                   
-
             if (player is null)
             {
                 return Result<PoolPlayer, SystemError<PlayerDataServiceProvider>>.Err(
@@ -125,6 +124,57 @@ namespace GamedayTracker.Services
 
                 return Result<bool, SystemError<PlayerDataServiceProvider>>.Ok(true);
             }
+        }
+        #endregion
+
+        #region GET PLAYER DATA FROM Json
+
+        public async Task<Result<PoolPlayer, SystemError<PlayerDataServiceProvider>>> GetPlayerFromJsonAsync(
+            string playerName)
+        {
+            // ReSharper disable once StringLiteralTypo
+            var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"player_data.json");
+            if (!File.Exists(filePath))
+            {
+                
+                return Result<PoolPlayer, SystemError<PlayerDataServiceProvider>>.Err(
+                    new SystemError<PlayerDataServiceProvider>()
+                    {
+                        ErrorMessage = "Player data does not exist.Please use slash command ``/addplayer`` to add a new player",
+                        ErrorType = ErrorType.INFORMATION,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = this
+                    });
+            }
+
+            var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None);
+            var doc = await XDocument.LoadAsync(fs, LoadOptions.None, CancellationToken.None);
+            fs.Close();
+
+            var player = doc.Descendants("Player")
+                .FirstOrDefault(x => x.Attribute("Name")!.Value.Equals(playerName));
+
+            if (player is null)
+            {
+                return Result<PoolPlayer, SystemError<PlayerDataServiceProvider>>.Err(
+                    new SystemError<PlayerDataServiceProvider>()
+                    {
+                        ErrorMessage = "Player data could not be parsed.",
+                        ErrorType = ErrorType.INFORMATION,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = this
+                    });
+            }
+            var newPlayer = new PoolPlayer
+            {
+                Id = int.Parse(player.Attribute("Id")!.Value),
+                PlayerId = ulong.Parse(player.Attribute("Identifier")!.Value),
+                PlayerName = player.Attribute("Name")!.Value,
+                Company = player.Attribute("Company")!.Value,
+                Balance = double.Parse(player.Element("Bank")!.Attribute("Balance")!.Value),
+                DepositTimestamp = DateTime.Parse(player.Element("Bank")!.Attribute("Last_Deposit")!.Value)
+            };
+            return Result<PoolPlayer, SystemError<PlayerDataServiceProvider>>.Ok(newPlayer);
         }
         #endregion
 

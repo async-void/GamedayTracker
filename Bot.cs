@@ -25,9 +25,11 @@ namespace GamedayTracker
         public async Task RunAsync()
         { 
             var configService = new ConfigurationDataService();
-            
+            var botTimerService = new BotTimerDataServiceProvider();
             var token = configService.GetBotToken();
             var prefix = configService.GetBotPrefix();
+
+            await botTimerService.WriteTimestampToTextAsync();
 
             var dBuilder = DiscordClientBuilder.CreateDefault(token.Value, TextCommandProcessor.RequiredIntents | SlashCommandProcessor.RequiredIntents | DiscordIntents.All);
 
@@ -36,7 +38,6 @@ namespace GamedayTracker
             {
                 services.AddScoped<ITeamData, TeamDataService>();
                 services.AddScoped<ITimerService, TimerService>();
-                services.AddScoped<NflEmojiService>();
                 services.AddScoped<ILogger, LoggerService>();
                 services.AddScoped<IGameData, GameDataService>();
                 services.AddScoped<IXmlDataService, XmlDataServiceProvider>();
@@ -46,6 +47,7 @@ namespace GamedayTracker
                 services.AddScoped<INewsService, NFLNewsService>();
                 services.AddScoped<ICommandHelper, SlashCommandHelper>();
                 services.AddScoped<IGuildMemberService, GuildMemberService>();
+                services.AddScoped<IBotTimer, BotTimerDataServiceProvider>();
             });
             #endregion
 
@@ -121,9 +123,6 @@ namespace GamedayTracker
                             $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray("Connection Success, Listening for events...")}");
                         timerService.CreateNew();
                         timerService.Start();
-
-                        //var teamData = new TeamDataService();
-                        //var nubs = await teamData.GetDraftResultsAsync(2024);
                     })
 
                    #endregion
@@ -131,10 +130,21 @@ namespace GamedayTracker
                     #region SESSION CREATED
                     .HandleSessionCreated(async (s,e) =>
                     {
-                        Console.WriteLine(
-                            $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray("shaking hands with discord...")}");
-                        Console.WriteLine(
-                            $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray("Session Started!")}");
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.Write($"[{DateTimeOffset.UtcNow}] [Gameday Tracker] ");
+                        Console.ForegroundColor = ConsoleColor.Magenta;
+                        Console.Write($"[INFO] ");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.WriteLine("shaking hands with discord...");
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.Write($"[{DateTimeOffset.UtcNow}] [Gameday Tracker] ");
+                        Console.ForegroundColor = ConsoleColor.Magenta;
+                        Console.Write($"[INFO] ");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write("Session Started!");
+                        Console.WriteLine();
+                        Console.ResetColor();
                     })
                    #endregion
 

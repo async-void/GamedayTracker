@@ -12,6 +12,7 @@ namespace GamedayTracker.Interfaces
     {
         Task<Result<bool, SystemError<PlayerDataServiceProvider>>> WritePlayerToXmlAsync(PoolPlayer player);
         Task<Result<PoolPlayer, SystemError<PlayerDataServiceProvider>>> GetPlayerFromXmlAsync(string playerName);
+        Task<Result<PoolPlayer, SystemError<PlayerDataServiceProvider>>> GetPlayerFromJsonAsync(string playerName);
         Task<Result<int, SystemError<PlayerDataServiceProvider>>> GeneratePlayerIdAsync();
         Result<ulong, SystemError<PlayerDataServiceProvider>> GeneratePlayerIdentifier();
     }

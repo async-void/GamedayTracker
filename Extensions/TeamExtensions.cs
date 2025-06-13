@@ -154,18 +154,44 @@ namespace GamedayTracker.Extensions
 
         public static string ToTeamFullName(this string name)
         {
-            var jsonFile = File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Json",
-                "team_names.json"));
-
-            var jsonNodes = JsonNode.Parse(jsonFile)!.GetValue<List<TeamJson>>();
-
-            foreach (var jsonNode in jsonNodes)
+            var result = name switch
             {
-                if (jsonNode.FullName!.Equals(name))
-                    return jsonNode.FullName;
-            }
+                "Buffalo" => "Buffalo Bills",
+                "Miami"=> "Miami Dolphins",
+                "NY Jets" =>  "New York Jets",
+                "New England" => "New England Patriots",
+                "Baltimore" => "Baltimore Ravens",
+                "Pittsburgh" => "Pittsburgh Steelers",
+                "Cincinnati" => "Cincinnati Bengals",
+                "Cleveland" =>  "Cleveland Browns",
+                "Houston" => "Houston Texans",
+                "Indianapolis" => "Indianapolis Colts",
+                "Jacksonville" => "Jacksonville Jaguars",
+                "Tennessee" => "Tennessee Titans",
+                "Kansas City" => "Kansas City Chiefs",
+                "LA Chargers" => "Los Angeles Chargers",
+                "Denver" => "Denver Broncos",
+                "Las Vegas" => "Las Vegas Raiders",
+                "Philadelphia" => "Philadelphia Eagles",
+                "Washington" => "Washington Commanders",
+                "Dallas" => "Dallas Cowboys",
+                "NY Giants" => "NY Giants",
+                "Detroit" => "Detroit Lions",
+                "Minnesota" => "Minnesota Vikings",
+                "Green Bay" => "Green Bay Packers",
+                "Chicago" => "Chicago Bears",
+                "Tampa Bay" => "Tampa Bay Buccaneers",
+                "Atlanta" => "Atlanta Falcons",
+                "Carolina" => "Carolina Panthers",
+                "New Orleans" => "New Orleans Saints",
+                "LA Rams" => "Los Angeles Rams",
+                "Seattle" => "Seattle Seahawks",
+                "Arizona" => "Arizona Cardinals",
+                "San Francisco" => "San Francisco 49ers",
+                _ => name
+            };
 
-            return "Not Found";
+            return result;
         }
         #endregion
 

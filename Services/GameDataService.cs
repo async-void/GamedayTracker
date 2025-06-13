@@ -13,7 +13,7 @@ using System.Xml.Linq;
 
 namespace GamedayTracker.Services
 {
-    public class GameDataService(IXmlDataService xmlData, IJsonDataService jsonDataService) : IGameData
+    public class GameDataService(IJsonDataService jsonDataService, ILogger logger) : IGameData
     {
         private readonly AppDbContextFactory _dbFactory = new AppDbContextFactory();
 
@@ -86,7 +86,7 @@ namespace GamedayTracker.Services
         /// <param name="week"></param>
         /// <returns>List Matchup</returns>
         #region GET SCOREBOARD
-        public Result<List<Matchup>, SystemError<GameDataService>> GetScoreboard(int season, int week)
+        public async Task<Result<List<Matchup>, SystemError<GameDataService>>> GetScoreboard(int season, int week)
         {
             var matchups = new List<Matchup>();
             var sw = new Stopwatch();
@@ -98,7 +98,7 @@ namespace GamedayTracker.Services
                 sw.Start();
                 var jsonFound = jsonDataService.GetMatchupsAsync(season.ToString(), week.ToString()).Result;
                 sw.Stop();
-                Console.WriteLine($"Json Fetch took: {sw.ElapsedMilliseconds}ms");
+                logger.Log(LogTarget.Console, LogType.Debug, DateTimeOffset.UtcNow, $"Json Fetch took: {sw.ElapsedMilliseconds}ms");
 
                 if (jsonFound.IsOk)
                     return Result<List<Matchup>, SystemError<GameDataService>>.Ok(jsonFound.Value);
@@ -183,7 +183,15 @@ namespace GamedayTracker.Services
                 matchups[i].Id = i + 1;
             }
             
-            jsonDataService.WriteAllMatchupsToJson(matchups, season).Wait();
+            try
+            {
+                await jsonDataService.WriteAllMatchupsToJson(matchups, season);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.DarkGray(e.Message)}");
+            }
+            
 
             sw.Stop();
             Console.WriteLine($"Web Fetch took: {sw.ElapsedMilliseconds}ms");
@@ -298,6 +306,13 @@ namespace GamedayTracker.Services
         #region GET TEAM SCHEDULE
         public async Task<Result<List<Matchup>, SystemError<GameDataService>>> GetTeamSchedule(string teamName)
         {
+            var schedule = await jsonDataService.GetSeasonScheduleFromJsonAsync(DateTime.UtcNow.Year, teamName);
+
+            if (schedule.IsOk)
+            {
+                return Result<List<Matchup>, SystemError<GameDataService>>.Ok(schedule.Value);
+            }
+
             var scheduleList = new List<Matchup>();
             var season = DateTime.UtcNow.Year;
             var teamLinkName = teamName.ToTeamLinkName();
@@ -369,8 +384,9 @@ namespace GamedayTracker.Services
                             scheduleList.Add(matchup);
                         }
                     } 
-                }             
+                }
             }
+            await jsonDataService.WriteSeasonScheduleToJson(scheduleList, teamName);
             return Result<List<Matchup>, SystemError<GameDataService>>.Ok(scheduleList);
         }
 

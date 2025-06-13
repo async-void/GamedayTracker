@@ -10,10 +10,13 @@ namespace GamedayTracker.Models
     {
         public int Id { get; set; }
         public ulong PlayerId { get; set; }
-        public string? PlayerName { get; set; }
-        public string? Company { get; set; }
+        public required string PlayerName { get; set; }
+        public required string Company { get; set; }
         public double Balance { get; set; }
         public DateTime DepositTimestamp { get; set; }
         public string[]? Picks { get; set; }
+
+        public int? GuildMemberId { get; set; }
+        public GuildMember? GuildMember { get; set; }
     }
 }

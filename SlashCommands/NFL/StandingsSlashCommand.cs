@@ -5,6 +5,7 @@ using DSharpPlus.Commands;
 using DSharpPlus.Entities;
 using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
+using GamedayTracker.Services;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
@@ -42,10 +43,11 @@ namespace GamedayTracker.SlashCommands.NFL
                 var sorted = standings.Value.OrderByDescending(x => int.Parse(x.Wins)).ToList();
                 foreach (var standing in sorted)
                 {
+                    var emoji = NflEmojiService.GetEmoji(standing.Abbr);
                     if (standing.Abbr.Length == 2)
-                        sBuilder.Append($"``{standing.Abbr.PadLeft(2).PadRight(2)}\t{standing.Wins.PadLeft(3)}\t{standing.Loses}\t{standing.Pct}``\r\n");
+                        sBuilder.Append($"{emoji}`{standing.Abbr.PadLeft(2).PadRight(2)}\t{standing.Wins.PadLeft(3)}\t{standing.Loses}\t{standing.Pct}`\r\n");
                     else
-                        sBuilder.Append($"``{standing.Abbr.PadLeft(2)}\t{standing.Wins.PadLeft(2)}\t{standing.Loses}\t{standing.Pct}``\r\n");
+                        sBuilder.Append($"{emoji}`{standing.Abbr.PadLeft(2)}\t{standing.Wins.PadLeft(2)}\t{standing.Loses}\t{standing.Pct}`\r\n");
                 }
 
                 DiscordComponent[] components =

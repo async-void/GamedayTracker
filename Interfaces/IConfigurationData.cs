@@ -17,6 +17,5 @@ namespace GamedayTracker.Interfaces
         Result<string, SystemError<ConfigurationDataService>> GetBotToken();
         Result<string, SystemError<ConfigurationDataService>> GetBotPrefix();
         Result<bool, SystemError<ConfigurationDataService>> GuildExists(DiscordGuild guild);
-
     }
 }
