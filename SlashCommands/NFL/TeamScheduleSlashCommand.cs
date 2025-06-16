@@ -29,7 +29,7 @@ namespace GamedayTracker.SlashCommands.NFL
             var sb = new StringBuilder();
             var teamSchedule = await gameData.GetTeamSchedule(teamName);
             var season = DateTime.UtcNow.Year.ToString();
-            var homeEmoji = NflEmojiService.GetEmoji(teamName.ToAbbr());
+            var titleEmoji = NflEmojiService.GetEmoji(teamName.ToAbbr());
             if (teamSchedule.IsOk)
             {
                 foreach (var match in teamSchedule.Value)
@@ -38,13 +38,13 @@ namespace GamedayTracker.SlashCommands.NFL
                     var homeName = match.Opponents.HomeTeam.Name.ToAbbr();
                     var date = match.GameDate;
                     var awayEmoji = NflEmojiService.GetEmoji(awayName);
-                    homeEmoji = NflEmojiService.GetEmoji(homeName);
+                    var homeEmoji = NflEmojiService.GetEmoji(homeName);
                     sb.AppendLine($"{awayEmoji} at {homeEmoji} `{date!}`");
                 }
 
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent($"{season} Schedule for {teamName}{homeEmoji}"),
+                    new DiscordTextDisplayComponent($"{season} Schedule for {teamName}{titleEmoji}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent($"{sb}"),
                     new DiscordSeparatorComponent(true),
@@ -58,7 +58,7 @@ namespace GamedayTracker.SlashCommands.NFL
                     .AddContainerComponent(container);
 
                 await ctx.RespondAsync(message);
-                logger.Log(LogTarget.Console, LogType.Information, DateTimeOffset.UtcNow, $"[Get Team Schedule] method ran in debug mode. |server [{ctx.Guild!.Name}]| user: [{ctx.Member!.Username}]");
+                logger.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, $"[Get Team Schedule] method ran in debug mode. |server [{ctx.Guild!.Name}]| user: [{ctx.Member!.Username}]");
             }
             else
             {

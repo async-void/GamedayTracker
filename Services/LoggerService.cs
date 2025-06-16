@@ -30,51 +30,84 @@ namespace GamedayTracker.Services
             _disposedValue = true;
         }
 
-        public void Log(LogTarget target, LogType type, DateTimeOffset timestamp, string message)
+        public void Log(LogTarget target, LogType type, DateTime timestamp, string message)
         {
             switch (target)
             {
                 case LogTarget.Console:
-                {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.Write($"[{timestamp}] [Gameday Tracker] ");
+                { 
                     switch (type)
                     {
                         case LogType.Information:
-                            Console.ForegroundColor = ConsoleColor.Magenta;
-                            Console.Write($"[INFO] ");
-                            Console.ResetColor();
-                            Console.Write(message);
-                            Console.WriteLine();
-                            break;
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                Console.Write($"[{timestamp}");
+                                Console.ForegroundColor = ConsoleColor.White;
+                                Console.Write($" INF");
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                Console.Write("] ");
+                                Console.ForegroundColor= ConsoleColor.Yellow;
+                                Console.Write($"[Gameday Tracker] ");
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                Console.Write(message);
+                                Console.WriteLine();
+                                Console.ResetColor();
+                                break;
                         case LogType.Warning:
-                            Console.ForegroundColor = ConsoleColor.DarkYellow;
-                            Console.Write($"[WARNING] ");
-                            Console.ResetColor();
-                            Console.Write(message);
-                            Console.WriteLine();
-                            break;
-                        case LogType.Error:
-                            Console.ForegroundColor = ConsoleColor.DarkRed;
-                            Console.Write($"[ERROR] ");
-                            Console.ResetColor();
-                            Console.Write(message);
-                            Console.WriteLine();
-                            break;
-                        case LogType.Debug: 
-                            Console.ForegroundColor = ConsoleColor.DarkBlue;
-                            Console.Write($"[DEBUG] ");
-                            Console.ResetColor();
-                            Console.Write(message);
-                            Console.WriteLine();
-                            break;
-                        default:
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.Write($"[LOG] ");
-                            Console.ResetColor();
-                            Console.Write(message);
-                            Console.WriteLine();
-                            break;
+                                Console.ForegroundColor = ConsoleColor.DarkGray; ;
+                                Console.Write($"[{timestamp}");
+                                Console.ForegroundColor = ConsoleColor.White;
+                                Console.Write($" WARN");
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                Console.Write("] ");
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+                                Console.Write($"[Gameday Tracker] ");
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                Console.Write(message);
+                                Console.WriteLine();
+                                Console.ResetColor();
+                                break;
+                            case LogType.Error:
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                Console.Write($"[{timestamp}");
+                                Console.ForegroundColor = ConsoleColor.White;
+                                Console.Write($" ERR");
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                Console.Write("] ");
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+                                Console.Write($"[Gameday Tracker] ");
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                Console.Write(message);
+                                Console.WriteLine();
+                                Console.ResetColor();
+                                break;
+                            case LogType.Debug:
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                Console.Write($"[{timestamp}");
+                                Console.ForegroundColor = ConsoleColor.White;
+                                Console.Write($" DBG");
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                Console.Write("] ");
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+                                Console.Write($"[Gameday Tracker] ");
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                Console.Write(message);
+                                Console.WriteLine();
+                                Console.ResetColor();
+                                break;
+                            default:
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+                                Console.Write($"[{timestamp}");
+                                Console.ForegroundColor = ConsoleColor.White;
+                                Console.Write($" LOG");
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                Console.Write("] ");
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+                                Console.Write($"[Gameday Tracker] ");
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                Console.Write(message);
+                                Console.WriteLine();
+                                Console.ResetColor();
+                                break;
                         }
                         break;
                 }

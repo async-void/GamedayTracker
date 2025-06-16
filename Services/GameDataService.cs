@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GamedayTracker.Services
 {
@@ -98,7 +99,7 @@ namespace GamedayTracker.Services
                 sw.Start();
                 var jsonFound = jsonDataService.GetMatchupsAsync(season.ToString(), week.ToString()).Result;
                 sw.Stop();
-                logger.Log(LogTarget.Console, LogType.Debug, DateTimeOffset.UtcNow, $"Json Fetch took: {sw.ElapsedMilliseconds}ms");
+                logger.Log(LogTarget.Console, LogType.Debug, DateTime.UtcNow, $"Json Fetch took: {sw.ElapsedMilliseconds}ms");
 
                 if (jsonFound.IsOk)
                     return Result<List<Matchup>, SystemError<GameDataService>>.Ok(jsonFound.Value);
@@ -113,7 +114,7 @@ namespace GamedayTracker.Services
                 
             }
             sw.Start();
-            Console.WriteLine($"no matchups for Season {season} : Week {week} found\r\nAttempting to collect data from website!");
+            logger.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, $"no matchups for Season {season} : Week {week} found\r\nAttempting to collect data from website!");
 
             for (var j = 1; j < 23; j++)
             {
@@ -159,7 +160,7 @@ namespace GamedayTracker.Services
                             matchups.Add(matchup.Value);
                         else
                         {
-                            Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.DarkGray(matchup.Error.ErrorMessage!)}");
+                            logger.Log(LogTarget.Console, LogType.Error, DateTime.UtcNow, matchup.Error.ErrorMessage!);
                         }
                     }
                     catch (Exception e)
@@ -171,10 +172,10 @@ namespace GamedayTracker.Services
                             CreatedAt = DateTime.UtcNow,
                             ErrorType = Enums.ErrorType.INFORMATION,
                         };
-                        Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.DarkGray(error.ErrorMessage)}");
+                        logger.Log(LogTarget.Console, LogType.Error, DateTime.UtcNow, error.ErrorMessage!);
                     }
                 }
-                Console.WriteLine($"{Chalk.Green("Week [")}{Chalk.Yellow($"{j}")}{Chalk.Green("] Complete...")}");
+                logger.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, $"Week [{j}] Complete.");
             }
 
             //xmlData.WriteAllMatchupsToXmlAsync(matchups, season.ToString()).Wait();
@@ -189,12 +190,12 @@ namespace GamedayTracker.Services
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{Chalk.Red("[ERROR]")} {Chalk.DarkGray(e.Message)}");
+                logger.Log(LogTarget.Console, LogType.Error, DateTime.UtcNow, e.Message!);
             }
             
 
             sw.Stop();
-            Console.WriteLine($"Web Fetch took: {sw.ElapsedMilliseconds}ms");
+            logger.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, $"Web Fetch Took: {sw.ElapsedMilliseconds}ms");
             return Result<List<Matchup>, SystemError<GameDataService>>.Ok(matchups.Where(m => m.Week.Equals(week)).ToList());
 
         }
@@ -364,7 +365,7 @@ namespace GamedayTracker.Services
                             var vsAwayAbbr = vsAwayName.ToAbbr();
                             var vsHomeAbbr = vsHomeName.ToAbbr();
                             var awayEmoji = NflEmojiService.GetEmoji(vsAwayAbbr);
-                            var homeEmoji = NflEmojiService.GetEmoji(vsAwayAbbr);
+                            var homeEmoji = NflEmojiService.GetEmoji(vsHomeAbbr);
                             var awayDivision = vsAwayName.ToDivision();
                             var homeDivision = vsHomeName.ToDivision();
 

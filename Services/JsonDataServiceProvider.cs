@@ -31,7 +31,7 @@ namespace GamedayTracker.Services
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
                 };
-                logger.Log(LogTarget.Console, LogType.Error, DateTimeOffset.UtcNow, $"{notFound.ErrorMessage}");
+                logger.Log(LogTarget.Console, LogType.Error, DateTime.UtcNow, $"{notFound.ErrorMessage}");
                 return Result<List<Matchup>, SystemError<JsonDataServiceProvider>>.Err(notFound);
             }
             var json = await File.ReadAllTextAsync(path);
@@ -158,24 +158,24 @@ namespace GamedayTracker.Services
         }
         #endregion
 
-        #region WRITE PLAYER TO JSON
+        #region WRITE MEMBER TO JSON
 
-        public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> WritePlayerToJsonAsync(PoolPlayer player)
+        public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteMemberToJsonAsync(GuildMember member)
         {
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "players.json");
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "members.json");
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 var options = new JsonSerializerOptions { WriteIndented = true };
-                var json = JsonSerializer.Serialize(player, options);
+                var json = JsonSerializer.Serialize(member, options);
                 await File.WriteAllTextAsync(path, json);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
             }
             else
             {
                 var file = await File.ReadAllTextAsync(path);
-                var players = JsonSerializer.Deserialize<List<PoolPlayer>>(file) ?? [];
-                players.Add(player);
+                var players = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
+                players.Add(member);
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 var updatedJson = JsonSerializer.Serialize(players, options);
                 await File.WriteAllTextAsync(path, updatedJson);
@@ -183,7 +183,35 @@ namespace GamedayTracker.Services
             }
         }
 
+        #endregion
 
+        #region GET MEMBER FROM JSON
+        public async Task<Result<GuildMember, SystemError<JsonDataServiceProvider>>> GetMemberFromJsonAsync(string memberId)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "members.json");
+            if (!File.Exists(path))
+            {
+                return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                {
+                    ErrorMessage = "Player data file not found.",
+                    CreatedAt = DateTime.UtcNow,
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedBy = this
+                });
+            }
+            var file = await File.ReadAllTextAsync(path);
+            var members = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
+            var member = members.FirstOrDefault(p => p.Id == int.Parse(memberId));
+            if (member is not null) return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Ok(member);
+
+            return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+            {
+                ErrorMessage = "Failed to fetch member data.",
+                CreatedAt = DateTime.UtcNow,
+                ErrorType = ErrorType.INFORMATION,
+                CreatedBy = this
+            });
+        }
         #endregion
 
         #region GENERATE PLAYER ID

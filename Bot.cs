@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using ChalkDotNET;
+﻿using ChalkDotNET;
 using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
@@ -7,14 +6,21 @@ using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Processors.TextCommands.Parsing;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
-using GamedayTracker.Factories;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Core;
+using Serilog.Extensions.Logging;
+using Serilog.Sinks.SystemConsole.Themes;
+using System.Diagnostics;
+using System.Reflection;
 using ILogger = GamedayTracker.Interfaces.ILogger;
+using Log = Serilog.Log;
 
 namespace GamedayTracker
 {
@@ -30,8 +36,21 @@ namespace GamedayTracker
             var prefix = configService.GetBotPrefix();
 
             await botTimerService.WriteTimestampToTextAsync();
+            Log.Logger = new LoggerConfiguration()
+                               .WriteTo.Console()
+                               .CreateLogger();
 
             var dBuilder = DiscordClientBuilder.CreateDefault(token.Value, TextCommandProcessor.RequiredIntents | SlashCommandProcessor.RequiredIntents | DiscordIntents.All);
+            
+            Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "Logs"));
+            var configuration = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .WriteTo.Console(theme: AnsiConsoleTheme.Code,
+                                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}")
+                .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "Logs", "trace_logs.txt"), rollingInterval: RollingInterval.Day,
+                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}")
+                .CreateLogger();
+
 
             #region CONFIGURE SERVICES
             dBuilder.ConfigureServices(services =>
@@ -46,8 +65,7 @@ namespace GamedayTracker
                 services.AddScoped<IConfigurationData, ConfigurationDataService>();
                 services.AddScoped<INewsService, NFLNewsService>();
                 services.AddScoped<ICommandHelper, SlashCommandHelper>();
-                services.AddScoped<IGuildMemberService, GuildMemberService>();
-                services.AddScoped<IBotTimer, BotTimerDataServiceProvider>();
+                services.AddScoped<IBotTimer, BotTimerDataServiceProvider>(); 
             });
             #endregion
 
@@ -93,8 +111,14 @@ namespace GamedayTracker
                         if (e.Message.Author!.IsBot && e.Message.Content.Equals("reload"))
                         {
                             await e.Message.RespondAsync("``documentation reloaded``");
-                            Console.WriteLine(
-                                $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkYellow("Documents Reloaded!")}");
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.Write($"[{DateTimeOffset.UtcNow}] [Gameday Tracker] ");
+                            Console.ForegroundColor = ConsoleColor.Magenta;
+                            Console.Write($"[INFO] ");
+                            Console.ForegroundColor = ConsoleColor.DarkGray;
+                            Console.Write( $"Documents Reloaded!");
+                            Console.WriteLine();
+                            Console.ResetColor();
                             return;
                         }
                         
@@ -106,67 +130,145 @@ namespace GamedayTracker
                             return;
                         }
                     })
-                    
-                    #region CHANNEL CREATED
+
+                #region SOCKET EVENTS
+                .HandleSocketClosed(async (s, e) =>
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write($"[{DateTime.UtcNow} ");
+                        Console.ForegroundColor = ConsoleColor.Magenta;
+                        Console.Write($"ERROR ");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write($"] ");
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write("[DiscordClient] ");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write($"Gateway Connection Closed. Reconnecting...");
+                        Console.WriteLine();
+                        await s.ReconnectAsync();
+                    })
+                .HandleSocketOpened(async (s, e) =>
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write($"[{DateTime.UtcNow} ");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write($" INF ");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write($"] ");
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write("[DiscordClient] ");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write($"Gateway Connection Opened. Connected to Discord.");
+                        Console.WriteLine();
+                    })
+                #endregion
+
+                #region ZOMIED
+                    .HandleZombied(async (s, e) =>
+                        {
+                            Console.ForegroundColor = ConsoleColor.DarkGray;
+                            Console.Write($"[{DateTime.UtcNow} ");
+                            Console.ForegroundColor = ConsoleColor.Magenta;
+                            Console.Write($"ERROR ");
+                            Console.ForegroundColor = ConsoleColor.DarkGray;
+                            Console.Write($"] ");
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.Write("[Gameday Tracker] ");
+                            Console.ForegroundColor = ConsoleColor.DarkGray;
+                            Console.Write($"Zombied Gateway Connection Detected. Reconnecting...");
+                            Console.WriteLine();
+                            await s.ReconnectAsync();
+                        })
+                    #endregion
+
+                #region CHANNEL CREATED
                     .HandleChannelCreated(async (s, e) =>
                     {
 
                     })
                     #endregion
 
-                    #region DOWNLOAD COMPLETE
+                #region DOWNLOAD COMPLETE
                     .HandleGuildDownloadCompleted(async (e, s) =>
                     {
-                        Console.WriteLine(
-                            $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray("Guild Download Complete.")}");
-                        Console.WriteLine(
-                            $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray("Connection Success, Listening for events...")}");
-                        timerService.CreateNew();
-                        timerService.Start();
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write($"[{DateTime.UtcNow}");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write($" INF");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write("] ");
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write("[DiscordClient] ");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write("Guild Download Complete.");
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write($"[{DateTime.UtcNow}");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write($" INF");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write("] ");
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write("[DiscordClient] ");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write("Connection Established");
+                        Console.WriteLine();
+
                     })
 
                    #endregion
 
-                    #region SESSION CREATED
+                #region SESSION CREATED
                     .HandleSessionCreated(async (s,e) =>
                     {
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.Write($"[{DateTimeOffset.UtcNow}] [Gameday Tracker] ");
-                        Console.ForegroundColor = ConsoleColor.Magenta;
-                        Console.Write($"[INFO] ");
                         Console.ForegroundColor = ConsoleColor.DarkGray;
-                        Console.WriteLine("shaking hands with discord...");
-                        Console.WriteLine();
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.Write($"[{DateTimeOffset.UtcNow}] [Gameday Tracker] ");
-                        Console.ForegroundColor = ConsoleColor.Magenta;
-                        Console.Write($"[INFO] ");
+                        Console.Write($"[{DateTime.UtcNow}");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write($" INF");
                         Console.ForegroundColor = ConsoleColor.DarkGray;
-                        Console.Write("Session Started!");
+                        Console.Write("] "); ;
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write("[DiscordClient] ");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write("Shaking Hands With Discord ");
                         Console.WriteLine();
-                        Console.ResetColor();
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write($"[{DateTime.UtcNow}");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write($" INF");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write("] ");
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write("[DiscordClient] ");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write("Session Started");
+                        Console.WriteLine();
                     })
                    #endregion
 
-                    #region GUILD CREATED
+                #region GUILD CREATED
                     .HandleGuildCreated(async (s, e) =>
                     {
-                        await using var db = new BotDbContextFactory().CreateDbContext();
-                        var guild = configService.GuildExists(e.Guild);
-                        if (!guild.IsOk)
+                        
+                        //TODO: need to write the guild to the json file.
+                        var g = new Guild()
                         {
-                            var g = new Guild()
-                            {
-                                DateAdded = DateTimeOffset.UtcNow,
-                                GuildId = (long)e.Guild.Id,
-                                GuildName = e.Guild.Name,
-                                GuildOwnerId = (long)e.Guild.OwnerId,
-                                NotificationChannelId = (long)e.Guild.SystemChannelId!
-                            };
-                            db.Guilds.Add(g);
-                            await db.SaveChangesAsync();
-                        }
+                            DateAdded = DateTimeOffset.UtcNow,
+                            GuildId = (long)e.Guild.Id,
+                            GuildName = e.Guild.Name,
+                            GuildOwnerId = (long)e.Guild.OwnerId,
+                            NotificationChannelId = (long)e.Guild.SystemChannelId!
+                        };
+                            
 
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.Write($"[{DateTimeOffset.UtcNow}] [Gameday Tracker] ");
+                        Console.ForegroundColor = ConsoleColor.Magenta;
+                        Console.Write($"[INFO] ");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write($"Guild Created | Guild ID: {e.Guild.Id} | Guild Name: {e.Guild.Name}");
+                        Console.WriteLine();
+                        Console.ResetColor();
                     })
                    #endregion
 

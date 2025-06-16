@@ -12,6 +12,8 @@ using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
 using Humanizer;
+using Serilog;
+using ILogger = GamedayTracker.Interfaces.ILogger;
 
 namespace GamedayTracker.SlashCommands.Utility
 {
@@ -49,8 +51,8 @@ namespace GamedayTracker.SlashCommands.Utility
             var message = new DiscordMessageBuilder()
                 .EnableV2Components()
                 .AddContainerComponent(container);
-
-            loggerService.Log(LogTarget.Console, LogType.Information, DateTimeOffset.UtcNow, "Help slash command was called!");
+            Log.Information("Help slash command was called!");
+            //loggerService.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, "Help slash command was called!");
             await ctx.EditResponseAsync(message);
         }
 
@@ -76,7 +78,7 @@ namespace GamedayTracker.SlashCommands.Utility
                 [
                     new DiscordTextDisplayComponent($"Latency **{sw.Elapsed.Humanize()}** "),
                     new DiscordTextDisplayComponent($"Discord **{connectionLat.Humanize()}**"),
-                    new DiscordTextDisplayComponent($"Uptime **{uptime.Humanize()}**")
+                    new DiscordTextDisplayComponent($"Uptime **{uptime.Humanize(3, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second)}**")
                 ];
                 DiscordContainerComponent container = new(components, false, DiscordColor.Blurple);
 
