@@ -5,6 +5,7 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Processors.TextCommands.Parsing;
 using DSharpPlus.Entities;
+using DSharpPlus.Extensions;
 using DSharpPlus.Interactivity.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
@@ -26,7 +27,7 @@ namespace GamedayTracker
 {
     public class Bot
     {
-        private readonly TimerService timerService = new TimerService();
+        private readonly TimerService timerService = new();
 
         public async Task RunAsync()
         { 
@@ -35,20 +36,24 @@ namespace GamedayTracker
             var token = configService.GetBotToken();
             var prefix = configService.GetBotPrefix();
 
+            Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "Logs"));
             await botTimerService.WriteTimestampToTextAsync();
-            Log.Logger = new LoggerConfiguration()
-                               .WriteTo.Console()
+
+            Log.Logger = (Serilog.ILogger)new LoggerConfiguration()
+                               .WriteTo.Console(theme: AnsiConsoleTheme.Code, outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
+                               .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "Logs", "bot_logs.txt"), rollingInterval: RollingInterval.Day,
+                                outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
                                .CreateLogger();
 
             var dBuilder = DiscordClientBuilder.CreateDefault(token.Value, TextCommandProcessor.RequiredIntents | SlashCommandProcessor.RequiredIntents | DiscordIntents.All);
             
-            Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "Logs"));
             var configuration = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
+                .MinimumLevel.Override("System.Net.Http", Serilog.Events.LogEventLevel.Error)
                 .WriteTo.Console(theme: AnsiConsoleTheme.Code,
-                                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}")
+                                 outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
                 .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "Logs", "trace_logs.txt"), rollingInterval: RollingInterval.Day,
-                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}")
+                 outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
                 .CreateLogger();
 
 
@@ -65,7 +70,13 @@ namespace GamedayTracker
                 services.AddScoped<IConfigurationData, ConfigurationDataService>();
                 services.AddScoped<INewsService, NFLNewsService>();
                 services.AddScoped<ICommandHelper, SlashCommandHelper>();
-                services.AddScoped<IBotTimer, BotTimerDataServiceProvider>(); 
+                services.AddScoped<IBotTimer, BotTimerDataServiceProvider>();
+                services.AddLogging(loggingBuilder =>
+                {
+                    loggingBuilder.ClearProviders();
+                    loggingBuilder.AddSerilog(configuration, dispose: true);
+                    loggingBuilder.SetMinimumLevel(LogLevel.Trace);
+                });
             });
             #endregion
 
@@ -181,13 +192,6 @@ namespace GamedayTracker
                         })
                     #endregion
 
-                #region CHANNEL CREATED
-                    .HandleChannelCreated(async (s, e) =>
-                    {
-
-                    })
-                    #endregion
-
                 #region DOWNLOAD COMPLETE
                     .HandleGuildDownloadCompleted(async (e, s) =>
                     {
@@ -253,7 +257,7 @@ namespace GamedayTracker
                         //TODO: need to write the guild to the json file.
                         var g = new Guild()
                         {
-                            DateAdded = DateTimeOffset.UtcNow,
+                            DateAdded = DateTime.UtcNow,
                             GuildId = (long)e.Guild.Id,
                             GuildName = e.Guild.Name,
                             GuildOwnerId = (long)e.Guild.OwnerId,
@@ -261,14 +265,22 @@ namespace GamedayTracker
                         };
                             
 
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write($"[{DateTime.UtcNow} ");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write($" INF");
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write($"] ");
                         Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.Write($"[{DateTimeOffset.UtcNow}] [Gameday Tracker] ");
-                        Console.ForegroundColor = ConsoleColor.Magenta;
-                        Console.Write($"[INFO] ");
+                        Console.Write("[Gameday Tracker]");
                         Console.ForegroundColor = ConsoleColor.DarkGray;
                         Console.Write($"Guild Created | Guild ID: {e.Guild.Id} | Guild Name: {e.Guild.Name}");
                         Console.WriteLine();
-                        Console.ResetColor();
+
+                        //TODO: send this message to the support server
+                        var supportServer = await s.GetGuildAsync(1384428811805921301);
+                        var sysChnl = await supportServer.GetChannelAsync(1384436855524692048);
+                        await sysChnl.SendMessageAsync($"New Guild Created: {e.Guild.Name} | ID: {e.Guild.Id} | Owner: <@{e.Guild.OwnerId}>");
                     })
                    #endregion
 
