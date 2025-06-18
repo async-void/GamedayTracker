@@ -1,11 +1,9 @@
-﻿using ChalkDotNET;
-using DSharpPlus;
+﻿using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Processors.TextCommands.Parsing;
 using DSharpPlus.Entities;
-using DSharpPlus.Extensions;
 using DSharpPlus.Interactivity.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
@@ -15,20 +13,14 @@ using GamedayTracker.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using Serilog.Core;
-using Serilog.Extensions.Logging;
 using Serilog.Sinks.SystemConsole.Themes;
-using System.Diagnostics;
 using System.Reflection;
 using ILogger = GamedayTracker.Interfaces.ILogger;
-using Log = Serilog.Log;
 
 namespace GamedayTracker
 {
     public class Bot
     {
-        private readonly TimerService timerService = new();
-
         public async Task RunAsync()
         { 
             var configService = new ConfigurationDataService();
@@ -39,11 +31,11 @@ namespace GamedayTracker
             Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "Logs"));
             await botTimerService.WriteTimestampToTextAsync();
 
-            Log.Logger = (Serilog.ILogger)new LoggerConfiguration()
-                               .WriteTo.Console(theme: AnsiConsoleTheme.Code, outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
-                               .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "Logs", "bot_logs.txt"), rollingInterval: RollingInterval.Day,
-                                outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
-                               .CreateLogger();
+            //Log.Logger = (Serilog.ILogger)new LoggerConfiguration()
+            //                   .WriteTo.Console(theme: AnsiConsoleTheme.Code, outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
+            //                   .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "Logs", "bot_logs.txt"), rollingInterval: RollingInterval.Day,
+            //                    outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
+            //                   .CreateLogger();
 
             var dBuilder = DiscordClientBuilder.CreateDefault(token.Value, TextCommandProcessor.RequiredIntents | SlashCommandProcessor.RequiredIntents | DiscordIntents.All);
             
@@ -110,45 +102,47 @@ namespace GamedayTracker
             dBuilder.ConfigureEventHandlers(
                 m => m.HandleMessageCreated(async (s, e) =>
                     {
-                        if (e.Message!.Author!.Id.Equals(1076279184667721859))
-                        {
-                            if (e.Guild.Id.Equals(764184337620140062) && e.Message!.Channel!.Id.Equals(1076279102841045093))
-                            {
-                                var channel = await s.GetChannelAsync(1367596778362241086); 
-                                await channel.SendMessageAsync("reload");
-                            }
-                        }
+                        //if (e.Message!.Author!.IsBot)
+                        //    return;
+                        //if (e.Message!.Author!.Id.Equals(1076279184667721859))
+                        //{
+                        //    if (e.Guild.Id.Equals(764184337620140062) && e.Message!.Channel!.Id.Equals(1076279102841045093))
+                        //    {
+                        //        var channel = await s.GetChannelAsync(1367596778362241086); 
+                        //        await channel.SendMessageAsync("reload");
+                        //    }
+                        //}
 
-                        if (e.Message.Author!.IsBot && e.Message.Content.Equals("reload"))
-                        {
-                            await e.Message.RespondAsync("``documentation reloaded``");
-                            Console.ForegroundColor = ConsoleColor.Yellow;
-                            Console.Write($"[{DateTimeOffset.UtcNow}] [Gameday Tracker] ");
-                            Console.ForegroundColor = ConsoleColor.Magenta;
-                            Console.Write($"[INFO] ");
-                            Console.ForegroundColor = ConsoleColor.DarkGray;
-                            Console.Write( $"Documents Reloaded!");
-                            Console.WriteLine();
-                            Console.ResetColor();
-                            return;
-                        }
+                        //if (e.Message.Author!.IsBot && e.Message.Content.Equals("reload"))
+                        //{
+                        //    await e.Message.RespondAsync("``documentation reloaded``");
+                        //    Console.ForegroundColor = ConsoleColor.Yellow;
+                        //    Console.Write($"[{DateTimeOffset.UtcNow}] [Gameday Tracker] ");
+                        //    Console.ForegroundColor = ConsoleColor.Magenta;
+                        //    Console.Write($"[INFO] ");
+                        //    Console.ForegroundColor = ConsoleColor.DarkGray;
+                        //    Console.Write( $"Documents Reloaded!");
+                        //    Console.WriteLine();
+                        //    Console.ResetColor();
+                        //    return;
+                        //}
                         
-                        if (e.Message.Content.Contains("help"))
-                        {
-                            var user = e.Author;
-                            await e.Channel.SendMessageAsync(
-                                "I noticed you needed some help.....please use the ``/help`` command to see a list of help topics");
-                            return;
-                        }
+                        //if (e.Message.Content.Contains("help"))
+                        //{
+                        //    var user = e.Author;
+                        //    await e.Channel.SendMessageAsync(
+                        //        "I noticed you needed some help.....please use the ``/help`` command to see a list of help topics");
+                        //    return;
+                        //}
                     })
 
                 #region SOCKET EVENTS
                 .HandleSocketClosed(async (s, e) =>
                     {
                         Console.ForegroundColor = ConsoleColor.DarkGray;
-                        Console.Write($"[{DateTime.UtcNow} ");
+                        Console.Write($"[{DateTime.UtcNow}");
                         Console.ForegroundColor = ConsoleColor.Magenta;
-                        Console.Write($"ERROR ");
+                        Console.Write($" ERROR ");
                         Console.ForegroundColor = ConsoleColor.DarkGray;
                         Console.Write($"] ");
                         Console.ForegroundColor = ConsoleColor.Cyan;
@@ -294,8 +288,12 @@ namespace GamedayTracker
             var client = dBuilder.Build();
             dBuilder.SetReconnectOnFatalGatewayErrors();
             await client.ConnectAsync(status, DiscordUserStatus.Online, DateTimeOffset.UtcNow);
-           
-            await Task.Delay(-1);
+
+            //await Task.Delay(-1);
+            while(Console.ReadLine() == "test")
+            {
+                Console.WriteLine("hello world");
+            }
         }
 
     }

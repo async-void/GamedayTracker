@@ -8,6 +8,8 @@ using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
+using Serilog;
+using ILogger = GamedayTracker.Interfaces.ILogger;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
@@ -58,6 +60,7 @@ namespace GamedayTracker.SlashCommands.NFL
                     .AddContainerComponent(container);
 
                 await ctx.RespondAsync(message);
+               
                 logger.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, $"[Get Team Schedule] method ran in debug mode. |server [{ctx.Guild!.Name}]| user: [{ctx.Member!.Username}]");
             }
             else
