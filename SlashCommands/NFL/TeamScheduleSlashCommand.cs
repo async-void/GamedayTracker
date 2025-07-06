@@ -6,6 +6,7 @@ using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
+using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
 using Serilog;
@@ -21,7 +22,9 @@ namespace GamedayTracker.SlashCommands.NFL
         {
             
             await ctx.DeferResponseAsync();
-            if (!teamData.IsValidTeamName(teamName.ToLower()))
+
+            var normalizedName = NflTeamMatcher.MatchTeam(teamName);
+            if (!teamData.IsValidTeamName(normalizedName!.ToLower()))
             {
                 await ctx.EditResponseAsync(new DiscordMessageBuilder()
                         .WithContent($"Invalid team name: {teamName}. Please use a valid team name."))
@@ -29,9 +32,9 @@ namespace GamedayTracker.SlashCommands.NFL
                 return;
             }
             var sb = new StringBuilder();
-            var teamSchedule = await gameData.GetTeamSchedule(teamName);
+            var teamSchedule = await gameData.GetTeamSchedule(normalizedName);
             var season = DateTime.UtcNow.Year.ToString();
-            var titleEmoji = NflEmojiService.GetEmoji(teamName.ToAbbr());
+            var titleEmoji = NflEmojiService.GetEmoji(normalizedName.ToAbbr());
             if (teamSchedule.IsOk)
             {
                 foreach (var match in teamSchedule.Value)
@@ -46,7 +49,7 @@ namespace GamedayTracker.SlashCommands.NFL
 
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent($"{season} Schedule for {teamName}{titleEmoji}"),
+                    new DiscordTextDisplayComponent($"{season} Schedule for {normalizedName}{titleEmoji}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent($"{sb}"),
                     new DiscordSeparatorComponent(true),

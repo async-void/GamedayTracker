@@ -73,7 +73,7 @@ namespace GamedayTracker.SlashCommands.Utility
             sw.Stop();
             if (savedTimeStamp.IsOk)
             {
-                var uptime = timestamp - savedTimeStamp.Value;
+                var uptime = timestamp - savedTimeStamp.Value; 
                 DiscordComponent[] components =
                 [
                     new DiscordTextDisplayComponent($"Latency **{sw.Elapsed.Humanize()}** "),

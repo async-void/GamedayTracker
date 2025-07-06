@@ -74,7 +74,8 @@ namespace GamedayTracker
 
 
             dBuilder.UseInteractivity();
-            
+            dBuilder.UseZlibCompression();
+
             #region USE COMMANDS
             dBuilder.UseCommands((IServiceProvider serviceProvider, CommandsExtension extension) =>
             {

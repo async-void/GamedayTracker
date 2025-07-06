@@ -1,6 +1,7 @@
 ﻿using ChalkDotNET;
 using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
+using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using System;
@@ -163,24 +164,35 @@ namespace GamedayTracker.Services
         public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteMemberToJsonAsync(GuildMember member)
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "members.json");
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            List<GuildMember> members;
+
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                var json = JsonSerializer.Serialize(member, options);
-                await File.WriteAllTextAsync(path, json);
-                return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
+                members = [member];
+                //var json = JsonSerializer.Serialize(member, options);
+                //await File.WriteAllTextAsync(path, json);
+                //return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
             }
             else
             {
                 var file = await File.ReadAllTextAsync(path);
-                var players = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
-                players.Add(member);
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                var updatedJson = JsonSerializer.Serialize(players, options);
-                await File.WriteAllTextAsync(path, updatedJson);
-                return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
+                members = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
+                members.Add(member);
+
+                //var file = await File.ReadAllTextAsync(path);
+                //var players = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
+                //players.Add(member);
+                //var options = new JsonSerializerOptions { WriteIndented = true };
+                //var updatedJson = JsonSerializer.Serialize(players, options);
+                //await File.WriteAllTextAsync(path, updatedJson);
+                //return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
             }
+            var updatedJson = JsonSerializer.Serialize(members, options);
+            await File.WriteAllTextAsync(path, updatedJson);
+            return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
+
         }
 
         #endregion
@@ -194,20 +206,20 @@ namespace GamedayTracker.Services
                 return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
                 {
                     ErrorMessage = "Player data file not found.",
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTimeOffset.UtcNow,
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
                 });
             }
             var file = await File.ReadAllTextAsync(path);
-            var members = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
-            var member = members.FirstOrDefault(p => p.Id == int.Parse(memberId));
-            if (member is not null) return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Ok(member);
+            var members = JsonSerializer.Deserialize<List<GuildMember>>(file);
+            var member = members.FirstOrDefault(p => p.MemberId.Equals(memberId));
+            if (member is not null || member is { }) return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Ok(member);
 
             return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
                 ErrorMessage = "Failed to fetch member data.",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this
             });
@@ -252,24 +264,27 @@ namespace GamedayTracker.Services
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"team_stats_{season}.json");
             if (!File.Exists(path)) 
             {
+                //TODO: if file does not exist, call TeamDataService.GetTeamStatsAsync() to fetch from API and write to file
+                
                 return Result<TeamStats, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
                 {
                     ErrorMessage = "Team stats data file not found.",
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTimeOffset.UtcNow,
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
                 });
             }
             var json = await File.ReadAllTextAsync(path);
             var lineType = choice == 0 ? LineType.Offense : LineType.Defense;
+           
             var stats = JsonSerializer.Deserialize<List<TeamStats>>(json)!
-                .Where(x => x.Season == season && x.LineType.Equals(lineType) && x.TeamName == teamName).FirstOrDefault();
+                .Where(x => x.Season == season && x.LineType.Equals(lineType) && x.TeamName.Equals(teamName, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
 
             if (stats is not null) return Result<TeamStats, SystemError<JsonDataServiceProvider>>.Ok(stats);
             var error = new SystemError<JsonDataServiceProvider>
             {
                 ErrorMessage = "Failed to fetch team stats data.",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this
             };
@@ -286,7 +301,7 @@ namespace GamedayTracker.Services
                 return Result<List<TeamStats>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
                 {
                     ErrorMessage = "Team stats data file not found.",
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTimeOffset.UtcNow,
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
                 });
@@ -300,7 +315,7 @@ namespace GamedayTracker.Services
             var error = new SystemError<JsonDataServiceProvider>
             {
                 ErrorMessage = "Failed to fetch team stats data.",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this
             };
@@ -335,7 +350,7 @@ namespace GamedayTracker.Services
             return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
                 ErrorMessage = "Failed to write team stats data.",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this
             });
@@ -383,7 +398,7 @@ namespace GamedayTracker.Services
             {
                 ErrorMessage = "schedule data already exists",
                 ErrorType = ErrorType.INFORMATION,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeOffset.UtcNow,
                 CreatedBy = this
             });
         }
@@ -398,7 +413,7 @@ namespace GamedayTracker.Services
                 return Result<List<Matchup>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
                 {
                     ErrorMessage = "Schedule data file not found.",
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTimeOffset.UtcNow,
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
                 });
@@ -409,7 +424,7 @@ namespace GamedayTracker.Services
             return Result<List<Matchup>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
                 ErrorMessage = "Failed to fetch schedule data.",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this
             });
@@ -425,7 +440,7 @@ namespace GamedayTracker.Services
                 return Result<List<DraftEntity>, SystemError <JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
                 {
                     ErrorMessage = "draft data file not found.",
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTimeOffset.UtcNow,
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
                 });
@@ -437,7 +452,7 @@ namespace GamedayTracker.Services
             return Result<List<DraftEntity>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
                 ErrorMessage = "Failed to fetch schedule data.",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this
             });
@@ -461,7 +476,7 @@ namespace GamedayTracker.Services
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
                 {
                     ErrorMessage = "Draft data already exists.",
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTimeOffset.UtcNow,
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
                 });

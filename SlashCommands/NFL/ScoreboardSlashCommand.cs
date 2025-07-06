@@ -70,7 +70,8 @@ namespace GamedayTracker.SlashCommands.NFL
 
                 var components = new DiscordComponent[]
                 {
-                    new DiscordTextDisplayComponent($"# Season {season}: {newWeek}"),
+                    new DiscordTextDisplayComponent($"# {newWeek}"),
+                    new DiscordTextDisplayComponent($"### Season {season}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent(sBuilder.ToString()),
                     new DiscordSeparatorComponent(true),

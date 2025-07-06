@@ -3,6 +3,7 @@ using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.MessageCommands;
 using DSharpPlus.Entities;
+using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 
@@ -41,7 +42,7 @@ namespace GamedayTracker.SlashCommands.Player
             //        new DiscordTextDisplayComponent("👍 **Player Added Successfully**"),
             //        new DiscordSeparatorComponent(true),
             //        new DiscordActionRowComponent(buttons),
-            //        new DiscordTextDisplayComponent($"Gameday Tracker - {DateTime.UtcNow.ToLongDateString()}"),
+            //        new DiscordTextDisplayComponent($"Gameday Tracker - {DateTimeOffset.UtcNow.ToLongDateString()}"),
 
             //    ];
             //    var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
@@ -65,7 +66,7 @@ namespace GamedayTracker.SlashCommands.Player
             //        new DiscordTextDisplayComponent($"{result.Error.ErrorMessage}"),
             //        new DiscordSeparatorComponent(true),
             //        new DiscordActionRowComponent(buttons),
-            //        new DiscordTextDisplayComponent($"Gameday Tracker - {DateTime.UtcNow.ToLongDateString()}"),
+            //        new DiscordTextDisplayComponent($"Gameday Tracker - {DateTimeOffset.UtcNow.ToLongDateString()}"),
 
             //    ];
             //    var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
@@ -87,29 +88,81 @@ namespace GamedayTracker.SlashCommands.Player
             await ctx.DeferResponseAsync();
 
             var result = await jsonDataService.GetMemberFromJsonAsync(dMember.Id.ToString());
+            DiscordComponent[] components;
+            DiscordContainerComponent container;
 
             if (result.IsOk)
             {
                 var member = result.Value;
-
-                var embed = new DiscordEmbedBuilder().WithTitle($"Player Profile: {member.MemberName}")
-                    .AddField("ID", member.Id.ToString(), true)
-                    .AddField("Member ID", member.MemberId.ToString(), true)
-                    .AddField("Guild ID", member.GuildId.ToString(), true)
-                    .WithColor(DiscordColor.Blurple);
-
-                await ctx.EditResponseAsync(new DiscordMessageBuilder().AddEmbed(embed));
+                components = [
+                    new DiscordTextDisplayComponent($"**{member.MemberName}**'s Profile"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"Balance: {member.Balance:C}"),
+                    new DiscordTextDisplayComponent($"Last Deposit: {member.LastDeposit?.ToString("g") ?? "Never"}"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"Guild: {member.GuildName}"),
+                    new DiscordTextDisplayComponent($"Favorite Team: {member.FavoriteTeam ?? "None"}"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTimeOffset.UtcNow.ToString("f")}"),
+                                                            new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                ];
+                container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
+                var msg = new DiscordMessageBuilder()
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
+                await ctx.RespondAsync(msg);
             }
             else
             {
-                var error = result.Error;
+                if (result.Error.ErrorType.Equals(ErrorType.FATAL))
+                {
 
-                var embed = new DiscordEmbedBuilder().WithTitle("⚠️ Error")
-                    .WithDescription(error.ErrorMessage ?? "An unknown error occurred.")
-                    .WithColor(DiscordColor.Red)
-                    .WithFooter($"Gameday Tracker ©️ {DateTime.UtcNow.ToShortTimeString()}");
+                }
+                await jsonDataService.WriteMemberToJsonAsync(new GuildMember
+                {
+                    Id = Guid.NewGuid(),
+                    MemberId = dMember.Id.ToString(),
+                    MemberName = dMember.Username,
+                    GuildId = ctx.Guild.Id.ToString(),
+                    GuildName = ctx.Guild.Name,
+                    Balance = 0
+                });
 
-                await ctx.EditResponseAsync(new DiscordMessageBuilder().AddEmbed(embed));
+                var m = await jsonDataService.GetMemberFromJsonAsync(dMember.Id.ToString());
+
+                if (m.IsOk)
+                {
+                    components = [
+                    new DiscordTextDisplayComponent($"**{m.Value.MemberName}**'s Profile"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"Balance: {m.Value.Balance:C}"),
+                    new DiscordTextDisplayComponent($"Last Deposit: {m.Value.LastDeposit?.ToString("g") ?? "Never"}"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"Guild: {m.Value.GuildName}"),
+                    new DiscordTextDisplayComponent($"Favorite Team: {m.Value.FavoriteTeam ?? "None"}"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTimeOffset.UtcNow.ToString("f")}"),
+                                                            new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                ];
+                    container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
+                    var msg = new DiscordMessageBuilder()
+                        .EnableV2Components()
+                        .AddContainerComponent(container);
+                    await ctx.RespondAsync(msg);
+                }
+                else
+                {
+                    components = [
+                        new DiscordTextDisplayComponent($"## ERROR"),
+                        new DiscordSeparatorComponent(true),
+                        new DiscordTextDisplayComponent($"Balance: {m.Error.ErrorMessage}"),
+                        new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTimeOffset.UtcNow.ToString("f")}"),
+                                                                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                    ];
+                        container = new DiscordContainerComponent(components, false, DiscordColor.DarkRed);
+                        var msg = new DiscordMessageBuilder()
+                            .EnableV2Components()
+                            .AddContainerComponent(container);
+                        await ctx.RespondAsync(msg);
+                    }
             }
         }
         #endregion

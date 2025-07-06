@@ -1,13 +1,14 @@
-﻿using System.ComponentModel;
-using ChalkDotNET;
+﻿using ChalkDotNET;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Extensions;
+using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
+using System.ComponentModel;
 
 namespace GamedayTracker.SlashCommands.Stats
 {
@@ -33,8 +34,9 @@ namespace GamedayTracker.SlashCommands.Stats
                     isOffense = "Defense";
                     return;
             }
-            var s = await teamDataService.GetStatsAsync(choice, season);
-            var stats = await teamDataService.GetTeamStatsAsync(choice, season, teamName);
+
+            var normalizedName = NflTeamMatcher.MatchTeam(teamName) ?? teamName;
+            var stats = await teamDataService.GetTeamStatsAsync(choice, season, normalizedName);
 
             if (stats.IsOk)
             {
