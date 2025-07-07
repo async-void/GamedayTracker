@@ -49,7 +49,7 @@ namespace GamedayTracker.Services
             const string scoreboardLink = "https://www.footballdb.com/scores/index.html";
             var web = new HtmlWeb();
             var doc = web.Load(scoreboardLink);
-            var gameNodes = doc.DocumentNode.SelectNodes(".//div[@class='lngame']//table//tbody/tr");
+            var gameNodes = doc.DocumentNode.SelectNodes(".//div[@class='lngame']//table");
 
             if (gameNodes is null)
                 return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
@@ -63,19 +63,46 @@ namespace GamedayTracker.Services
 
             foreach (var node in gameNodes)
             {
-                if (node is not { HasChildNodes: true, ChildNodes.Count: 4 }) continue;
-                var score = node.ChildNodes[3].InnerText;
-                if (score.Equals("--"))
-                    return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>()
+                var dateNode = node.SelectSingleNode("thead/tr/th");
+                var scoreBoardNode = node.SelectNodes("tbody/tr");
+
+                var awayScoreValue = scoreBoardNode[0].ChildNodes.Last().InnerText;
+                var homeScoreValue = scoreBoardNode[1].ChildNodes.Last().InnerText;
+                var awayNode = scoreBoardNode[0].ChildNodes[1];
+                var homeNode = scoreBoardNode[1].ChildNodes[1];
+
+                var matchup = new Matchup
+                {
+                    Week = GetCurWeek().Value,
+                    Season = DateTime.UtcNow.Year,
+                    GameDate = dateNode!.InnerText,
+                    Opponents = new Opponent
                     {
-                        ErrorMessage = "games have not finished!",
-                        ErrorType = ErrorType.INFORMATION,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedBy = this
-                    });
-
+                        AwayTeam = new Team
+                        {
+                            Name = awayNode.ChildNodes[0].InnerText.Trim(),
+                            Abbreviation = awayNode.ChildNodes[0].InnerText.ToAbbr(),
+                            Division = awayNode.ChildNodes[0].InnerText.Trim().ToDivision(),
+                            Emoji = NflEmojiService.GetEmoji(awayNode.ChildNodes[0].InnerText.Trim().ToAbbr()),
+                            LogoPath = LogoPathService.GetLogoPath(awayNode.ChildNodes[0].InnerText.Trim().ToAbbr()),
+                            Record = awayNode.ChildNodes[0].InnerText.Trim(),
+                            Score = int.TryParse(awayScoreValue, out var awayScore) ? awayScore : 0
+                        },
+                        HomeTeam = new Team
+                        {
+                            Name = homeNode.ChildNodes[0].InnerText.Trim(),
+                            Abbreviation = homeNode.ChildNodes[0].InnerText.ToAbbr(),
+                            Division = homeNode.ChildNodes[0].InnerText.Trim().ToDivision(),
+                            Emoji = NflEmojiService.GetEmoji(homeNode.ChildNodes[0].InnerText.Trim().ToAbbr()),
+                            LogoPath = LogoPathService.GetLogoPath(homeNode.ChildNodes[0].InnerText.Trim().ToAbbr()),
+                            Record = homeNode.ChildNodes[0].InnerText.Trim(),
+                            Score = int.TryParse(homeScoreValue, out var homeScore) ? homeScore : 0
+                        }
+                    }
+                    
+                };
+                matchups.Add(matchup);
             }
-
             return Result<List<Matchup>, SystemError<GameDataService>>.Ok(matchups);
         }
         #endregion
@@ -97,7 +124,7 @@ namespace GamedayTracker.Services
             if (File.Exists(filePath))
             {
                 sw.Start();
-                var jsonFound = jsonDataService.GetMatchupsAsync(season.ToString(), week.ToString()).Result;
+                var jsonFound = await jsonDataService.GetMatchupsAsync(season.ToString(), week.ToString());
                 sw.Stop();
                 logger.Log(LogTarget.Console, LogType.Debug, DateTime.UtcNow, $"Json Fetch took: {sw.ElapsedMilliseconds}ms");
 

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Linq;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.MessageCommands;
@@ -100,8 +101,9 @@ namespace GamedayTracker.SlashCommands.Player
                     new DiscordTextDisplayComponent($"Balance: {member.Balance:C}"),
                     new DiscordTextDisplayComponent($"Last Deposit: {member.LastDeposit?.ToString("g") ?? "Never"}"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"Guild: {member.GuildName}"),
+                    new DiscordTextDisplayComponent($"Guilds: {string.Join(",", member.Guilds!)}"),
                     new DiscordTextDisplayComponent($"Favorite Team: {member.FavoriteTeam ?? "None"}"),
+                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTimeOffset.UtcNow.ToString("f")}"),
                                                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
@@ -117,13 +119,15 @@ namespace GamedayTracker.SlashCommands.Player
                 {
 
                 }
+
                 await jsonDataService.WriteMemberToJsonAsync(new GuildMember
                 {
                     Id = Guid.NewGuid(),
                     MemberId = dMember.Id.ToString(),
                     MemberName = dMember.Username,
-                    GuildId = ctx.Guild.Id.ToString(),
-                    GuildName = ctx.Guild.Name,
+                    Guilds = [ new Guild { Id = Guid.NewGuid(), 
+                                                GuildId = (long)dMember.Guild.Id, 
+                                                GuildName = dMember.Guild.Name } ],
                     Balance = 0
                 });
 
@@ -137,8 +141,9 @@ namespace GamedayTracker.SlashCommands.Player
                     new DiscordTextDisplayComponent($"Balance: {m.Value.Balance:C}"),
                     new DiscordTextDisplayComponent($"Last Deposit: {m.Value.LastDeposit?.ToString("g") ?? "Never"}"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"Guild: {m.Value.GuildName}"),
+                    new DiscordTextDisplayComponent($"Guilds: {string.Join(",", m.Value.Guilds!)}"),
                     new DiscordTextDisplayComponent($"Favorite Team: {m.Value.FavoriteTeam ?? "None"}"),
+                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTimeOffset.UtcNow.ToString("f")}"),
                                                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
@@ -154,6 +159,7 @@ namespace GamedayTracker.SlashCommands.Player
                         new DiscordTextDisplayComponent($"## ERROR"),
                         new DiscordSeparatorComponent(true),
                         new DiscordTextDisplayComponent($"Balance: {m.Error.ErrorMessage}"),
+                        new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                         new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTimeOffset.UtcNow.ToString("f")}"),
                                                                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                     ];

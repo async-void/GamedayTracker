@@ -171,9 +171,9 @@ namespace GamedayTracker.Services
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 members = [member];
-                //var json = JsonSerializer.Serialize(member, options);
-                //await File.WriteAllTextAsync(path, json);
-                //return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
+                var json = JsonSerializer.Serialize(member, options);
+                await File.WriteAllTextAsync(path, json);
+                return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
             }
             else
             {

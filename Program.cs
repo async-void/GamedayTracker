@@ -3,10 +3,13 @@ using DSharpPlus.Commands;
 using DSharpPlus.Commands.EventArgs;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
+using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using DSharpPlus.Extensions;
 using DSharpPlus.Interactivity.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
+using GamedayTracker.Jobs;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
 using Microsoft.Extensions.DependencyInjection;
@@ -74,43 +77,107 @@ namespace GamedayTracker
                 .UseConsoleLifetime()
                 .ConfigureServices((context, services) =>
                 {
-                services.AddLogging(logging => logging.ClearProviders().AddSerilog(logger));
+                    services.AddLogging(logging => logging.ClearProviders().AddSerilog(logger));
 
-                services.AddHostedService<BotService>()
-                    .AddDiscordClient(token.Value, intents)
-                    .AddCommandsExtension((options, config) =>
+                    services.AddHostedService<BotService>()
+                        .AddDiscordClient(token.Value, intents)
+                        .AddCommandsExtension((options, config) =>
+                        {
+                            config.AddCommands(Assembly.GetExecutingAssembly());
+                        });
+
+                    services.AddScoped<ITeamData, TeamDataService>();
+                    services.AddScoped<ITimerService, TimerService>();
+                    services.AddScoped<ILogger, LoggerService>();
+                    services.AddScoped<IGameData, GameDataService>();
+                    services.AddScoped<IXmlDataService, XmlDataServiceProvider>();
+                    services.AddScoped<IJsonDataService, JsonDataServiceProvider>();
+                    services.AddScoped<IPlayerData, PlayerDataServiceProvider>();
+                    services.AddScoped<IConfigurationData, ConfigurationDataService>();
+                    services.AddScoped<INewsService, NFLNewsService>();
+                    services.AddScoped<ICommandHelper, SlashCommandHelper>();
+                    services.AddScoped<IBotTimer, BotTimerDataServiceProvider>();
+
+
+                    #region QUARTZ
+                    services.AddQuartz(q =>
                     {
-                        config.AddCommands(Assembly.GetExecutingAssembly());
+                        var jobKey = new JobKey("RealTimeScoresJob");
+
+                        q.AddJob<RealTimeScoresJob>(opts => opts.WithIdentity(jobKey));
+
+                        q.AddTrigger(opts => opts
+                            .ForJob(jobKey)
+                            .WithIdentity("RealTimeScores-trigger")
+                            .WithSimpleSchedule(x => x
+                                .WithInterval(TimeSpan.FromHours(1))
+                                .RepeatForever())
+                                .StartNow());
+
                     });
 
-                services.AddScoped<ITeamData, TeamDataService>();
-                services.AddScoped<ITimerService, TimerService>();
-                services.AddScoped<ILogger, LoggerService>();
-                services.AddScoped<IGameData, GameDataService>();
-                services.AddScoped<IXmlDataService, XmlDataServiceProvider>();
-                services.AddScoped<IJsonDataService, JsonDataServiceProvider>();
-                services.AddScoped<IPlayerData, PlayerDataServiceProvider>();
-                services.AddScoped<IConfigurationData, ConfigurationDataService>();
-                services.AddScoped<INewsService, NFLNewsService>();
-                services.AddScoped<ICommandHelper, SlashCommandHelper>();
-                services.AddScoped<IBotTimer, BotTimerDataServiceProvider>();
+                    services.AddQuartzHostedService(q =>
+                    {
+                        q.WaitForJobsToComplete = true;
+                    });
+
+                    #endregion
+
+                    #region CONFIGURE EVENT HANDLERS
+                    services.ConfigureEventHandlers(
+                        e => e.AddEventHandlers<InteractionHandler>(ServiceLifetime.Singleton));
+                    services.ConfigureEventHandlers(
+
+                        #region MESSAGE EVENT HANDLERS
+                        e => e.HandleMessageCreated((sender, args) =>
+                        {
+                            return Task.CompletedTask;
+                        })
+                        .HandleMessageDeleted((sender, args) =>
+                        {
+                            return Task.CompletedTask;
+                        })
+                        #endregion
+
+                        #region GUILD EVENTS HANDLERS
+                        .HandleGuildCreated(async (sender, args) =>
+                        {
+                            var supportChnl = await sender.GetChannelAsync(888659367824601160);
+                            var guilds = sender.Guilds.Values;
+                            var newChnl = args.Guild.GetDefaultChannel();
+                            if (newChnl is { } chnl)
+                            {
+                                DiscordComponent[] components =
+                                [
+                                    new DiscordTextDisplayComponent("## Welcome to Gameday Tracker!"),
+                                    new DiscordSeparatorComponent(true),
+                                    new DiscordTextDisplayComponent("Use the `/help` command to get started!"),
+                                    new DiscordSeparatorComponent(true),
+                                    new DiscordSectionComponent(
+                                        new DiscordTextDisplayComponent($"GamedayTracker ©️ {DateTimeOffset.UtcNow:MM/dd/yyyy hh:mm:ss tt}"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateBtn", "Donate"))
+                                ];
+
+                                var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
+                                var embed = new DiscordMessageBuilder()
+                                    .EnableV2Components()
+                                    .AddContainerComponent(container);
+                                await chnl.SendMessageAsync(embed);
+                            }
+
+                            await supportChnl.SendMessageAsync(
+                                $"New Guild Added:``{DateTimeOffset.UtcNow:MM-dd-yyyy hh:mm:ss tt zzz}`` {args.Guild.Name}:({args.Guild.Id}) - Total Guilds: {guilds.Count()}");
 
 
-                #region QUARTZ
-                services.AddQuartz(opt =>
-                {
+                        })
+                        .HandleGuildDeleted((sender, args) =>
+                        {
+                            return Task.CompletedTask;
+                        })
+                        #endregion
+                    );
+                    #endregion
 
-                });
-
-                services.AddQuartzHostedService(q =>
-                {
-                    q.WaitForJobsToComplete = true;
-                });
-
-                #endregion
-
-                services.ConfigureEventHandlers(
-                    e => e.AddEventHandlers<InteractionHandler>(ServiceLifetime.Singleton)); 
                 })
                 .RunConsoleAsync();
             
