@@ -74,8 +74,9 @@ namespace GamedayTracker.SlashCommands.NFL
                     new DiscordTextDisplayComponent($"### Season {season}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent(sBuilder.ToString()),
-                    new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLocalTime().ToLongDateString()} {DateTime.UtcNow.ToLocalTime().ToShortTimeString()}")
+                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyy hh:mm:ss tt zzz}"),
+                                            new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 };
 
                 var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);

@@ -78,7 +78,10 @@ namespace GamedayTracker.SlashCommands.Utility
                 [
                     new DiscordTextDisplayComponent($"Latency **{sw.Elapsed.Humanize()}** "),
                     new DiscordTextDisplayComponent($"Discord **{connectionLat.Humanize()}**"),
-                    new DiscordTextDisplayComponent($"Uptime **{uptime.Humanize(3, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second)}**")
+                    new DiscordTextDisplayComponent($"Uptime **{uptime.Humanize(3, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second)}**"),
+                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"GamedayTracker ©️ {savedTimeStamp.Value:MM-dd-yyyy hh:mm:ss tt zzz}"),
+                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
                 ];
                 DiscordContainerComponent container = new(components, false, DiscordColor.Blurple);
 
@@ -86,15 +89,14 @@ namespace GamedayTracker.SlashCommands.Utility
                     .EnableV2Components()
                     .AddContainerComponent(container);
 
-
-                //TODO: finish me.
-                loggerService.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, "Ping Command Executed");
+                Log.Information("Ping Command Executed");
                 await ctx.EditResponseAsync(message);
             }
             else
             {
                 await ctx.EditResponseAsync(new DiscordMessageBuilder()
                     .WithContent(savedTimeStamp.Error.ErrorMessage!));
+                Log.Error(savedTimeStamp.Error.ErrorMessage!);
 
             }
   

@@ -213,7 +213,7 @@ namespace GamedayTracker.Services
             }
             var file = await File.ReadAllTextAsync(path);
             var members = JsonSerializer.Deserialize<List<GuildMember>>(file);
-            var member = members.FirstOrDefault(p => p.MemberId.Equals(memberId));
+            var member = members!.FirstOrDefault(p => p.MemberId.Equals(memberId));
             if (member is not null || member is { }) return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Ok(member);
 
             return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>

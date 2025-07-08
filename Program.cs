@@ -109,11 +109,10 @@ namespace GamedayTracker
                         q.AddTrigger(opts => opts
                             .ForJob(jobKey)
                             .WithIdentity("RealTimeScores-trigger")
+                            .StartNow()
                             .WithSimpleSchedule(x => x
-                                .WithInterval(TimeSpan.FromHours(1))
-                                .RepeatForever())
-                                .StartNow());
-
+                                .WithInterval(TimeSpan.FromHours(12))
+                                .RepeatForever()));
                     });
 
                     services.AddQuartzHostedService(q =>
@@ -151,11 +150,12 @@ namespace GamedayTracker
                                 [
                                     new DiscordTextDisplayComponent("## Welcome to Gameday Tracker!"),
                                     new DiscordSeparatorComponent(true),
-                                    new DiscordTextDisplayComponent("Use the `/help` command to get started!"),
+                                    new DiscordSectionComponent(new DiscordTextDisplayComponent("Use the `help button` to get started!"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Primary, "helpId", "Help")),
                                     new DiscordSeparatorComponent(true),
                                     new DiscordSectionComponent(
-                                        new DiscordTextDisplayComponent($"GamedayTracker ©️ {DateTimeOffset.UtcNow:MM/dd/yyyy hh:mm:ss tt}"),
-                                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateBtn", "Donate"))
+                                        new DiscordTextDisplayComponent($"GamedayTracker ©️ {DateTimeOffset.UtcNow:MM-dd-yyyy hh:mm:ss tt zzz}"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                                 ];
 
                                 var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
@@ -166,8 +166,9 @@ namespace GamedayTracker
                             }
 
                             await supportChnl.SendMessageAsync(
-                                $"New Guild Added:``{DateTimeOffset.UtcNow:MM-dd-yyyy hh:mm:ss tt zzz}`` {args.Guild.Name}:({args.Guild.Id}) - Total Guilds: {guilds.Count()}");
+                                $"``New Guild Added:{DateTimeOffset.UtcNow:MM-dd-yyyy hh:mm:ss tt zzz} {args.Guild.Name}:({args.Guild.Id}) - Total Guilds: {guilds.Count()}``");
 
+                            Log.Information($"New Guild Added: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}");
 
                         })
                         .HandleGuildDeleted((sender, args) =>

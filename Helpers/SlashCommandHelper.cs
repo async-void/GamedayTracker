@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DSharpPlus.Interactivity;
 using GamedayTracker.Enums;
 using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
@@ -95,6 +96,29 @@ namespace GamedayTracker.Helpers
             }
 
             return Result<string, SystemError<SlashCommandHelper>>.Ok(builder.ToString());
+        }
+        #endregion
+
+        #region BUILD HELP SECTION
+        public Result<List<Page>, SystemError<SlashCommandHelper>> BuildHelpSection()
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("**Gameday Tracker Slash Commands**\r\n");
+            builder.AppendLine("## Utility Commands");
+            builder.AppendLine("`/ping` - get Discord's and the DB's latency");
+            builder.AppendLine("`/help` - Show this help message");
+            builder.AppendLine("`/leaderboard` - Show the leaderboard for the current guild or globally");
+            builder.AppendLine("`/profile` - View your profile");
+            builder.AppendLine("`/deposit` - Deposit money into your account");
+            builder.AppendLine("`/withdraw` - Withdraw money from your account");
+            builder.AppendLine("`/balance` - Check your balance");
+            builder.AppendLine("`/donate` - Donate to the bot");
+            var pages = new List<Page>
+            {
+                new() { Content = builder.ToString(), },
+                
+            };
+            return Result<List<Page>, SystemError<SlashCommandHelper>>.Ok(pages);
         }
         #endregion
     }

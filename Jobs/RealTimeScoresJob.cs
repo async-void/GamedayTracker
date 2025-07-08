@@ -2,6 +2,7 @@
 using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
 using Quartz;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,10 +16,11 @@ namespace GamedayTracker.Jobs
         public async Task Execute(IJobExecutionContext context)
         {
             var scoreboard = gameDataService.GetCurrentScoreboard();
-            var sb = new StringBuilder();
+           
 
             if (scoreboard.IsOk && scoreboard.Value.Count > 0)
             {
+                var sb = new StringBuilder();
                 var grouped = scoreboard.Value
                     .GroupBy(g => g.GameDate)
                     .Select(scoreboard => new
@@ -26,12 +28,11 @@ namespace GamedayTracker.Jobs
                         GameDate = scoreboard.Key,
                         Opponents = scoreboard.Select(o => new
                         {
-                            AwayTeam = o.Opponents.AwayTeam,
-                            HomeTeam = o.Opponents.HomeTeam
+                            o.Opponents!.AwayTeam,
+                            o.Opponents.HomeTeam
                         })
                     })
                     .ToList();
-
 
                 for (var i = 0; i < grouped.Count; i++)
                 {
@@ -42,7 +43,7 @@ namespace GamedayTracker.Jobs
                             $"{grouped[i].Opponents.ElementAt(j).HomeTeam.Emoji} **{grouped[i].Opponents.ElementAt(j).HomeTeam.Name}** : {grouped[i].Opponents.ElementAt(j).HomeTeam.Score}");
                     }
                 }
-                   
+
                 foreach (var guild in client.Guilds.Values)
                 {
                     var channel = guild.GetDefaultChannel();
@@ -52,8 +53,21 @@ namespace GamedayTracker.Jobs
                             .WithTitle("Current NFL Scores")
                             .WithDescription(sb.ToString())
                             .WithColor(DiscordColor.Green);
-                        
+
                         await chnl.SendMessageAsync(embed.Build());
+                    }
+                }
+                Log.Information("Fetching realtime scores....[success]");
+            }
+            else
+            {
+                Log.Error("Fetching realtime scores....[failed]");
+                foreach (var guild in client.Guilds.Values)
+                {
+                    var channel = guild.GetDefaultChannel();
+                    if (channel is { } chnl)
+                    {
+                        await chnl.SendMessageAsync("``could not fetch real time updated scores...``");
                     }
                 }
             }

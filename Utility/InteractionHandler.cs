@@ -125,7 +125,9 @@ namespace GamedayTracker.Utility
                                 DiscordComponent[] bComponent =
                                 [
                                     new DiscordTextDisplayComponent(
-                                        "Donate is in development, the devs are hard at work implementing this feature!")
+                                        "Donate is in development, the devs are hard at work implementing this feature!"),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyy hh:mm:ss tt zzz}")
                                 ];
                                 var cContainer =
                                     new DiscordContainerComponent(bComponent, false, DiscordColor.LightGray);
@@ -149,6 +151,25 @@ namespace GamedayTracker.Utility
                                     .AddContainerComponent(cContainer);
                                 await eventArgs.Interaction.CreateResponseAsync(
                                     DiscordInteractionResponseType.UpdateMessage,
+                                    new DiscordInteractionResponseBuilder(bMsg));
+                                break;
+                            case "helpId":
+                                bComponent =                                 
+                                [
+                                    new DiscordTextDisplayComponent(
+                                        "Help is in development, the devs are hard at work implementing this feature!"),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                    new DiscordSectionComponent(new DiscordTextDisplayComponent("help keep GamedayTracker alive!"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyy hh:mm:ss tt zzz}")
+                                ];
+                                 cContainer =
+                                    new DiscordContainerComponent(bComponent, false, DiscordColor.Goldenrod);
+                                 bMsg = new DiscordInteractionResponseBuilder()
+                                    .EnableV2Components()
+                                    .AddContainerComponent(cContainer);
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage, 
                                     new DiscordInteractionResponseBuilder(bMsg));
                                 break;
                             case "btnAddPlayer":
