@@ -111,7 +111,7 @@ namespace GamedayTracker
                             .WithIdentity("RealTimeScores-trigger")
                             .StartNow()
                             .WithSimpleSchedule(x => x
-                                .WithInterval(TimeSpan.FromHours(12))
+                                .WithInterval(TimeSpan.FromHours(4))
                                 .RepeatForever()));
                     });
 

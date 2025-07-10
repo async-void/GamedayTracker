@@ -28,7 +28,7 @@ namespace GamedayTracker.SlashCommands.Economy
 
             //await using var db = new BotDbContextFactory().CreateDbContext();
             //var dbUser = await memberService.GetGuildMemberAsync(ctx.Guild!.Id.ToString(), member!.Username!);
-            var player = await dataService.GetMemberFromJsonAsync(member.Id.ToString());
+            var player = await dataService.GetMemberFromJsonAsync(member.Id.ToString(), member.Guild.Id.ToString());
 
             DiscordComponent[] buttons =
             [
@@ -84,7 +84,7 @@ namespace GamedayTracker.SlashCommands.Economy
             var member = ctx.Member;
 
 
-            var dbUser = await dataService.GetMemberFromJsonAsync(member!.Id.ToString());
+            var dbUser = await dataService.GetMemberFromJsonAsync(member!.Id.ToString(), member.Guild.Id.ToString());
             logger.Log(LogTarget.Console, LogType.Debug, DateTime.UtcNow,
                 $"attempting to fetch user {member!.GlobalName!}");
 

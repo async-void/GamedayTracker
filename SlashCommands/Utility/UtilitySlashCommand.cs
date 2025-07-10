@@ -23,7 +23,7 @@ namespace GamedayTracker.SlashCommands.Utility
     public class UtilitySlashCommand(IBotTimer botTimer, ILogger loggerService)
     {
 
-        [Command("help")]
+        [Command("help")]//TODO: fix me
         [Description("help commands and a brief explaination")]
         public async Task Help(CommandContext ctx)
         {
@@ -80,7 +80,7 @@ namespace GamedayTracker.SlashCommands.Utility
                     new DiscordTextDisplayComponent($"Discord **{connectionLat.Humanize()}**"),
                     new DiscordTextDisplayComponent($"Uptime **{uptime.Humanize(3, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second)}**"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"GamedayTracker ©️ {savedTimeStamp.Value:MM-dd-yyyy hh:mm:ss tt zzz}"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"GamedayTracker ©️ ``{DateTimeOffset.UtcNow:MM-dd-yyyy hh:mm:ss tt zzz}``"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
                 ];
                 DiscordContainerComponent container = new(components, false, DiscordColor.Blurple);

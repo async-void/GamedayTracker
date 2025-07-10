@@ -171,7 +171,7 @@ namespace GamedayTracker.Services
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 members = [member];
-                var json = JsonSerializer.Serialize(member, options);
+                var json = JsonSerializer.Serialize(members, options);
                 await File.WriteAllTextAsync(path, json);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
             }
@@ -198,7 +198,7 @@ namespace GamedayTracker.Services
         #endregion
 
         #region GET MEMBER FROM JSON
-        public async Task<Result<GuildMember, SystemError<JsonDataServiceProvider>>> GetMemberFromJsonAsync(string memberId)
+        public async Task<Result<GuildMember, SystemError<JsonDataServiceProvider>>> GetMemberFromJsonAsync(string memberId, string guildId)
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "members.json");
             if (!File.Exists(path))
@@ -213,12 +213,15 @@ namespace GamedayTracker.Services
             }
             var file = await File.ReadAllTextAsync(path);
             var members = JsonSerializer.Deserialize<List<GuildMember>>(file);
-            var member = members!.FirstOrDefault(p => p.MemberId.Equals(memberId));
-            if (member is not null || member is { }) return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Ok(member);
+            var member = members!
+                .Where(p => p.MemberId.ToString().Equals(memberId) && p.Guilds != null && p.Guilds.Any(g => g.GuildId.ToString().Equals(guildId)))
+                .FirstOrDefault();
+            if (member is { } mem) return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Ok(mem);
 
+            //member is not found
             return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
-                ErrorMessage = "Failed to fetch member data.",
+                ErrorMessage = "Member data not found.",
                 CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this
