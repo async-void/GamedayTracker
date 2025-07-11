@@ -22,7 +22,7 @@ namespace GamedayTracker.SlashCommands.Utility
     [Description("Utility Slash Commands")]
     public class UtilitySlashCommand(IBotTimer botTimer, ILogger loggerService)
     {
-
+        #region HELP
         [Command("help")]//TODO: fix me
         [Description("help commands and a brief explaination")]
         public async Task Help(CommandContext ctx)
@@ -55,6 +55,7 @@ namespace GamedayTracker.SlashCommands.Utility
             //loggerService.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, "Help slash command was called!");
             await ctx.EditResponseAsync(message);
         }
+        #endregion
 
         #region PING
         [Command("ping")]
@@ -63,6 +64,7 @@ namespace GamedayTracker.SlashCommands.Utility
         public async ValueTask Ping(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
+            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var sw = new Stopwatch();
             sw.Start();
             
@@ -80,7 +82,7 @@ namespace GamedayTracker.SlashCommands.Utility
                     new DiscordTextDisplayComponent($"Discord **{connectionLat.Humanize()}**"),
                     new DiscordTextDisplayComponent($"Uptime **{uptime.Humanize(3, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second)}**"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"GamedayTracker ©️ ``{DateTimeOffset.UtcNow:MM-dd-yyyy hh:mm:ss tt zzz}``"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"GamedayTracker ©️ <t:{unixTimestamp}:F>"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
                 ];
                 DiscordContainerComponent container = new(components, false, DiscordColor.Blurple);

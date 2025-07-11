@@ -17,10 +17,10 @@ namespace GamedayTracker.Jobs
         {
             var scoreboard = gameDataService.GetCurrentScoreboard();
            
-
             if (scoreboard.IsOk && scoreboard.Value.Count > 0)
             {
                 var sb = new StringBuilder();
+                var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 var grouped = scoreboard.Value
                     .GroupBy(g => g.GameDate)
                     .Select(scoreboard => new
@@ -49,12 +49,21 @@ namespace GamedayTracker.Jobs
                     var channel = guild.GetDefaultChannel();
                     if (channel is { } chnl)
                     {
-                        var embed = new DiscordEmbedBuilder()
-                            .WithTitle("Current NFL Scores")
-                            .WithDescription(sb.ToString())
-                            .WithColor(DiscordColor.Green);
+                        DiscordComponent[] components =
+                        [
+                            new DiscordTextDisplayComponent("Current NFL Scores"),
+                            new DiscordSeparatorComponent(true),
+                            new DiscordTextDisplayComponent($"{sb.ToString()}"),
+                            new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                            new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by GamedayTracker ©️ <t:{unixTimestamp}:F>"), 
+                                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))  
+                        ];  
+                        var container = new DiscordContainerComponent(components);
+                        var embed = new DiscordMessageBuilder()
+                            .EnableV2Components()
+                            .AddContainerComponent(container);
 
-                        await chnl.SendMessageAsync(embed.Build());
+                        await chnl.SendMessageAsync(embed);
                     }
                 }
                 Log.Information("Fetching realtime scores....[success]");

@@ -84,7 +84,6 @@ namespace GamedayTracker.SlashCommands.Player
         }
         #endregion
 
-
         #region PLAYER PROFILE
         [Command("profile")]
         [Description("View player profile")]//TODO: fix me
@@ -130,7 +129,7 @@ namespace GamedayTracker.SlashCommands.Player
             {
                 if (result.Error.ErrorType.Equals(ErrorType.FATAL))
                 {
-                    Log.Error(result.Error.ErrorMessage);
+                    Log.Error(result.Error.ErrorMessage!);
                 }
 
                 await jsonDataService.WriteMemberToJsonAsync(new GuildMember

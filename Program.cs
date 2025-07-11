@@ -10,6 +10,7 @@ using DSharpPlus.Interactivity.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Jobs;
+using GamedayTracker.Schedules;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
 using Microsoft.Extensions.DependencyInjection;
@@ -97,6 +98,8 @@ namespace GamedayTracker
                     services.AddScoped<INewsService, NFLNewsService>();
                     services.AddScoped<ICommandHelper, SlashCommandHelper>();
                     services.AddScoped<IBotTimer, BotTimerDataServiceProvider>();
+                    services.AddScoped<IEvaluator, RealTimeScoresModeEvaluatorService>();
+                    services.AddScoped<DailyHeadlinesScheduler>();
 
 
                     #region QUARTZ
