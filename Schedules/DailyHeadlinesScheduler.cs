@@ -1,10 +1,6 @@
 ﻿using GamedayTracker.Jobs;
+using GamedayTracker.Models;
 using Quartz;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GamedayTracker.Schedules
 {
@@ -21,9 +17,10 @@ namespace GamedayTracker.Schedules
                 .WithIdentity("DailyHeadlineTrigger", "NFL News")
                 .StartNow()
                 .WithSimpleSchedule(x => x
-                    .WithInterval(TimeSpan.FromMinutes(1)) //TODO: Run daily
+                    .WithInterval(TimeSpan.FromHours(24)) //TODO: Run daily
                     .RepeatForever())
                 .Build();
+            Serilog.Log.Information($"Starting Daily Headline Job...{job.Key}");
             await scheduler.Start();
             await scheduler.ScheduleJob(job, trigger);
         }

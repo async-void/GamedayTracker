@@ -27,5 +27,8 @@ namespace GamedayTracker.Interfaces
         Task<Result<List<Matchup>, SystemError<JsonDataServiceProvider>>> GetSeasonScheduleFromJsonAsync(int season, string teamName);
         Task<Result<List<DraftEntity>, SystemError<JsonDataServiceProvider>>> GetDraftFromJsonAsync(int season, string teamName);
         Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteDraftToJsonAsync(List<DraftEntity> source, int season);
+        Task<Result<Guild, SystemError<JsonDataServiceProvider>>> GetMemberGuildFromJsonAsync(string memberId, string guildId);
+        Task<Result<List<Guild>, SystemError<JsonDataServiceProvider>>> GetGuildsFromJsonAsync();
+        Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteGuildToJsonAsync(Guild guild);
     }
 }

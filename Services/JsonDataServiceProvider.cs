@@ -1,22 +1,12 @@
-﻿using ChalkDotNET;
-using GamedayTracker.Enums;
+﻿using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
-using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace GamedayTracker.Services
 {
-    public class JsonDataServiceProvider(ILogger logger) : IJsonDataService
+    public class JsonDataServiceProvider() : IJsonDataService
     {
         #region GET MATCHUPS
         public async Task<Result<List<Matchup>, SystemError<JsonDataServiceProvider>>> GetMatchupsAsync(string season, string week)
@@ -32,7 +22,7 @@ namespace GamedayTracker.Services
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
                 };
-                logger.Log(LogTarget.Console, LogType.Error, DateTime.UtcNow, $"{notFound.ErrorMessage}");
+                Serilog.Log.Information($"{notFound.ErrorMessage}");
                 return Result<List<Matchup>, SystemError<JsonDataServiceProvider>>.Err(notFound);
             }
             var json = await File.ReadAllTextAsync(path);
@@ -487,5 +477,100 @@ namespace GamedayTracker.Services
         }
         #endregion
 
+        #region GET MEMBER GUILD FROM JSON
+
+        public async Task<Result<Guild, SystemError<JsonDataServiceProvider>>> GetMemberGuildFromJsonAsync(string memberId, string guildId)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "members.json");
+            if (!File.Exists(path))
+            {
+                return Result<Guild, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                {
+                    ErrorMessage = "Member data file not found.",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedBy = this
+                });
+            }
+            var file = await File.ReadAllTextAsync(path);
+            var members = JsonSerializer.Deserialize<List<GuildMember>>(file);
+            var member = members!
+                .Where(p => p.MemberId.ToString().Equals(memberId) && p.Guilds != null && p.Guilds.Any(g => g.GuildId.ToString().Equals(guildId)))
+                .FirstOrDefault();
+            //member is not found
+            return Result<Guild, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+            {
+                ErrorMessage = "Member guild data not found.",
+                CreatedAt = DateTimeOffset.UtcNow,
+                ErrorType = ErrorType.INFORMATION,
+                CreatedBy = this
+            });
+        }
+
+        #endregion
+
+        #region GET ALL GUILDS FROM JSON
+        public async Task<Result<List<Guild>, SystemError<JsonDataServiceProvider>>> GetGuildsFromJsonAsync()
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "guilds.json");
+            if (!File.Exists(path))
+            {
+                return Result<List<Guild>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                {
+                    ErrorMessage = "Guild data file not found.",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedBy = this
+                });
+            }
+            var json = await File.ReadAllTextAsync(path);
+            var guilds = JsonSerializer.Deserialize<List<Guild>>(json)!;
+            if (guilds is { } glds) return Result<List<Guild>, SystemError<JsonDataServiceProvider>>.Ok(glds);
+            return Result<List<Guild>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+            {
+                ErrorMessage = "Failed to fetch guild data.",
+                CreatedAt = DateTimeOffset.UtcNow,
+                ErrorType = ErrorType.INFORMATION,
+                CreatedBy = this
+            });
+        }
+        #endregion
+
+        #region WRITE GUILD TO JSON
+        public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteGuildToJsonAsync(Guild guild)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "guilds.json");
+            if (!File.Exists(path))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                var json = JsonSerializer.Serialize(new List<Guild> { guild }, options);
+                await File.WriteAllTextAsync(path, json);
+                return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
+            }
+            else
+            {
+                var file = await File.ReadAllTextAsync(path);
+                var existingGuilds = JsonSerializer.Deserialize<List<Guild>>(file) ?? [];
+                var guildExists = existingGuilds.Any(g => g.GuildId.Equals(guild.GuildId));
+
+                if (!guildExists)
+                {
+                    existingGuilds.Add(guild);
+                    var options = new JsonSerializerOptions { WriteIndented = true };
+                    var updatedJson = JsonSerializer.Serialize(existingGuilds, options);
+                    await File.WriteAllTextAsync(path, updatedJson);
+                    return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
+                }
+                return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                {
+                    ErrorMessage = "Guild data already exists.",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedBy = this
+                });
+            }
+        }
+        #endregion
     }
 }

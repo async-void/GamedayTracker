@@ -10,12 +10,14 @@ using System.Threading.Tasks;
 
 namespace GamedayTracker.Jobs
 {
-    public class DailyHeadlineJob(INewsService newService, DiscordClient client) : IJob
+    public class DailyHeadlineJob(INewsService newService, IJsonDataService dataService, DiscordClient client) : IJob
     {
         private readonly INewsService _newsService = newService;
+        private readonly IJsonDataService _dataService = dataService;
+        private readonly DiscordClient _client = client;
         public async Task Execute(IJobExecutionContext context)
         {
-            var guilds = client.Guilds.Values;  
+            var guilds = await _dataService.GetGuildsFromJsonAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var rnd = new Random();
             var articles = _newsService.GetNews();
@@ -49,11 +51,19 @@ namespace GamedayTracker.Jobs
                 var message = new DiscordMessageBuilder()
                     .EnableV2Components()
                     .AddContainerComponent(container);
-                foreach (var g in guilds)
+                if (guilds.IsOk && guilds.Value.Count > 0)
                 {
-                    var chnl = g.GetDefaultChannel();
-                    await chnl.SendMessageAsync(message);
-                }   
+                    foreach (var g in guilds.Value)
+                    {
+                        var chnl = await _client.GetChannelAsync(ulong.Parse(g.NotificationChannelId));
+                        if (chnl is { } ch)
+                        {
+                            await ch.SendMessageAsync(message);
+                        }
+
+                    }
+                }
+                   
             }
 
         }

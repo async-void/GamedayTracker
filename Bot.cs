@@ -250,14 +250,14 @@ namespace GamedayTracker
                     {
                         
                         //TODO: need to write the guild to the json file.
-                        var g = new Guild()
-                        {
-                            DateAdded = DateTime.UtcNow,
-                            GuildId = (long)e.Guild.Id,
-                            GuildName = e.Guild.Name,
-                            GuildOwnerId = (long)e.Guild.OwnerId,
-                            NotificationChannelId = (long)e.Guild.SystemChannelId!
-                        };
+                        //var g = new Guild()
+                        //{
+                        //    DateAdded = DateTime.UtcNow,
+                        //    GuildId = (long)e.Guild.Id,
+                        //    GuildName = e.Guild.Name,
+                        //    GuildOwnerId = (long)e.Guild.OwnerId,
+                        //    NotificationChannelId = (long)e.Guild.SystemChannelId!
+                        //};
                             
 
                         Console.ForegroundColor = ConsoleColor.DarkGray;

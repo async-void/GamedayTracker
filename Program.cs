@@ -10,6 +10,7 @@ using DSharpPlus.Interactivity.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Jobs;
+using GamedayTracker.Models;
 using GamedayTracker.Schedules;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
@@ -20,7 +21,7 @@ using Quartz;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Reflection;
-using ILogger = GamedayTracker.Interfaces.ILogger;
+using Log = Serilog.Log;
 
 
 namespace GamedayTracker
@@ -89,7 +90,6 @@ namespace GamedayTracker
 
                     services.AddScoped<ITeamData, TeamDataService>();
                     services.AddScoped<ITimerService, TimerService>();
-                    services.AddScoped<ILogger, LoggerService>();
                     services.AddScoped<IGameData, GameDataService>();
                     services.AddScoped<IXmlDataService, XmlDataServiceProvider>();
                     services.AddScoped<IJsonDataService, JsonDataServiceProvider>();
@@ -99,6 +99,7 @@ namespace GamedayTracker
                     services.AddScoped<ICommandHelper, SlashCommandHelper>();
                     services.AddScoped<IBotTimer, BotTimerDataServiceProvider>();
                     services.AddScoped<IEvaluator, RealTimeScoresModeEvaluatorService>();
+                    services.AddScoped<Interfaces.ILogger, LoggerService>();
                     services.AddScoped<DailyHeadlinesScheduler>();
 
 
@@ -108,7 +109,7 @@ namespace GamedayTracker
                         var jobKey = new JobKey("RealTimeScoresJob");
 
                         q.AddJob<RealTimeScoresJob>(opts => opts.WithIdentity(jobKey));
-
+                       
                         q.AddTrigger(opts => opts
                             .ForJob(jobKey)
                             .WithIdentity("RealTimeScores-trigger")
@@ -144,6 +145,20 @@ namespace GamedayTracker
                         #region GUILD EVENTS HANDLERS
                         .HandleGuildCreated(async (sender, args) =>
                         {
+                            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                            var jsonService = sender.ServiceProvider.GetRequiredService<IJsonDataService>();
+                            var guild = new Guild()
+                            {
+                                GuildId = args.Guild.Id.ToString(),
+                                GuildName = args.Guild.Name,
+                                GuildOwnerId = args.Guild.OwnerId.ToString(),
+                                DateAdded = DateTimeOffset.UtcNow,
+                                IsDailyHeadlinesEnabled = true,
+                                IsRealTimeScoresEnabled = true,
+                                NotificationChannelId = args.Guild.GetDefaultChannel()!.Id.ToString()
+
+                            };
+                            var guildResult = await jsonService.WriteGuildToJsonAsync(guild);
                             var supportChnl = await sender.GetChannelAsync(888659367824601160);
                             var guilds = sender.Guilds.Values;
                             var newChnl = args.Guild.GetDefaultChannel();
@@ -156,8 +171,11 @@ namespace GamedayTracker
                                     new DiscordSectionComponent(new DiscordTextDisplayComponent("Use the `help button` to get started!"),
                                         new DiscordButtonComponent(DiscordButtonStyle.Primary, "helpId", "Help")),
                                     new DiscordSeparatorComponent(true),
+                                    new DiscordSectionComponent(new DiscordTextDisplayComponent("Headlines and Realtime Scores are enabled by default!"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Primary, "settingsId", "Settings")),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                                     new DiscordSectionComponent(
-                                        new DiscordTextDisplayComponent($"GamedayTracker ©️ {DateTimeOffset.UtcNow:MM-dd-yyyy hh:mm:ss tt zzz}"),
+                                        new DiscordTextDisplayComponent($"Powered by GamedayTracker ©️ <t:{unixTimestamp}:F>"),
                                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                                 ];
 

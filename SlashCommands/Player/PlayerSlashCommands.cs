@@ -138,7 +138,7 @@ namespace GamedayTracker.SlashCommands.Player
                     MemberId = dMember.Id.ToString(),
                     MemberName = dMember.Username,
                     Guilds = [ new Guild { Id = Guid.NewGuid(), 
-                                                GuildId = (long)dMember.Guild.Id, 
+                                                GuildId = dMember.Guild.Id.ToString(), 
                                                 GuildName = dMember.Guild.Name,
                                                 DateAdded = DateTimeOffset.UtcNow},],
                     Balance = 100

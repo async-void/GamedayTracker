@@ -4,11 +4,13 @@ namespace GamedayTracker.Models
 {
     public class Guild
     {
-        public Guid Id { get; set; }
-        public required long GuildId { get; set; }
-        public long? NotificationChannelId { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public required string GuildId { get; set; }
+        public string? NotificationChannelId { get; set; }
         public required string GuildName { get; set; }
-        public long? GuildOwnerId { get; set; }
+        public string? GuildOwnerId { get; set; }
         public DateTimeOffset DateAdded { get; set; }
+        public bool IsDailyHeadlinesEnabled { get; set; }
+        public bool IsRealTimeScoresEnabled { get; set; }
     }
 }

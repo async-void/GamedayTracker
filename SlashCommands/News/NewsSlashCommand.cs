@@ -9,13 +9,17 @@ using GamedayTracker.Services;
 using GamedayTracker.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
+using Quartz.Impl.Matchers;
 
 namespace GamedayTracker.SlashCommands.News
 {
     [Command("news")]
     [Description("News Slash Commands")]
-    public class NewsSlashCommand(INewsService newsService)
+    public class NewsSlashCommand(INewsService newsService, ISchedulerFactory schedulerFactory)
     {
+        private readonly ISchedulerFactory _schedulerFactory = schedulerFactory;
+        private readonly INewsService _newsService = newsService;
+
         #region GET NEWS HEADLINES
         [Command("get")]
         [Description("Gets the most recent NFL News and Updates.")]
@@ -24,7 +28,7 @@ namespace GamedayTracker.SlashCommands.News
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var rnd = new Random();
-            var articles = newsService.GetNews();
+            var articles = _newsService.GetNews();
             var imgList = new List<string>();
             if (articles.IsOk)
             {
@@ -70,13 +74,24 @@ namespace GamedayTracker.SlashCommands.News
         }
         #endregion
 
-        #region SET DAILY HEADLINES
-        [Command("set-daily")]
+        #region ENABLE DAILY HEADLINES
+        [Command("enable-daily")]
         [Description("Sets the daily news headlines, default interval = 24h")]
         [RequirePermissions(DiscordPermission.ManageGuild)]
-        public async Task SetDailyHeadlines(CommandContext ctx, [Description("Interval in hours")] int interval = 24)
+        public async Task EnableDailyHeadlines(CommandContext ctx, [Description("Interval in hours")] int interval = 24)
         {
             await ctx.DeferResponseAsync();
+
+            var scheduler = await _schedulerFactory.GetScheduler();
+            var jobs = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+
+            var jobExists = jobs.Any(j => j.Name.Equals("DailyHeadlineJob") && j.Group.Equals("NFL News"));
+            if (jobExists)
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder()
+                    .WithContent("A daily news headline job is already scheduled. Please remove it before setting a new one."));
+                return;
+            }
 
             var dailyScheduler = ctx.ServiceProvider.GetService<DailyHeadlinesScheduler>();
             await dailyScheduler!.StartAsync();
@@ -113,5 +128,6 @@ namespace GamedayTracker.SlashCommands.News
             }
         }
         #endregion
+       
     }
 }

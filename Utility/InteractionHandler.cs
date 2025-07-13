@@ -9,7 +9,7 @@ using GamedayTracker.Services;
 
 namespace GamedayTracker.Utility
 {
-    public class InteractionHandler(ITeamData teamData, IPlayerData playerDataService): IEventHandler<InteractionCreatedEventArgs>
+    public class InteractionHandler(ITeamData teamData, IPlayerData playerDataService, IJsonDataService jsonService): IEventHandler<InteractionCreatedEventArgs>
     {
         public async Task HandleEventAsync(DiscordClient sender, InteractionCreatedEventArgs eventArgs)
         {
@@ -24,7 +24,8 @@ namespace GamedayTracker.Utility
                 case DiscordInteractionType.Component:
                 {
 
-                    switch (eventArgs.Interaction.Data.CustomId)
+                        var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                        switch (eventArgs.Interaction.Data.CustomId)
                         {
                             #region AFC DROPDOWN
                             case "afcDropdown":
@@ -127,7 +128,7 @@ namespace GamedayTracker.Utility
                                     new DiscordTextDisplayComponent(
                                         "Donate is in development, the devs are hard at work implementing this feature!"),
                                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyy hh:mm:ss tt zzz}")
+                                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ <t:{unixTimestamp}:F>")
                                 ];
                                 var cContainer =
                                     new DiscordContainerComponent(bComponent, false, DiscordColor.LightGray);
@@ -154,6 +155,7 @@ namespace GamedayTracker.Utility
                                     new DiscordInteractionResponseBuilder(bMsg));
                                 break;
                             case "helpId":
+                                unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                                 bComponent =                                 
                                 [
                                     new DiscordTextDisplayComponent(
@@ -162,7 +164,7 @@ namespace GamedayTracker.Utility
                                     new DiscordSectionComponent(new DiscordTextDisplayComponent("help keep GamedayTracker alive!"),
                                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
                                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyy hh:mm:ss tt zzz}")
+                                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ <t:{unixTimestamp}:F>")
                                 ];
                                  cContainer =
                                     new DiscordContainerComponent(bComponent, false, DiscordColor.Goldenrod);
@@ -171,6 +173,34 @@ namespace GamedayTracker.Utility
                                     .AddContainerComponent(cContainer);
                                 await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage, 
                                     new DiscordInteractionResponseBuilder(bMsg));
+                                break;
+                            case "settingsId":
+                                unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                                DiscordButtonComponent[] btns =
+                                [
+                                        new DiscordButtonComponent(DiscordButtonStyle.Primary, "headlinesId", "Headlines"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Primary, "realtimeScoresId", "Real Time Scores")
+                                ];
+                                bComponent =
+                                [
+                                    new DiscordTextDisplayComponent(
+                                        "Settings is in development, the devs are hard at work implementing this feature!"),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                   new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
+                                ];
+                                 cContainer =
+                                    new DiscordContainerComponent(bComponent, false, DiscordColor.Goldenrod);
+                                 bMsg = new DiscordInteractionResponseBuilder()
+                                    .EnableV2Components()
+                                    .AddContainerComponent(cContainer)
+                                    .AddActionRowComponent(btns);
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                    new DiscordInteractionResponseBuilder(bMsg));
+                                break;
+                            case "headlinesId":
+                                break;
+                            case "realtimeScoresId":
                                 break;
                             case "btnAddPlayer":
                             {
