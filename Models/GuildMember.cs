@@ -15,6 +15,5 @@ namespace GamedayTracker.Models
         public string? FavoriteTeam { get; set; }
         public double? Balance { get; set; }
         public DateTimeOffset? LastDeposit { get; set; }
-        public ICollection<Guild>? Guilds { get; set; }
     }
 }

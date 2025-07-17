@@ -204,7 +204,7 @@ namespace GamedayTracker.Services
             var file = await File.ReadAllTextAsync(path);
             var members = JsonSerializer.Deserialize<List<GuildMember>>(file);
             var member = members!
-                .Where(p => p.MemberId.ToString().Equals(memberId) && p.Guilds != null && p.Guilds.Any(g => g.GuildId.ToString().Equals(guildId)))
+                .Where(p => p.MemberId.ToString().Equals(memberId))
                 .FirstOrDefault();
             if (member is { } mem) return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Ok(mem);
 
@@ -271,7 +271,7 @@ namespace GamedayTracker.Services
             var lineType = choice == 0 ? LineType.Offense : LineType.Defense;
            
             var stats = JsonSerializer.Deserialize<List<TeamStats>>(json)!
-                .Where(x => x.Season == season && x.LineType.Equals(lineType) && x.TeamName.Equals(teamName, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                .Where(x => x.Season == season && x.LineType.Equals(lineType) && x.TeamName!.Equals(teamName, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
 
             if (stats is not null) return Result<TeamStats, SystemError<JsonDataServiceProvider>>.Ok(stats);
             var error = new SystemError<JsonDataServiceProvider>
@@ -495,7 +495,7 @@ namespace GamedayTracker.Services
             var file = await File.ReadAllTextAsync(path);
             var members = JsonSerializer.Deserialize<List<GuildMember>>(file);
             var member = members!
-                .Where(p => p.MemberId.ToString().Equals(memberId) && p.Guilds != null && p.Guilds.Any(g => g.GuildId.ToString().Equals(guildId)))
+                .Where(p => p.MemberId.ToString().Equals(memberId))
                 .FirstOrDefault();
             //member is not found
             return Result<Guild, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>

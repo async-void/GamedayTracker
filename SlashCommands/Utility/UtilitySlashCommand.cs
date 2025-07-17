@@ -1,26 +1,20 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
-using System.Drawing;
-using System.Globalization;
+using System.Reflection;
 using System.Text;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Entities;
-using GamedayTracker.Data;
-using GamedayTracker.Enums;
-using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
-using GamedayTracker.Services;
 using Humanizer;
 using Serilog;
-using ILogger = GamedayTracker.Interfaces.ILogger;
 
 namespace GamedayTracker.SlashCommands.Utility
 {
    
     [Command("utility")]
     [Description("Utility Slash Commands")]
-    public class UtilitySlashCommand(IBotTimer botTimer, ILogger loggerService)
+    public class UtilitySlashCommand(IBotTimer botTimer)
     {
         #region HELP
         [Command("help")]//TODO: fix me
@@ -102,6 +96,45 @@ namespace GamedayTracker.SlashCommands.Utility
 
             }
   
+        }
+        #endregion
+
+        #region ABOUT
+        [Command("about")]
+        [Description("get information about the bot")]
+        public async ValueTask About(CommandContext ctx)
+        {
+            await ctx.DeferResponseAsync();
+            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var bot = ctx.Client.CurrentUser;
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            var buildDate = new DateTime(2000, 1, 1).AddDays(version!.Build).AddSeconds(version.Revision * 2);
+            var aboutText = new StringBuilder()
+                .AppendLine("## GamedayTracker Bot")
+                .AppendLine($"# Version: {version}")
+                .AppendLine($"# Build Date: {buildDate:MM-dd-yyyy}")
+                .AppendLine($"# Guilds: {ctx.Client.Guilds.Count}")
+                .AppendLine("# Created by: Async")
+                .AppendLine("")
+                .AppendLine("[Support](\"https://discord.gg/r65JVSs4\")")
+                .AppendLine("[GitHub](\"https://github.com/async-void/GamedayTracker\")");
+
+            DiscordComponent[] components =
+            [
+                new DiscordSectionComponent(new DiscordTextDisplayComponent("GamedayTracker"),
+                    new DiscordThumbnailComponent($"{bot.AvatarUrl}")),
+                new DiscordSeparatorComponent(true),
+                new DiscordTextDisplayComponent(aboutText.ToString()),
+                new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                new DiscordSectionComponent(new DiscordTextDisplayComponent($"GamedayTracker ©️ <t:{unixTimestamp}:F>"),
+                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+            ];
+            var container = new DiscordContainerComponent(components, false, DiscordColor.Goldenrod); 
+            var msg = new DiscordMessageBuilder()
+                .EnableV2Components()
+                .AddContainerComponent(container);
+
+            await ctx.EditResponseAsync(msg);
         }
         #endregion
     }

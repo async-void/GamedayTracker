@@ -12,6 +12,7 @@ namespace GamedayTracker.Schedules
             var scheduler = await _schedulerFactory.GetScheduler();
             var job = JobBuilder.Create<DailyHeadlineJob>()
                 .WithIdentity("DailyHeadlineJob", "NFL News")
+                .WithDescription("Job to fetch daily NFL headlines: 24 hour interval")
                 .Build();
             var trigger = TriggerBuilder.Create()
                 .WithIdentity("DailyHeadlineTrigger", "NFL News")

@@ -7,6 +7,8 @@ using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using Quartz;
 using Quartz.Impl.Matchers;
+using CommandAttribute = DSharpPlus.Commands.CommandAttribute;
+using DescriptionAttribute = System.ComponentModel.DescriptionAttribute;
 
 namespace GamedayTracker.SlashCommands.Settings.Moderation
 {
@@ -111,6 +113,7 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
                 var message = new DiscordMessageBuilder()
                     .EnableV2Components()
                     .AddContainerComponent(container);
+                await ctx.RespondAsync(message);
             }
         }
         #endregion

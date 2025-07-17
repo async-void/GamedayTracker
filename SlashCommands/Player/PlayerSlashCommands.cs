@@ -91,20 +91,21 @@ namespace GamedayTracker.SlashCommands.Player
         {
             await ctx.DeferResponseAsync();
 
+            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var result = await jsonDataService.GetMemberFromJsonAsync(dMember.Id.ToString(), dMember.Guild.Id.ToString());
             DiscordComponent[] components;
             DiscordContainerComponent container;
-            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             if (result.IsOk)
             {
                 var member = result.Value;
                 var guild = await ctx.Client.GetGuildAsync(dMember.Guild.Id);
+
                 var sb = new StringBuilder();
-                foreach (var g in member.Guilds)
-                {
-                    sb.Append(g.GuildName);
-                }
+                sb.AppendLine($"**Member Name:** {dMember.Username}");
+                sb.AppendLine($"**Member ID:** {dMember.Id}");
+                sb.AppendLine($"**Joined:** {dMember.JoinedAt.Humanize()}");
+
                 components = 
                 [
                     new DiscordTextDisplayComponent($"**{dMember.Username}**'s Profile"),
@@ -112,13 +113,12 @@ namespace GamedayTracker.SlashCommands.Player
                     new DiscordTextDisplayComponent($"Balance: {member.Balance:C}"),
                     new DiscordTextDisplayComponent($"Last Deposit: {member.LastDeposit?.ToString("g") ?? "Never"}"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"Guilds: {string.Join(",", sb.ToString()) ?? guild.Name}"),
                     new DiscordTextDisplayComponent($"Favorite Team: {member.FavoriteTeam ?? "None"}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
                                                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
-                Log.Information($"Player Exists, profile found for - {member.MemberName} in Guild {member.Guilds.First().GuildName}");
+                Log.Information($"Player Exists, profile found for - {member.MemberName}");
                 container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
                 var msg = new DiscordMessageBuilder()
                     .EnableV2Components()
@@ -130,6 +130,7 @@ namespace GamedayTracker.SlashCommands.Player
                 if (result.Error.ErrorType.Equals(ErrorType.FATAL))
                 {
                     Log.Error(result.Error.ErrorMessage!);
+                    return;
                 }
 
                 await jsonDataService.WriteMemberToJsonAsync(new GuildMember
@@ -137,10 +138,6 @@ namespace GamedayTracker.SlashCommands.Player
                     Id = Guid.NewGuid(),
                     MemberId = dMember.Id.ToString(),
                     MemberName = dMember.Username,
-                    Guilds = [ new Guild { Id = Guid.NewGuid(), 
-                                                GuildId = dMember.Guild.Id.ToString(), 
-                                                GuildName = dMember.Guild.Name,
-                                                DateAdded = DateTimeOffset.UtcNow},],
                     Balance = 100
                 });
 
@@ -149,10 +146,6 @@ namespace GamedayTracker.SlashCommands.Player
                 if (m.IsOk)
                 {
                     var sb = new StringBuilder();
-                    foreach (var g in m.Value.Guilds)
-                    {
-                        sb.Append(g.GuildName);
-                    }
                     components = 
                     [
                         new DiscordTextDisplayComponent($"**{m.Value.MemberName}**'s Profile"),
@@ -160,13 +153,12 @@ namespace GamedayTracker.SlashCommands.Player
                         new DiscordTextDisplayComponent($"Balance: {m.Value.Balance:C}"),
                         new DiscordTextDisplayComponent($"Last Deposit: {m.Value.LastDeposit?.ToString("g") ?? "Never"}"),
                         new DiscordSeparatorComponent(true),
-                        new DiscordTextDisplayComponent($"Guilds: {string.Join(",", sb.ToString())}"),
                         new DiscordTextDisplayComponent($"Favorite Team: {m.Value.FavoriteTeam ?? "None"}"),
                         new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                         new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
                                                                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                     ];
-                    Log.Information($"Player profile found for - {m.Value.MemberName} in Guild {m.Value.Guilds.First().GuildName}");
+                    Log.Information($"Player profile found for - {m.Value.MemberName}");
                     container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
                     var msg = new DiscordMessageBuilder()
                         .EnableV2Components()

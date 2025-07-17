@@ -98,17 +98,15 @@ namespace GamedayTracker
                     services.AddScoped<INewsService, NFLNewsService>();
                     services.AddScoped<ICommandHelper, SlashCommandHelper>();
                     services.AddScoped<IBotTimer, BotTimerDataServiceProvider>();
-                    services.AddScoped<IEvaluator, RealTimeScoresModeEvaluatorService>();
-                    services.AddScoped<Interfaces.ILogger, LoggerService>();
+                    services.AddScoped<IEvaluator, RealTimeScoresModeEvaluatorService>();  
                     services.AddScoped<DailyHeadlinesScheduler>();
-
 
                     #region QUARTZ
                     services.AddQuartz(q =>
                     {
                         var jobKey = new JobKey("RealTimeScoresJob");
-
-                        q.AddJob<RealTimeScoresJob>(opts => opts.WithIdentity(jobKey));
+                        q.AddJob<RealTimeScoresJob>(opts => opts.WithIdentity(jobKey)
+                        .WithDescription("get realtime scores : user-defined intervals").Build());
                        
                         q.AddTrigger(opts => opts
                             .ForJob(jobKey)
@@ -116,7 +114,7 @@ namespace GamedayTracker
                             .StartNow()
                             .WithSimpleSchedule(x => x
                                 .WithInterval(TimeSpan.FromHours(4))
-                                .RepeatForever()));
+                                .RepeatForever().Build()));
                     });
 
                     services.AddQuartzHostedService(q =>
