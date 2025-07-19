@@ -14,6 +14,7 @@
     <PackageReference Include="DSharpPlus.CommandsNext" Version="5.0.0-nightly-02532" />
     <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02532" />
     <PackageReference Include="DSharpPlus.Natives.Zstd" Version="1.5.7.21" />
+    <PackageReference Include="DSharpPlus.SlashCommands" Version="5.0.0-nightly-02532" />
     <PackageReference Include="DSharpPlus.VoiceNext" Version="5.0.0-nightly-02532" />
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
     <PackageReference Include="HtmlAgilityPack" Version="1.12.1" />

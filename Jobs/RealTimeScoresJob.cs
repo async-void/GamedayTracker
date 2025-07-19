@@ -3,11 +3,7 @@ using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
 using Quartz;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace GamedayTracker.Jobs
 {
@@ -15,6 +11,7 @@ namespace GamedayTracker.Jobs
     {
         public async Task Execute(IJobExecutionContext context)
         {
+            Log.Information("Fetching realtime scores....[started]");
             var scoreboard = gameDataService.GetCurrentScoreboard();
            
             if (scoreboard.IsOk && scoreboard.Value.Count > 0)

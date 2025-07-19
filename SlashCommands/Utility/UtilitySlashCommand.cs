@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using DSharpPlus.Commands;
-using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
 using Humanizer;
@@ -53,7 +52,6 @@ namespace GamedayTracker.SlashCommands.Utility
 
         #region PING
         [Command("ping")]
-        [RequirePermissions(permissions: DiscordPermission.ManageGuild)]
         [Description("get the client latency [must have mod or higher roles]")]
         public async ValueTask Ping(CommandContext ctx)
         {
@@ -108,16 +106,15 @@ namespace GamedayTracker.SlashCommands.Utility
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var bot = ctx.Client.CurrentUser;
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            var buildDate = new DateTime(2000, 1, 1).AddDays(version!.Build).AddSeconds(version.Revision * 2);
+            var buildDate = DateTimeOffset.UtcNow;
             var aboutText = new StringBuilder()
-                .AppendLine("## GamedayTracker Bot")
-                .AppendLine($"# Version: {version}")
-                .AppendLine($"# Build Date: {buildDate:MM-dd-yyyy}")
-                .AppendLine($"# Guilds: {ctx.Client.Guilds.Count}")
-                .AppendLine("# Created by: Async")
+                .AppendLine($"**Version:** {version}")
+                .AppendLine($"**Build Date:** {buildDate:MM-dd-yyyy}")
+                .AppendLine($"**Guilds:** {ctx.Client.Guilds.Count}")
+                .AppendLine("**Created by:** Async-Void 》[top level bubbler]")
                 .AppendLine("")
-                .AppendLine("[Support](\"https://discord.gg/r65JVSs4\")")
-                .AppendLine("[GitHub](\"https://github.com/async-void/GamedayTracker\")");
+                .AppendLine("[Support Server](https://discord.gg/r65JVSs4)")
+                .AppendLine("[GitHub](https://github.com/async-void/GamedayTracker)");
 
             DiscordComponent[] components =
             [

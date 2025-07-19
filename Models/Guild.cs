@@ -12,5 +12,6 @@ namespace GamedayTracker.Models
         public DateTimeOffset DateAdded { get; set; }
         public bool IsDailyHeadlinesEnabled { get; set; }
         public bool IsRealTimeScoresEnabled { get; set; }
+        public bool ReceiveSystemMessages { get; set; }
     }
 }

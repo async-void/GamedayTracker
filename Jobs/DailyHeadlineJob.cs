@@ -2,11 +2,8 @@
 using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
 using Quartz;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Serilog;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace GamedayTracker.Jobs
 {
@@ -17,6 +14,7 @@ namespace GamedayTracker.Jobs
         private readonly DiscordClient _client = client;
         public async Task Execute(IJobExecutionContext context)
         {
+            Log.Information("Executing Daily Headline Job...");
             var guilds = await _dataService.GetGuildsFromJsonAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var rnd = new Random();
@@ -55,16 +53,20 @@ namespace GamedayTracker.Jobs
                 {
                     foreach (var g in guilds.Value)
                     {
-                        var chnl = await _client.GetChannelAsync(ulong.Parse(g.NotificationChannelId));
-                        if (chnl is { } ch)
+                        if (g.IsDailyHeadlinesEnabled)
                         {
-                            await ch.SendMessageAsync(message);
+                            var chnl = await _client.GetChannelAsync(ulong.Parse(g.NotificationChannelId));
+                            if (chnl is { } ch)
+                            {
+                                await ch.SendMessageAsync(message);
+                            }
                         }
-
                     }
                 }
-                   
+
             }
+            else
+                Log.Error("Failed to fetch news articles.");
 
         }
     }

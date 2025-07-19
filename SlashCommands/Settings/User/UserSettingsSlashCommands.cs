@@ -1,23 +1,18 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
 using DSharpPlus.Commands;
-using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Extensions;
-using GamedayTracker.Factories;
+using GamedayTracker.Helpers;
+using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
+using Humanizer;
 
 namespace GamedayTracker.SlashCommands.Settings.User
 {
-    public class UserSettingsSlashCommands
+    public class UserSettingsSlashCommands(IJsonDataService jsonDataService)
     {
         #region FAVORITE TEAM
         [Command("favorite-team")]
@@ -25,46 +20,58 @@ namespace GamedayTracker.SlashCommands.Settings.User
         public async Task SetFavoriteTeam(SlashCommandContext ctx, [Parameter("team")] string teamName)
         {
             await ctx.DeferResponseAsync();
-            var abbr = teamName.ToAbbr();
+            var teamNameMatch = NflTeamMatcher.MatchTeam(teamName);
+            var abbr = teamNameMatch!.ToAbbr();
             var logoPath = LogoPathService.GetLogoPath(abbr);
-            var userName = ctx.Member!.Username;
-            await using var db = new BotDbContextFactory().CreateDbContext();
-            var dbMember = db.Members.Where(x => x.MemberName.Equals(userName))!.FirstOrDefault();
-            if (dbMember is not null)
+            
+            var memResult = await jsonDataService.GetMemberFromJsonAsync(ctx.Member.Id.ToString(), ctx.Guild!.Id.ToString());
+            if (memResult.IsOk)
             {
-                dbMember.FavoriteTeam = teamName;
+                var member = memResult.Value;
+                member.FavoriteTeam = teamNameMatch;
+                var teamEmoji = NflEmojiService.GetEmoji(abbr);
+                var writeResult = await jsonDataService.UpdateMemberDataAsync(member);
 
-                DiscordComponent[] components =
-                [
-                    
-                    new DiscordTextDisplayComponent("User Settings - Favorite Team"),
-                    new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"Favorite Team set to: {teamName}"),
-                    new DiscordSeparatorComponent(true),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"{teamName}"),
-                        new DiscordThumbnailComponent(logoPath)),
-                    new DiscordSeparatorComponent(true),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToShortDateString()}"),
-                        new DiscordButtonComponent(DiscordButtonStyle.Primary, label: "Donate", customId: "donateId"))
-                ];
+                if (writeResult.IsOk)
+                {
+                    DiscordComponent[] components =
+                    [
+                        new DiscordTextDisplayComponent("### User Settings - Favorite Team"),
+                        new DiscordSeparatorComponent(true),
+                        new DiscordTextDisplayComponent($"Favorite Team set to: {teamName.Titleize()} {teamEmoji}"),
+                        new DiscordSeparatorComponent(true),
+                        new DiscordSectionComponent(new DiscordTextDisplayComponent($"{teamName}"),
+                            new DiscordThumbnailComponent(logoPath)),
+                        new DiscordSeparatorComponent(true),
+                        new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToShortDateString()}"),
+                            new DiscordButtonComponent(DiscordButtonStyle.Primary, label: "Donate", customId: "donateId"))
+                    ];
 
-                var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
-                var message = new DiscordMessageBuilder()
-                    .EnableV2Components()
-                    .AddContainerComponent(container);
+                    var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
+                    var message = new DiscordMessageBuilder()
+                        .EnableV2Components()
+                        .AddContainerComponent(container);
 
 
-                await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
+                    await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
 
-                db.Members.Update(dbMember);
-                await db.SaveChangesAsync();
-                await ctx.User.SendMessageAsync($"favorite team {teamName} has been set!");
+                    await ctx.User.SendMessageAsync($"favorite team ``{teamName.Titleize()}`` {teamEmoji} has been set!");
+                }
+                else
+                {
+                    var message = new DiscordMessageBuilder()
+                        .AddEmbed(new DiscordEmbedBuilder()
+                            .WithTitle($"User Setting - Set Favorite Team Command")
+                            .WithDescription($"{writeResult.Error.ErrorMessage}")
+                            .WithTimestamp(DateTime.UtcNow));
+                    await ctx.EditResponseAsync(message);
+                }
             }
             else
             {
                 var message = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle($"Daily Command")
+                        .WithTitle($"NOT FOUND")
                         .WithDescription("WIP: member is not in db\r\nwould you like to add the member now?")
                         .WithTimestamp(DateTime.UtcNow));
 

@@ -104,16 +104,29 @@ namespace GamedayTracker
                     #region QUARTZ
                     services.AddQuartz(q =>
                     {
-                        var jobKey = new JobKey("RealTimeScoresJob");
-                        q.AddJob<RealTimeScoresJob>(opts => opts.WithIdentity(jobKey)
+                        var rtJobKey = new JobKey("RealTimeScoresJob");
+                        var headlinesJobKey = new JobKey("DailyHeadlinesJob");
+
+                        q.AddJob<RealTimeScoresJob>(opts => opts.WithIdentity(rtJobKey)
                         .WithDescription("get realtime scores : user-defined intervals").Build());
                        
                         q.AddTrigger(opts => opts
-                            .ForJob(jobKey)
+                            .ForJob(rtJobKey)
                             .WithIdentity("RealTimeScores-trigger")
                             .StartNow()
                             .WithSimpleSchedule(x => x
                                 .WithInterval(TimeSpan.FromHours(4))
+                                .RepeatForever().Build()));
+
+                        q.AddJob<DailyHeadlineJob>(opts => opts.WithIdentity(headlinesJobKey)
+                        .WithDescription("get daily headlines : 24 hour interval").Build());
+
+                        q.AddTrigger(opts => opts
+                            .ForJob(headlinesJobKey)
+                            .WithIdentity("DailyHeadlines-trigger")
+                            .StartNow()
+                            .WithSimpleSchedule(x => x
+                                .WithInterval(TimeSpan.FromHours(24))
                                 .RepeatForever().Build()));
                     });
 
@@ -140,11 +153,12 @@ namespace GamedayTracker
                         })
                         #endregion
 
-                        #region GUILD EVENTS HANDLERS
+                        #region GUILD EVENT HANDLERS
                         .HandleGuildCreated(async (sender, args) =>
                         {
                             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                             var jsonService = sender.ServiceProvider.GetRequiredService<IJsonDataService>();
+                            
                             var guild = new Guild()
                             {
                                 GuildId = args.Guild.Id.ToString(),
@@ -153,6 +167,7 @@ namespace GamedayTracker
                                 DateAdded = DateTimeOffset.UtcNow,
                                 IsDailyHeadlinesEnabled = true,
                                 IsRealTimeScoresEnabled = true,
+                                ReceiveSystemMessages = true,
                                 NotificationChannelId = args.Guild.GetDefaultChannel()!.Id.ToString()
 
                             };
@@ -185,7 +200,7 @@ namespace GamedayTracker
                             }
 
                             await supportChnl.SendMessageAsync(
-                                $"``New Guild Added:{DateTimeOffset.UtcNow:MM-dd-yyyy hh:mm:ss tt zzz} {args.Guild.Name}:({args.Guild.Id}) - Total Guilds: {guilds.Count()}``");
+                                $"``New Guild Added: <t:{unixTimestamp}:F> {args.Guild.Name}:({args.Guild.Id}) - Total Guilds: {guilds.Count()}``");
 
                             Log.Information($"New Guild Added: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}");
 

@@ -1,12 +1,7 @@
 ﻿using GamedayTracker.Interfaces;
 using GamedayTracker.Jobs;
-using GamedayTracker.Services;
 using Quartz;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Serilog;
 
 namespace GamedayTracker.Schedules
 {
@@ -29,6 +24,7 @@ namespace GamedayTracker.Schedules
                     .WithInterval(_evaluatorService.GetInterval(_evaluatorService.Evaluate(DateTimeOffset.Now)))
                     .RepeatForever())
                 .Build();
+            Log.Information($"Starting Daily Headline Job...{job.Key}");
             await _scheduler.ScheduleJob(job, trigger);
             await _scheduler.Start();
         }
