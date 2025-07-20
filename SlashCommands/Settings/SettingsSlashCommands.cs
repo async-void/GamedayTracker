@@ -1,22 +1,24 @@
 ﻿using DSharpPlus.Commands;
+using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
-using DSharpPlus.SlashCommands.Attributes;
-using GamedayTracker.Attributes;
 using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Interfaces;
+using System.ComponentModel;
 
 namespace GamedayTracker.SlashCommands.Settings
 {
-    [SlashCommandGroup("settings", "Settings related commands")]
+    [Command("settings")]
+    [Description("Settings related commands")]
     public class SettingsSlashCommands(IJsonDataService jsonDataService)
     {
         private readonly IJsonDataService _jsonDataService = jsonDataService;
 
-        [SlashCommand("toggle-notifications", "turn on/off system wide notifications")]
-        public async Task ToggleServerNotifications(SlashCommandContext ctx, [SlashChoiceProvider<ToggleChoiceProvider>] int choice)
+        [Command("toggle-notifications")]
+        [Description("turn on/off system wide notifications")]
+        [RequirePermissions(permissions: DiscordPermission.Administrator)]
+        public async Task ToggleServerNotifications(CommandContext ctx, [SlashChoiceProvider<ToggleChoiceProvider>] int choice)
         {
             await ctx.DeferResponseAsync();
             var guildId = ctx.Guild!.Id.ToString();

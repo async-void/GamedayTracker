@@ -1,24 +1,26 @@
 ﻿using System.Text;
 using DSharpPlus.Commands;
+using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
-using GamedayTracker.Attributes;
 using GamedayTracker.Interfaces;
 using Quartz;
 using Quartz.Impl.Matchers;
+using CommandAttribute = DSharpPlus.Commands.CommandAttribute;
 using DescriptionAttribute = System.ComponentModel.DescriptionAttribute;
 
 namespace GamedayTracker.SlashCommands.Settings.Moderation
 {
-    [SlashCommandGroup("moderation", "Moderation Slash Commands")]
+    [Command("moderation")]
+    [Description("Moderation Slash Commands")]
     public class ModerationSettingsSlashCommands(IJsonDataService jsonService, ISchedulerFactory schedulerFactory)
     {
         private readonly IJsonDataService _jsonService = jsonService;
         private readonly ISchedulerFactory _schedulerFactory = schedulerFactory;
 
         #region SET NOTIFICATION CHANNEL
-        [SlashCommand("set-notification-channel", "set the notification channel to receive bot notifications")]
-        [RequireRole(["admin", "mod", "Admin", "Mod"])]
+        [Command("set-notification-channel")]
+        [Description("set the notification channel to receive bot notifications")]
+        [RequirePermissions(permissions: DiscordPermission.Administrator)]
         public async ValueTask SetNotificationChannel(CommandContext ctx, [Description("channel")] DiscordChannel channel)
         {
             await ctx.DeferResponseAsync();
@@ -78,8 +80,9 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
         #endregion
 
         #region LIST SCHEDULED JOBS
-        [SlashCommand("list-jobs", "Lists all scheduled jobs for the current guild")]
-        [RequireRole(["admin", "mod", "Admin", "Mod"])]
+        [Command("list-jobs")]
+        [Description("Lists all scheduled jobs for the current guild")]
+        [RequirePermissions(permissions: DiscordPermission.Administrator)]
         public async ValueTask ListScheduledJobs(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();

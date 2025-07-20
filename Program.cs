@@ -1,13 +1,9 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Commands;
-using DSharpPlus.Commands.EventArgs;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
 using DSharpPlus.Extensions;
-using DSharpPlus.Interactivity.Extensions;
-using DSharpPlus.SlashCommands;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Jobs;
@@ -218,9 +214,6 @@ namespace GamedayTracker
                 .RunConsoleAsync();
             
             await Log.CloseAndFlushAsync();
-
-            //var bot = new Bot();
-            //await bot.RunAsync();
 
         }
     }

@@ -4,7 +4,6 @@ using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Schedules;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,8 +20,9 @@ namespace GamedayTracker.SlashCommands.News
         private readonly INewsService _newsService = newsService;
 
         #region GET NEWS HEADLINES
-        [SlashCommand("get", "Gets the most recent NFL News and Updates.")]
-        public async Task GetNewOrUpdates(SlashCommandContext ctx)
+        [Command("get")]
+        [Description("Gets the most recent NFL News and Updates.")]
+        public async Task GetNewOrUpdates(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();

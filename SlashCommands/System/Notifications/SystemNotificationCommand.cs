@@ -1,21 +1,25 @@
 ﻿
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
 using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Utility;
 using Serilog;
-using System.ComponentModel;
+using CommandAttribute = DSharpPlus.Commands.CommandAttribute;
+using DescriptionAttribute = System.ComponentModel.DescriptionAttribute;
 
 namespace GamedayTracker.SlashCommands.System.Notifications
 {
-    [SlashCommandGroup("notification", "notification commands")]
+    [Command("notification")]
+    [Description("notification commands")]
     public class SystemNotificationCommand(IJsonDataService jsonDataService)
     {
-        [SlashCommand("notify", "Sends a system notification to all guilds that have ReceiveNotifications flag set to true.")]
-        public async Task NotifyAsync(SlashCommandContext ctx, [Parameter("The message to send.")] string message)
+        [Command("notify")]
+        [Description("Sends a system notification to all guilds that have the notification channel set.")]
+        [RequirePermissions(permissions: DiscordPermission.Administrator)]
+        public async Task NotifyAsync(CommandContext ctx, [Parameter("The message to send.")] string message)
         {
             await ctx.DeferResponseAsync();
             var userId = ctx.User.Id;
