@@ -7,6 +7,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Extensions;
 using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.SlashCommands;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Jobs;
@@ -73,7 +74,7 @@ namespace GamedayTracker
                 .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "Logs", "bot_logs.txt"), rollingInterval: RollingInterval.Day,
                  outputTemplate: "[{Timestamp:yyyy-MM-dd hh:mm:ss.fff tt zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
                 .CreateLogger();
-
+           
             await Host.CreateDefaultBuilder()
                 .UseSerilog()
                 .UseConsoleLifetime()
@@ -109,7 +110,7 @@ namespace GamedayTracker
 
                         q.AddJob<RealTimeScoresJob>(opts => opts.WithIdentity(rtJobKey)
                         .WithDescription("get realtime scores : user-defined intervals").Build());
-                       
+
                         q.AddTrigger(opts => opts
                             .ForJob(rtJobKey)
                             .WithIdentity("RealTimeScores-trigger")
@@ -126,7 +127,7 @@ namespace GamedayTracker
                             .WithIdentity("DailyHeadlines-trigger")
                             .StartNow()
                             .WithSimpleSchedule(x => x
-                                .WithInterval(TimeSpan.FromHours(24))
+                                .WithInterval(TimeSpan.FromHours(4))
                                 .RepeatForever().Build()));
                     });
 

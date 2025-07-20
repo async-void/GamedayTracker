@@ -1,33 +1,33 @@
 ﻿
 using DSharpPlus.Commands;
-using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
-using GamedayTracker.Attributes;
+using DSharpPlus.SlashCommands;
+using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
+using GamedayTracker.Utility;
 using Serilog;
 using System.ComponentModel;
 
 namespace GamedayTracker.SlashCommands.System.Notifications
 {
+    [SlashCommandGroup("notification", "notification commands")]
     public class SystemNotificationCommand(IJsonDataService jsonDataService)
     {
-        [Command("notify")]
-        [Description("Sends a system notification to all Guilds.")]
-        [RequirePermissions(DiscordPermission.Administrator)]   
-        public async Task NotifyAsync(CommandContext ctx, [Parameter("The message to send.")] string message)
+        [SlashCommand("notify", "Sends a system notification to all guilds that have ReceiveNotifications flag set to true.")]
+        public async Task NotifyAsync(SlashCommandContext ctx, [Parameter("The message to send.")] string message)
         {
             await ctx.DeferResponseAsync();
-            var author = ctx.User;
+            var userId = ctx.User.Id;
 
-            if (author.Id != 524434302361010186)
+            if (userId != 524434302361010186)
             {
-                var errMsg = new DiscordInteractionResponseBuilder()
-                    .WithContent("You do not have permission to use this command.")
+                var errMessage = new DiscordInteractionResponseBuilder()
+                    .WithContent("this command is reserved for GamedayTracker devs. you donot have permission to execute!")
                     .AsEphemeral(true);
-                await ctx.EditResponseAsync(errMsg);
+                await ctx.EditResponseAsync(errMessage);
                 return;
             }
-
             var guildResult = await jsonDataService.GetGuildsFromJsonAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
@@ -39,7 +39,7 @@ namespace GamedayTracker.SlashCommands.System.Notifications
                     try
                     {
                         var chnl = await ctx.Client.GetChannelAsync(ulong.Parse(guild.NotificationChannelId!));
-                        if (chnl is { } channel)
+                        if (chnl is { } channel && guild.ReceiveSystemMessages == true)
                         {
                             DiscordComponent[] components =
                             [
@@ -57,11 +57,12 @@ namespace GamedayTracker.SlashCommands.System.Notifications
                                 .AddContainerComponent(container);
                             await chnl.SendMessageAsync(msg);
                         }
+                        else
+                            Log.Information($"Guild [{guild.GuildName}] not found! or system messages are disabled.");
                     }
                     catch (Exception ex)
                     {
-                        // Log the exception or handle it as needed
-                        Log.Information($"Failed to send message to guild {guild.Id}: {ex.Message}");
+                        Log.Information($"Failed to send message to guild {guild.GuildName}: {ex.Message}");
                         continue;
                     }
                 }
@@ -72,8 +73,13 @@ namespace GamedayTracker.SlashCommands.System.Notifications
             }
             else
             {
+                //await foreach (var g in ctx.Client.GetGuildsAsync())
+                //{
+                    //TODO: eventially I will send the message to all guilds in the client cashe!
+                //}
+
                 var errMessage = new DiscordInteractionResponseBuilder()
-                   .WithContent($"Failed to retreive Guilds")
+                   .WithContent($"{SystemErrorCodes.GetErrorMessage(ErrorCode.GuildNotFound)} With Error Code: GDT-{ErrorCode.GuildNotFound}")
                    .AsEphemeral(true);
                 await ctx.EditResponseAsync(errMessage);
             }

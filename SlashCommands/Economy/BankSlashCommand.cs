@@ -15,7 +15,7 @@ namespace GamedayTracker.SlashCommands.Economy
       
     [Command("bank")]
     [Description("bank group commands")]
-    public class BankSlashCommand(ILogger logger, IJsonDataService dataService)//TODO: convert from database to json
+    public class BankSlashCommand(IJsonDataService dataService)//TODO: convert from database to json
     {
         #region BALANCE
         [Command("balance")]
@@ -55,7 +55,7 @@ namespace GamedayTracker.SlashCommands.Economy
                     .AddContainerComponent(container);
 
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
-                logger.Log(LogTarget.Console, LogType.Debug, DateTime.UtcNow, $"Get Member Balance was used in {ctx.Guild!.Name} by member: {Chalk.Yellow(ctx.Member!.GlobalName!)}");
+                
                 return;
             }
 
@@ -85,8 +85,7 @@ namespace GamedayTracker.SlashCommands.Economy
 
 
             var dbUser = await dataService.GetMemberFromJsonAsync(member!.Id.ToString(), member.Guild.Id.ToString());
-            logger.Log(LogTarget.Console, LogType.Debug, DateTime.UtcNow,
-                $"attempting to fetch user {member!.GlobalName!}");
+           
 
             //user is in db, run daily command.
             if (dbUser.IsOk)
@@ -111,8 +110,6 @@ namespace GamedayTracker.SlashCommands.Economy
                     dbUser.Value.LastDeposit = DateTime.UtcNow;
                     //TODO: write member data to json
 
-                    logger.Log(LogTarget.Console, LogType.Debug, DateTime.UtcNow,
-                        $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray($"[Daily was used in {ctx.Guild!.Name}]")}");
                     await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
                 }
                 else
@@ -121,8 +118,7 @@ namespace GamedayTracker.SlashCommands.Economy
                         .AddEmbed(new DiscordEmbedBuilder() 
                             .WithDescription($"you can use daily again in ``{timeRemaining}`` from now")
                             .WithTimestamp(DateTime.UtcNow));
-                    logger.Log(LogTarget.Console, LogType.Debug, DateTime.UtcNow,
-                        $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray($"[Daily attempted use in {ctx.Guild!.Name}]")}");
+                   
                     await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
                 }
 

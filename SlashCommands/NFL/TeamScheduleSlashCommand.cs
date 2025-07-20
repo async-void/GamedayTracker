@@ -14,7 +14,7 @@ using ILogger = GamedayTracker.Interfaces.ILogger;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
-    public class TeamScheduleSlashCommand(IGameData gameData, ITeamData teamData, ILogger logger)
+    public class TeamScheduleSlashCommand(IGameData gameData, ITeamData teamData)
     {
         [Command("schedule")]
         [Description("Get Current Season Team Schedule")]
@@ -64,8 +64,6 @@ namespace GamedayTracker.SlashCommands.NFL
                     .AddContainerComponent(container);
 
                 await ctx.RespondAsync(message);
-               
-                logger.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, $"[Get Team Schedule] method ran in debug mode. |server [{ctx.Guild!.Name}]| user: [{ctx.Member!.Username}]");
             }
             else
             {

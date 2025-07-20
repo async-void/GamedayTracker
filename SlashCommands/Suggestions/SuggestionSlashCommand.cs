@@ -5,7 +5,7 @@ namespace GamedayTracker.SlashCommands.Suggestions
 {
     public class SuggestionSlashCommand
     {
-        [DSharpPlus.Commands.Command("suggestion")]
+        [Command("suggestion")]
         [Description("creates a suggestion")]
         public async Task CreateSuggestion(CommandContext ctx, [Parameter("title")] string title,
             [Parameter("suggestion")] string description)

@@ -2,13 +2,13 @@
 
 namespace GamedayTracker.Attributes
 {
-    public class RequireRoleAttribute(ulong[] roles) : SlashCheckBaseAttribute
+    public class RequireRoleAttribute(string[] roles) : SlashCheckBaseAttribute
     {
-        private readonly ulong[] Roles = roles;
+        private readonly string[] Roles = roles;
 
         public override async Task<bool> ExecuteChecksAsync(InteractionContext ctx)
         {
-            var memRoles = ctx.Member.Roles.Select(role => role.Id).ToArray();
+            var memRoles = ctx.Member.Roles.Select(role => role.Name).ToArray();
             foreach (var role in Roles)
             {
                 if (memRoles.Contains(role))
