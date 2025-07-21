@@ -1,18 +1,26 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Commands;
-using DSharpPlus.Commands.EventArgs;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
 using DSharpPlus.Extensions;
-using DSharpPlus.Interactivity.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Jobs;
 using GamedayTracker.Models;
 using GamedayTracker.Schedules;
 using GamedayTracker.Services;
+using GamedayTracker.SlashCommands.Economy;
+using GamedayTracker.SlashCommands.News;
+using GamedayTracker.SlashCommands.NFL;
+using GamedayTracker.SlashCommands.Notifications;
+using GamedayTracker.SlashCommands.Player;
+using GamedayTracker.SlashCommands.Settings;
+using GamedayTracker.SlashCommands.Settings.Moderation;
+using GamedayTracker.SlashCommands.Settings.User;
+using GamedayTracker.SlashCommands.Stats;
+using GamedayTracker.SlashCommands.Suggestions;
+using GamedayTracker.SlashCommands.Utility;
 using GamedayTracker.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -73,21 +81,19 @@ namespace GamedayTracker
                 .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "Logs", "bot_logs.txt"), rollingInterval: RollingInterval.Day,
                  outputTemplate: "[{Timestamp:yyyy-MM-dd hh:mm:ss.fff tt zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
                 .CreateLogger();
-
+           
             await Host.CreateDefaultBuilder()
                 .UseSerilog()
                 .UseConsoleLifetime()
                 .ConfigureServices((context, services) =>
                 {
-                    services.AddLogging(logging => logging.ClearProviders().AddSerilog(logger));
-
                     services.AddHostedService<BotService>()
                         .AddDiscordClient(token.Value, intents)
-                        .AddCommandsExtension((options, config) =>
+                        .AddCommandsExtension((context, config) =>
                         {
                             config.AddCommands(Assembly.GetExecutingAssembly());
                         });
-
+                    services.AddLogging(logging => logging.ClearProviders().AddSerilog(logger));
                     services.AddScoped<ITeamData, TeamDataService>();
                     services.AddScoped<ITimerService, TimerService>();
                     services.AddScoped<IGameData, GameDataService>();
@@ -100,7 +106,7 @@ namespace GamedayTracker
                     services.AddScoped<IBotTimer, BotTimerDataServiceProvider>();
                     services.AddScoped<IEvaluator, RealTimeScoresModeEvaluatorService>();  
                     services.AddScoped<DailyHeadlinesScheduler>();
-
+                    
                     #region QUARTZ
                     services.AddQuartz(q =>
                     {
@@ -109,7 +115,7 @@ namespace GamedayTracker
 
                         q.AddJob<RealTimeScoresJob>(opts => opts.WithIdentity(rtJobKey)
                         .WithDescription("get realtime scores : user-defined intervals").Build());
-                       
+
                         q.AddTrigger(opts => opts
                             .ForJob(rtJobKey)
                             .WithIdentity("RealTimeScores-trigger")
@@ -126,7 +132,7 @@ namespace GamedayTracker
                             .WithIdentity("DailyHeadlines-trigger")
                             .StartNow()
                             .WithSimpleSchedule(x => x
-                                .WithInterval(TimeSpan.FromHours(24))
+                                .WithInterval(TimeSpan.FromHours(4))
                                 .RepeatForever().Build()));
                     });
 
@@ -217,9 +223,6 @@ namespace GamedayTracker
                 .RunConsoleAsync();
             
             await Log.CloseAndFlushAsync();
-
-            //var bot = new Bot();
-            //await bot.RunAsync();
 
         }
     }

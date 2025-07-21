@@ -568,6 +568,35 @@ namespace GamedayTracker.Services
         }
         #endregion
 
+        #region GET GUILD FROM JSON
+        public async Task<Result<Guild, SystemError<JsonDataServiceProvider>>> GetGuildFromJsonAsync(string guildId)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "guilds.json");
+            if (!File.Exists(path))
+            {
+                return Result<Guild, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                {
+                    ErrorMessage = "Guild data file not found.",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedBy = this
+                });
+            }
+            var json = await File.ReadAllTextAsync(path);
+            var guilds = JsonSerializer.Deserialize<List<Guild>>(json)!;
+            var guild = guilds.FirstOrDefault(g => g.GuildId.Equals(guildId, StringComparison.OrdinalIgnoreCase));
+            if (guild is { }) return Result<Guild, SystemError<JsonDataServiceProvider>>.Ok(guild);
+
+            return Result<Guild, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+            {
+                ErrorMessage = "Guild data not found.",
+                CreatedAt = DateTimeOffset.UtcNow,
+                ErrorType = ErrorType.INFORMATION,
+                CreatedBy = this
+            });
+        }
+        #endregion
+
         #region WRITE GUILD TO JSON
         public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteGuildToJsonAsync(Guild guild)
         {
@@ -602,6 +631,42 @@ namespace GamedayTracker.Services
                     CreatedBy = this
                 });
             }
+        }
+        #endregion
+
+        #region UPDATE GUILD DATA
+        public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> UpdateGuildDataAsync(Guild guild)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "guilds.json");
+            if (!File.Exists(path))
+            {
+                return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                {
+                    ErrorMessage = "Guild data file not found.",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedBy = this
+                });
+            }
+            var json = File.ReadAllText(path);
+            JsonArray? guilds = JsonNode.Parse(json)?.AsArray();
+            if (guilds is not null)
+            {
+                var gld = guilds.OfType<JsonObject>()
+                    .FirstOrDefault(g => g["GuildId"]!.ToString().Equals(guild.GuildId.ToString()));
+                if (gld is { })
+                {
+                    await File.WriteAllTextAsync(path, guilds.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+                    return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
+                }
+            }
+            return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+            {
+                ErrorMessage = "Guild data not found.",
+                CreatedAt = DateTimeOffset.UtcNow,
+                ErrorType = ErrorType.INFORMATION,
+                CreatedBy = this
+            });
         }
         #endregion
     }

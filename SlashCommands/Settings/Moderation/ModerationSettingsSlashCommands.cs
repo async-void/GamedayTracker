@@ -1,9 +1,8 @@
-﻿using System.ComponentModel;
-using System.Text;
+﻿using System.Text;
 using DSharpPlus.Commands;
-using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using Quartz;
 using Quartz.Impl.Matchers;
@@ -14,7 +13,6 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
 {
     [Command("moderation")]
     [Description("Moderation Slash Commands")]
-    [RequirePermissions(DiscordPermission.ManageGuild)]
     public class ModerationSettingsSlashCommands(IJsonDataService jsonService, ISchedulerFactory schedulerFactory)
     {
         private readonly IJsonDataService _jsonService = jsonService;
@@ -23,7 +21,8 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
         #region SET NOTIFICATION CHANNEL
         [Command("set-notification-channel")]
         [Description("set the notification channel to receive bot notifications")]
-        public async ValueTask SetNotificationChannel(CommandContext ctx, [Description("channel")] DiscordChannel channel)
+        [RequirePermissions(permissions: DiscordPermission.Administrator)]
+        public async ValueTask SetNotificationChannel(SlashCommandContext ctx, [Description("channel")] DiscordChannel channel)
         {
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -84,7 +83,8 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
         #region LIST SCHEDULED JOBS
         [Command("list-jobs")]
         [Description("Lists all scheduled jobs for the current guild")]
-        public async ValueTask ListScheduledJobs(CommandContext ctx)
+        [RequirePermissions(permissions: DiscordPermission.Administrator)]
+        public async ValueTask ListScheduledJobs(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();

@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.MessageCommands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
 using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
@@ -23,8 +24,8 @@ namespace GamedayTracker.SlashCommands.Player
 
         [Command("add")]
         [Description("add player to the pool")]
-        [RequirePermissions(DiscordPermission.ManageGuild)]
-        public async Task AddPlayer(MessageCommandContext ctx, 
+        [RequirePermissions(permissions: DiscordPermission.ManageGuild)]
+        public async Task AddPlayer(SlashCommandContext ctx, 
             [Parameter("Name")] string playerName, [Parameter("Company")] string company,
             [Parameter("Balance")] string balance)
         {
@@ -88,7 +89,7 @@ namespace GamedayTracker.SlashCommands.Player
         #region PLAYER PROFILE
         [Command("profile")]
         [Description("View player profile")]//TODO: fix me
-        public async ValueTask GetPlayerProfile(CommandContext ctx, [Parameter("Member")] DiscordMember dMember)
+        public async ValueTask GetPlayerProfile(SlashCommandContext ctx, [Parameter("Member")] DiscordMember dMember)
         {
             await ctx.DeferResponseAsync();
 

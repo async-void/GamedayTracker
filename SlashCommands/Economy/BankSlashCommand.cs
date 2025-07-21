@@ -1,11 +1,7 @@
 ﻿using System.ComponentModel;
-using System.Globalization;
-using ChalkDotNET;
 using DSharpPlus.Commands;
-using DSharpPlus.Commands.Processors.MessageCommands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
-using GamedayTracker.Enums;
-using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using Humanizer;
@@ -15,12 +11,12 @@ namespace GamedayTracker.SlashCommands.Economy
       
     [Command("bank")]
     [Description("bank group commands")]
-    public class BankSlashCommand(ILogger logger, IJsonDataService dataService)//TODO: convert from database to json
+    public class BankSlashCommand(IJsonDataService dataService)
     {
         #region BALANCE
         [Command("balance")]
         [Description("Get User Bank Balance")]
-        public async Task GetUserBalance(MessageCommandContext ctx,
+        public async Task GetUserBalance(SlashCommandContext ctx,
             [Parameter("member")] DiscordUser user)
         {
             await ctx.DeferResponseAsync();
@@ -55,7 +51,7 @@ namespace GamedayTracker.SlashCommands.Economy
                     .AddContainerComponent(container);
 
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
-                logger.Log(LogTarget.Console, LogType.Debug, DateTime.UtcNow, $"Get Member Balance was used in {ctx.Guild!.Name} by member: {Chalk.Yellow(ctx.Member!.GlobalName!)}");
+                
                 return;
             }
 
@@ -78,15 +74,14 @@ namespace GamedayTracker.SlashCommands.Economy
         #region DAILY SLASHCOMMAND
         [Command("daily")]
         [Description("adds the daily [$5.00] to the user account")]
-        public async ValueTask RunDaily(CommandContext ctx)
+        public async ValueTask RunDaily(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync();
             var member = ctx.Member;
 
 
             var dbUser = await dataService.GetMemberFromJsonAsync(member!.Id.ToString(), member.Guild.Id.ToString());
-            logger.Log(LogTarget.Console, LogType.Debug, DateTime.UtcNow,
-                $"attempting to fetch user {member!.GlobalName!}");
+           
 
             //user is in db, run daily command.
             if (dbUser.IsOk)
@@ -111,8 +106,6 @@ namespace GamedayTracker.SlashCommands.Economy
                     dbUser.Value.LastDeposit = DateTime.UtcNow;
                     //TODO: write member data to json
 
-                    logger.Log(LogTarget.Console, LogType.Debug, DateTime.UtcNow,
-                        $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray($"[Daily was used in {ctx.Guild!.Name}]")}");
                     await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
                 }
                 else
@@ -121,8 +114,7 @@ namespace GamedayTracker.SlashCommands.Economy
                         .AddEmbed(new DiscordEmbedBuilder() 
                             .WithDescription($"you can use daily again in ``{timeRemaining}`` from now")
                             .WithTimestamp(DateTime.UtcNow));
-                    logger.Log(LogTarget.Console, LogType.Debug, DateTime.UtcNow,
-                        $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray($"[Daily attempted use in {ctx.Guild!.Name}]")}");
+                   
                     await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
                 }
 
@@ -152,8 +144,7 @@ namespace GamedayTracker.SlashCommands.Economy
                                          $"``{TimeSpan.FromHours(24).Humanize(3, minUnit: TimeUnit.Minute)}`` from now")
                         .WithTimestamp(DateTime.UtcNow)
                         );
-                Console.WriteLine(
-                    $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray($"[Daily was used in {ctx.Guild.Name}]")}");
+               
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
             }
         }

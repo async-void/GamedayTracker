@@ -83,7 +83,7 @@ namespace GamedayTracker.SlashCommands.Settings.User
         #region ENABLE UPDATES
         [Command("user-settings")]
         [Description("user settings")]
-        public async Task UserSettings(SlashCommandContext ctx, [SlashChoiceProvider<UserSettingsChoiceProvider>] int choice)
+        public async Task UserSettings(CommandContext ctx, [SlashChoiceProvider<UserSettingsChoiceProvider>] int choice)
         {
             await ctx.DeferResponseAsync();
             switch (choice)

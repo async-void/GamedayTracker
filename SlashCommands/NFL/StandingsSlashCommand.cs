@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
 using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
@@ -13,7 +14,7 @@ namespace GamedayTracker.SlashCommands.NFL
     {
         [Command("standings")]
         [Description("get season Team Standings")]
-        public async Task GetStandings(CommandContext ctx,
+        public async Task GetStandings(SlashCommandContext ctx,
             [Parameter("season")] string season)
         {
             await ctx.DeferResponseAsync();
