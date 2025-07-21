@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
 using Humanizer;
@@ -18,7 +19,7 @@ namespace GamedayTracker.SlashCommands.Utility
         #region HELP
         [Command("help")]//TODO: fix me
         [Description("help commands and a brief explaination")]
-        public async Task Help(CommandContext ctx)
+        public async Task Help(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync();
 
@@ -53,7 +54,7 @@ namespace GamedayTracker.SlashCommands.Utility
         #region PING
         [Command("ping")]
         [Description("get the client latency [must have mod or higher roles]")]
-        public async ValueTask Ping(CommandContext ctx)
+        public async ValueTask Ping(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -100,7 +101,7 @@ namespace GamedayTracker.SlashCommands.Utility
         #region ABOUT
         [Command("about")]
         [Description("get information about the bot")]
-        public async ValueTask About(CommandContext ctx)
+        public async ValueTask About(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();

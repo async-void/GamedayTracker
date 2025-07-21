@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
@@ -16,7 +17,7 @@ namespace GamedayTracker.SlashCommands.Settings.User
         #region FAVORITE TEAM
         [Command("favorite-team")]
         [Description("set's the user's favorite NFL team.")]
-        public async Task SetFavoriteTeam(CommandContext ctx, [Parameter("team")] string teamName)
+        public async Task SetFavoriteTeam(SlashCommandContext ctx, [Parameter("team")] string teamName)
         {
             await ctx.DeferResponseAsync();
             var teamNameMatch = NflTeamMatcher.MatchTeam(teamName);

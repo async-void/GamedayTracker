@@ -10,6 +10,17 @@ using GamedayTracker.Jobs;
 using GamedayTracker.Models;
 using GamedayTracker.Schedules;
 using GamedayTracker.Services;
+using GamedayTracker.SlashCommands.Economy;
+using GamedayTracker.SlashCommands.News;
+using GamedayTracker.SlashCommands.NFL;
+using GamedayTracker.SlashCommands.Notifications;
+using GamedayTracker.SlashCommands.Player;
+using GamedayTracker.SlashCommands.Settings;
+using GamedayTracker.SlashCommands.Settings.Moderation;
+using GamedayTracker.SlashCommands.Settings.User;
+using GamedayTracker.SlashCommands.Stats;
+using GamedayTracker.SlashCommands.Suggestions;
+using GamedayTracker.SlashCommands.Utility;
 using GamedayTracker.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -76,15 +87,13 @@ namespace GamedayTracker
                 .UseConsoleLifetime()
                 .ConfigureServices((context, services) =>
                 {
-                    services.AddLogging(logging => logging.ClearProviders().AddSerilog(logger));
-
                     services.AddHostedService<BotService>()
                         .AddDiscordClient(token.Value, intents)
-                        .AddCommandsExtension((options, config) =>
+                        .AddCommandsExtension((context, config) =>
                         {
                             config.AddCommands(Assembly.GetExecutingAssembly());
                         });
-
+                    services.AddLogging(logging => logging.ClearProviders().AddSerilog(logger));
                     services.AddScoped<ITeamData, TeamDataService>();
                     services.AddScoped<ITimerService, TimerService>();
                     services.AddScoped<IGameData, GameDataService>();
@@ -97,7 +106,7 @@ namespace GamedayTracker
                     services.AddScoped<IBotTimer, BotTimerDataServiceProvider>();
                     services.AddScoped<IEvaluator, RealTimeScoresModeEvaluatorService>();  
                     services.AddScoped<DailyHeadlinesScheduler>();
-
+                    
                     #region QUARTZ
                     services.AddQuartz(q =>
                     {

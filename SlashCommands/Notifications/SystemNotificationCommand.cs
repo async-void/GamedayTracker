@@ -1,38 +1,33 @@
-﻿
-using DSharpPlus.Commands;
+﻿using DSharpPlus.Commands;
+using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands;
-using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Utility;
 using Serilog;
-using CommandAttribute = DSharpPlus.Commands.CommandAttribute;
-using DescriptionAttribute = System.ComponentModel.DescriptionAttribute;
+using System.ComponentModel;
 
-namespace GamedayTracker.SlashCommands.System.Notifications
+namespace GamedayTracker.SlashCommands.Notifications
 {
-    [Command("notification")]
-    [Description("notification commands")]
     public class SystemNotificationCommand(IJsonDataService jsonDataService)
     {
+        private readonly IJsonDataService _jsonDataService = jsonDataService;
+
         [Command("notify")]
         [Description("Sends a system notification to all guilds that have the notification channel set.")]
         [RequirePermissions(permissions: DiscordPermission.Administrator)]
-        public async Task NotifyAsync(CommandContext ctx, [Parameter("The message to send.")] string message)
+        public async Task NotifyAsync(SlashCommandContext ctx, [Description("the message to send")] [Parameter("message")] string message)
         {
             await ctx.DeferResponseAsync();
             var userId = ctx.User.Id;
 
             if (userId != 524434302361010186)
             {
-                var errMessage = new DiscordInteractionResponseBuilder()
-                    .WithContent("this command is reserved for GamedayTracker devs. you donot have permission to execute!")
-                    .AsEphemeral(true);
-                await ctx.EditResponseAsync(errMessage);
+                await ctx.EditResponseAsync("unable to execute command!");
                 return;
             }
-            var guildResult = await jsonDataService.GetGuildsFromJsonAsync();
+            var guildResult = await _jsonDataService.GetGuildsFromJsonAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             if (guildResult.IsOk)

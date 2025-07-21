@@ -27,7 +27,7 @@ namespace GamedayTracker.SlashCommands.Economy
         #region LEADERBOARD
         [Command("leaderboard")]
         [Description("get the betting leaderboard")]
-        public async Task Leaderboard(CommandContext ctx, [SlashChoiceProvider<LeaderboardChoiceProvider>] int choice)
+        public async Task Leaderboard(SlashCommandContext ctx, [SlashChoiceProvider<LeaderboardChoiceProvider>] int choice)
         {
             await ctx.DeferResponseAsync();
             

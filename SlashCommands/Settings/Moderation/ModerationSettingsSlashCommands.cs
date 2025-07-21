@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
@@ -21,7 +22,7 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
         [Command("set-notification-channel")]
         [Description("set the notification channel to receive bot notifications")]
         [RequirePermissions(permissions: DiscordPermission.Administrator)]
-        public async ValueTask SetNotificationChannel(CommandContext ctx, [Description("channel")] DiscordChannel channel)
+        public async ValueTask SetNotificationChannel(SlashCommandContext ctx, [Description("channel")] DiscordChannel channel)
         {
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -83,7 +84,7 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
         [Command("list-jobs")]
         [Description("Lists all scheduled jobs for the current guild")]
         [RequirePermissions(permissions: DiscordPermission.Administrator)]
-        public async ValueTask ListScheduledJobs(CommandContext ctx)
+        public async ValueTask ListScheduledJobs(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();

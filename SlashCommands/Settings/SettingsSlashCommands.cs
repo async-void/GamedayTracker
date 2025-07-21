@@ -18,7 +18,7 @@ namespace GamedayTracker.SlashCommands.Settings
         [Command("toggle-notifications")]
         [Description("turn on/off system wide notifications")]
         [RequirePermissions(permissions: DiscordPermission.Administrator)]
-        public async Task ToggleServerNotifications(CommandContext ctx, [SlashChoiceProvider<ToggleChoiceProvider>] int choice)
+        public async Task ToggleServerNotifications(SlashCommandContext ctx, [SlashChoiceProvider<ToggleChoiceProvider>] int choice)
         {
             await ctx.DeferResponseAsync();
             var guildId = ctx.Guild!.Id.ToString();

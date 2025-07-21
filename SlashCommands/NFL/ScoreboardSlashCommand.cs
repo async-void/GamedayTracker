@@ -1,4 +1,5 @@
 ﻿using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
@@ -18,7 +19,7 @@ namespace GamedayTracker.SlashCommands.NFL
 
         [Command("scoreboard")]
         [Description("get the scores for a specified week")]
-        public async Task GetScoreboard(CommandContext ctx, [SlashChoiceProvider<SeasonChoiceProvider>] int season,
+        public async Task GetScoreboard(SlashCommandContext ctx, [SlashChoiceProvider<SeasonChoiceProvider>] int season,
             [SlashChoiceProvider<WeekChoiceProvider>] int week)
         {
             await ctx.DeferResponseAsync();

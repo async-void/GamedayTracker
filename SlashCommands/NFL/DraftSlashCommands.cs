@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Commands.Processors.SlashCommands.Localization;
 using DSharpPlus.Entities;
@@ -24,7 +25,7 @@ namespace GamedayTracker.SlashCommands.NFL
     {
         [Command("get")]
         [Description("Get supplied draft season")]
-        public async Task GetDraftSeason(CommandContext ctx, [SlashChoiceProvider<ConferenceChoiceProvider>] int conference)
+        public async Task GetDraftSeason(SlashCommandContext ctx, [SlashChoiceProvider<ConferenceChoiceProvider>] int conference)
         {
             await ctx.DeferResponseAsync();
 

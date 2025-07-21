@@ -22,7 +22,7 @@ namespace GamedayTracker.SlashCommands.News
         #region GET NEWS HEADLINES
         [Command("get")]
         [Description("Gets the most recent NFL News and Updates.")]
-        public async Task GetNewOrUpdates(CommandContext ctx)
+        public async Task GetNewOrUpdates(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();

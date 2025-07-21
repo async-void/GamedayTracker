@@ -18,6 +18,7 @@ namespace GamedayTracker.SlashCommands.Stats
         [Description("Get [Offense, Defense] Stats")]
         public async Task GetTeamStats(SlashCommandContext ctx, [SlashChoiceProvider<OffenseDefenseChoiceProvider>] int choice, 
             [Parameter("team"), Description("example: Buffalo or Pittsburgh")] string teamName, [SlashChoiceProvider<SeasonChoiceProvider>] int season)
+            
         {
             await ctx.DeferResponseAsync();
             var isOffense = "";

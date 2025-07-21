@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 
 namespace GamedayTracker.SlashCommands.Suggestions
 {
@@ -7,7 +8,7 @@ namespace GamedayTracker.SlashCommands.Suggestions
     {
         [Command("suggestion")]
         [Description("creates a suggestion")]
-        public async Task CreateSuggestion(CommandContext ctx, [Parameter("title")] string title,
+        public async Task CreateSuggestion(SlashCommandContext ctx, [Parameter("title")] string title,
             [Parameter("suggestion")] string description)
         {
             await ctx.DeferResponseAsync();
