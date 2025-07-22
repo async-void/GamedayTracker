@@ -13,8 +13,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GamedayTracker.Helpers
 {
-    public class SlashCommandHelper : ICommandHelper
+    public class SlashCommandHelper(IJsonDataService dataService): ICommandHelper
     {
+        private readonly IJsonDataService _dataService = dataService;
+
         #region BUILDLEADERBOARD
         /// <summary>
         /// Build a leaderboard based on the Guild or Global scope
@@ -22,45 +24,48 @@ namespace GamedayTracker.Helpers
         /// <param name="guildId"></param>
         /// <param name="scope"></param>
         /// <returns>a list of guild members</returns>
-        public Result<List<GuildMember>, SystemError<SlashCommandHelper>> BuildLeaderboard(string guildId, int scope)
+        public async Task<Result<List<GuildMember>, SystemError<SlashCommandHelper>>> BuildLeaderboard(string guildId, int scope)
         {
             List<GuildMember> leaderboard;
-           using var db = new BotDbContextFactory().CreateDbContext();
 
             switch (scope)
             {
-                case 0:
-                    leaderboard = null;
-                        
-                    
-                    if (leaderboard.Count > 0)
+                case 0://Guild
+                    var leaderboardResult = await _dataService.GetAllMembersForScope(0, guildId);
+
+                    if (leaderboardResult.IsOk)
                     {
+                        leaderboard = [.. leaderboardResult.Value
+                            .Where(m => m.GuildId == guildId)
+                            .OrderByDescending(m => m.BetWins)];
                         return Result<List<GuildMember>, SystemError<SlashCommandHelper>>.Ok(leaderboard);
                     }
                     else
                     {
-                       return Result<List<GuildMember>, SystemError<SlashCommandHelper>>.Err(new SystemError<SlashCommandHelper>()
-                       {
-                           ErrorMessage = "No members found",
-                           ErrorType = ErrorType.INFORMATION,
-                           CreatedAt = DateTime.Now,
-                           CreatedBy = this
-                       });
+                        return Result<List<GuildMember>, SystemError<SlashCommandHelper>>.Err(new SystemError<SlashCommandHelper>
+                        {
+                            ErrorMessage = leaderboardResult.Error.ErrorMessage,
+                            ErrorType = leaderboardResult.Error.ErrorType,
+                            CreatedAt = DateTime.Now,
+                            CreatedBy = this
+                        });
                     }
 
-                case 1:
-                    leaderboard = db.Members.ToList();
-                        
-                    if (leaderboard.Count > 0)
+                case 1://Global
+                    leaderboardResult = await _dataService.GetAllMembersForScope(1);
+
+                    if (leaderboardResult.IsOk)
                     {
+                        leaderboard = [.. leaderboardResult.Value
+                            .OrderByDescending(m => m.BetWins)];
                         return Result<List<GuildMember>, SystemError<SlashCommandHelper>>.Ok(leaderboard);
                     }
                     else
                     {
-                        return Result<List<GuildMember>, SystemError<SlashCommandHelper>>.Err(new SystemError<SlashCommandHelper>()
+                        return Result<List<GuildMember>, SystemError<SlashCommandHelper>>.Err(new SystemError<SlashCommandHelper>
                         {
-                            ErrorMessage = "No members found",
-                            ErrorType = ErrorType.INFORMATION,
+                            ErrorMessage = leaderboardResult.Error.ErrorMessage,
+                            ErrorType = leaderboardResult.Error.ErrorType,
                             CreatedAt = DateTime.Now,
                             CreatedBy = this
                         });
@@ -91,7 +96,7 @@ namespace GamedayTracker.Helpers
 
             foreach (var member in members)
             {
-                builder.Append($"``{idx.ToString(CultureInfo.CurrentCulture)}. {member.MemberName.PadLeft(8)} {member.Balance}");
+                builder.Append($"``{idx.ToString(CultureInfo.CurrentCulture)}``. {member.MemberName.PadLeft(8)} {member.Balance}");
                 idx++;
             }
 

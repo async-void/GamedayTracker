@@ -1,10 +1,11 @@
-﻿using System;
+﻿using GamedayTracker.Helpers;
+using GamedayTracker.Models;
+using GamedayTracker.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using GamedayTracker.Models;
-using GamedayTracker.Services;
 
 namespace GamedayTracker.Interfaces
 {
@@ -29,6 +30,7 @@ namespace GamedayTracker.Interfaces
         Task<Result<List<DraftEntity>, SystemError<JsonDataServiceProvider>>> GetDraftFromJsonAsync(int season, string teamName);
         Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteDraftToJsonAsync(List<DraftEntity> source, int season);
         Task<Result<Guild, SystemError<JsonDataServiceProvider>>> GetMemberGuildFromJsonAsync(string memberId, string guildId);
+        Task<Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>> GetAllMembersForScope(int scope, string? guildId = null);
         Task<Result<List<Guild>, SystemError<JsonDataServiceProvider>>> GetGuildsFromJsonAsync();
         Task<Result<Guild, SystemError<JsonDataServiceProvider>>> GetGuildFromJsonAsync(string guildId);
         Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteGuildToJsonAsync(Guild guild);

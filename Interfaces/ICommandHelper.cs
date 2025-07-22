@@ -10,7 +10,7 @@ namespace GamedayTracker.Interfaces
 {
     public interface ICommandHelper
     {
-        Result<List<GuildMember>, SystemError<SlashCommandHelper>> BuildLeaderboard(string guildId, int scope);
+        Task<Result<List<GuildMember>, SystemError<SlashCommandHelper>>> BuildLeaderboard(string guildId, int scope);
         Result<string, SystemError<SlashCommandHelper>> BuildLeaderboardDescription(List<GuildMember> members);
     }
 }

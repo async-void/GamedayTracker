@@ -1,5 +1,6 @@
 ﻿using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
+using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using System.Text.Json;
@@ -178,6 +179,83 @@ namespace GamedayTracker.Services
 
         }
 
+        #endregion
+
+        #region GET ALL MEMBERS FOR SCOPE
+        public async Task<Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>> GetAllMembersForScope(int scope, string? guildId)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "members.json");
+            if (!File.Exists(path))
+            {
+                return Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                {
+                    ErrorMessage = "Player data file not found.",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedBy = this
+                });
+            }
+
+            switch (scope)
+            {
+                case 0: //Guild Scope
+                    if (guildId is not null)
+                    {
+                        var file = await File.ReadAllTextAsync(path);
+                        var members = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
+                        var guildMembers = members
+                            .Where(m => m.GuildId.ToString().Equals(guildId, StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+                        if (guildMembers.Count > 0)
+                        {
+                            return Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>.Ok(guildMembers);
+                        }
+                        return Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                        {
+                            ErrorMessage = "No members found for the specified guild.",
+                            CreatedAt = DateTimeOffset.UtcNow,
+                            ErrorType = ErrorType.INFORMATION,
+                            CreatedBy = this
+                        });
+                    }
+                    else
+                    {
+                        return Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                        {
+                            ErrorMessage = "Guild Id not found or Guild Id was not provided.",
+                            CreatedAt = DateTimeOffset.UtcNow,
+                            ErrorType = ErrorType.INFORMATION,
+                            CreatedBy = this
+                        });
+                    }
+
+                case 1://Global Scope
+                    var _file = await File.ReadAllTextAsync(path);
+                    var _members = JsonSerializer.Deserialize<List<GuildMember>>(_file) ?? [];
+                    if (_members.Count > 0)
+                    {
+                        return Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>.Ok(_members);
+                    }
+
+                    return Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                    {
+                        ErrorMessage = "No members found.",
+                        CreatedAt = DateTimeOffset.UtcNow,
+                        ErrorType = ErrorType.INFORMATION,
+                        CreatedBy = this
+                    });
+
+                default:
+                    break;
+            }
+            return Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+            {
+                ErrorMessage = "Unkown error occured...unable to get members list",
+                CreatedAt = DateTimeOffset.UtcNow,
+                ErrorType = ErrorType.INFORMATION,
+                CreatedBy = this
+            });
+        }
         #endregion
 
         #region GET MEMBER FROM JSON

@@ -1,13 +1,14 @@
 ﻿using System.Text;
-using DSharpPlus.Commands;
+using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using GamedayTracker.Attributes;
 using GamedayTracker.Interfaces;
 using Quartz;
 using Quartz.Impl.Matchers;
 using CommandAttribute = DSharpPlus.Commands.CommandAttribute;
-using DescriptionAttribute = System.ComponentModel.DescriptionAttribute;
+using RequirePermissionsAttribute = DSharpPlus.Commands.ContextChecks.RequirePermissionsAttribute;
 
 namespace GamedayTracker.SlashCommands.Settings.Moderation
 {
@@ -21,12 +22,12 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
         #region SET NOTIFICATION CHANNEL
         [Command("set-notification-channel")]
         [Description("set the notification channel to receive bot notifications")]
-        [RequirePermissions(permissions: DiscordPermission.Administrator)]
+        [RequireRole(["admin", "Admin"])]
         public async ValueTask SetNotificationChannel(SlashCommandContext ctx, [Description("channel")] DiscordChannel channel)
         {
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var guildResult = await _jsonService.GetMemberGuildFromJsonAsync(ctx.User.Id.ToString(), ctx.Guild!.Id.ToString());
+            var guildResult = await _jsonService.GetGuildFromJsonAsync(ctx.Guild!.Id.ToString());
 
             if (guildResult.IsOk)
             {
@@ -59,7 +60,7 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
                 [
                     new DiscordTextDisplayComponent($"## ❌ FAILURE ❌"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"unable to set {channel.Name} as the notification channel, with error id: {errorId}"),
+                    new DiscordTextDisplayComponent($"unable to set {channel.Name} as the notification channel, with error id: {errorId}\r\nError Message {guildResult.Error.ErrorMessage}"),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
                         new DiscordButtonComponent(DiscordButtonStyle.Primary, "donateId", "Donate"))
                 ];
