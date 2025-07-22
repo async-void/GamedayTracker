@@ -147,7 +147,8 @@ namespace GamedayTracker.SlashCommands.Player
                     GuildId = dMember.Guild.Id.ToString(),
                     MemberId = dMember.Id.ToString(),
                     MemberName = dMember.Username,
-                    Balance = 100
+                    Balance = 100,
+                    BetWins = 0,
                 });
 
                 var m = await jsonDataService.GetMemberFromJsonAsync(dMember.Id.ToString(), dMember.Guild.Id.ToString());

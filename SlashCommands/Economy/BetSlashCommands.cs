@@ -5,7 +5,9 @@ using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Factories;
+using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
+using GamedayTracker.Models;
 using GamedayTracker.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,14 +15,17 @@ namespace GamedayTracker.SlashCommands.Economy
 {
     [Command("betting")]
     [Description("betting slash commands")]
-    public class BetSlashCommands(ICommandHelper slashCmdHelper, IGameData gameData)
+    public class BetSlashCommands(ICommandHelper slashCmdHelper, IJsonDataService jsonService)
     {
+        private readonly IJsonDataService _jsonService = jsonService;
+
         [Command("bet")]
         [Description("place bet on a matchup")]
         public async Task Bet(SlashCommandContext ctx, [Parameter("amount")] int amount, [Parameter("team")] string teamName)
         {
+            //TODO: finish betting command
             await ctx.DeferResponseAsync();
-
+            var member = await _jsonService.GetMemberFromJsonAsync(ctx.User.Id.ToString(), ctx.Guild!.Id.ToString());
             await ctx.RespondAsync($"You bet {amount} on {teamName}");
         }
 
@@ -30,9 +35,21 @@ namespace GamedayTracker.SlashCommands.Economy
         public async Task Leaderboard(SlashCommandContext ctx, [SlashChoiceProvider<LeaderboardChoiceProvider>] int choice)
         {
             await ctx.DeferResponseAsync();
-            
-            var leaderboard = slashCmdHelper.BuildLeaderboard(ctx.Guild!.Id.ToString(), choice);
+            var leaderboard = new Result<List<GuildMember>, SystemError<SlashCommandHelper>>();
 
+            switch (choice)
+            {
+                case 0:
+                    leaderboard = await slashCmdHelper.BuildLeaderboard(ctx.Guild!.Id.ToString(), choice);
+                    break;
+                case 1:
+                    leaderboard = await slashCmdHelper.BuildLeaderboard("", choice);
+                    break;
+                default:
+                   
+                    return;
+            }
+            
             var title = choice switch
             {
                 0 => "Server Leaderboard",

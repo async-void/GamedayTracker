@@ -1,7 +1,8 @@
 ﻿using DSharpPlus;
+using DSharpPlus.Entities;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Serilog;
+
 namespace GamedayTracker.Services
 {
     public class BotService : IHostedService
@@ -19,8 +20,18 @@ namespace GamedayTracker.Services
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            Log.Information("Connecting to Discord...");
+            logger.LogInformation("Connecting to Discord...");
             await dClient.ConnectAsync();
+
+            await Task.Delay(1000, cancellationToken);
+            var ready = dClient.AllShardsConnected;
+
+            if (ready)
+            {
+                logger.LogInformation("Connected to Discord successfully.");
+                await dClient.UpdateStatusAsync(new DiscordActivity("Watching Scores"), userStatus: DSharpPlus.Entities.DiscordUserStatus.Online);
+            }
+               
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
