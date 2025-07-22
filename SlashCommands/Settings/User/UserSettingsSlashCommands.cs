@@ -24,7 +24,7 @@ namespace GamedayTracker.SlashCommands.Settings.User
             var abbr = teamNameMatch!.ToAbbr();
             var logoPath = LogoPathService.GetLogoPath(abbr);
             
-            var memResult = await jsonDataService.GetMemberFromJsonAsync(ctx.Member.Id.ToString(), ctx.Guild!.Id.ToString());
+            var memResult = await jsonDataService.GetMemberFromJsonAsync(ctx.Member!.Id.ToString(), ctx.Guild!.Id.ToString());
             if (memResult.IsOk)
             {
                 var member = memResult.Value;

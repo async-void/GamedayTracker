@@ -112,7 +112,7 @@ namespace GamedayTracker.SlashCommands.Utility
                 .AppendLine($"**Version:** {version}")
                 .AppendLine($"**Build Date:** {buildDate:MM-dd-yyyy}")
                 .AppendLine($"**Guilds:** {ctx.Client.Guilds.Count}")
-                .AppendLine("**Created by:** Async-Void 》[top level bubbler]")
+                .AppendLine("**Created by:** <@524434302361010186>")
                 .AppendLine("")
                 .AppendLine("[Support Server](https://discord.gg/r65JVSs4)")
                 .AppendLine("[GitHub](https://github.com/async-void/GamedayTracker)");

@@ -14,6 +14,7 @@ namespace GamedayTracker.Utility
         {
             { ErrorCode.FileNotFound, "File not found." },
             { ErrorCode.MemberNotFound, "Member not found." },
+            { ErrorCode.GuildNotFound, "Guild not found." },
             { ErrorCode.ResourceNotFound, "Resource not found." },
             { ErrorCode.RoleNotFound, "Role not found." },
             { ErrorCode.UnauthorizedAccess, "Access Denied." },

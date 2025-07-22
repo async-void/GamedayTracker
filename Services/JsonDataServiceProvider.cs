@@ -3,6 +3,7 @@ using GamedayTracker.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Utility;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -654,7 +655,7 @@ namespace GamedayTracker.Services
             {
                 return Result<Guild, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
                 {
-                    ErrorMessage = "Guild data file not found.",
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.GuildNotFound),
                     CreatedAt = DateTimeOffset.UtcNow,
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
@@ -667,7 +668,7 @@ namespace GamedayTracker.Services
 
             return Result<Guild, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
-                ErrorMessage = "Guild data not found.",
+                ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.GuildNotFound),
                 CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this
@@ -720,27 +721,29 @@ namespace GamedayTracker.Services
             {
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
                 {
-                    ErrorMessage = "Guild data file not found.",
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.FileNotFound),
                     CreatedAt = DateTimeOffset.UtcNow,
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
                 });
             }
-            var json = File.ReadAllText(path);
-            JsonArray? guilds = JsonNode.Parse(json)?.AsArray();
-            if (guilds is not null)
+            var json = await File.ReadAllTextAsync(path);
+            List<Guild> guilds = JsonSerializer.Deserialize<List<Guild>>(json) ?? [];
+
+            var guildToUpdate = guilds.FirstOrDefault(g => g.GuildId.Equals(guild.GuildId.ToString()));
+            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+            if (guildToUpdate is { })
             {
-                var gld = guilds.OfType<JsonObject>()
-                    .FirstOrDefault(g => g["GuildId"]!.ToString().Equals(guild.GuildId.ToString()));
-                if (gld is { })
-                {
-                    await File.WriteAllTextAsync(path, guilds.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-                    return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
-                }
+                guilds.Remove(guildToUpdate);
+                guilds.Add(guild);
+                json = JsonSerializer.Serialize(guilds, jsonOptions);
+                await File.WriteAllTextAsync(path, json);
+                return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
             }
+
             return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
-                ErrorMessage = "Guild data not found.",
+                ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.GuildNotFound),
                 CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this
