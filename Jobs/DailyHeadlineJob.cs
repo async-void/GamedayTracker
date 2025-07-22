@@ -59,6 +59,7 @@ namespace GamedayTracker.Jobs
                             if (chnl is { } ch)
                             {
                                 await ch.SendMessageAsync(message);
+                                await Task.Delay(200); 
                             }
                         }
                     }

@@ -61,6 +61,7 @@ namespace GamedayTracker.Jobs
                             .AddContainerComponent(container);
 
                         await chnl.SendMessageAsync(embed);
+                        await Task.Delay(200);
                     }
                 }
                 Log.Information("Fetching realtime scores....[success]");
@@ -74,6 +75,7 @@ namespace GamedayTracker.Jobs
                     if (channel is { } chnl)
                     {
                         await chnl.SendMessageAsync("``could not fetch real time updated scores...``");
+                        await Task.Delay(200);
                     }
                 }
             }

@@ -91,12 +91,12 @@ namespace GamedayTracker.Helpers
             var idx = 1;
             const string prefix = "#";
             const string uName = "Username";
-            const string balance = "Balance";
-            builder.Append($"``{prefix.PadRight(2)} {uName} {balance.PadLeft(10)}``\r\n");
+            const string wins = "Wins";
+            builder.Append($"``{prefix.PadRight(2)} {uName} {wins.PadLeft(10)}``\r\n");
 
             foreach (var member in members)
             {
-                builder.Append($"``{idx.ToString(CultureInfo.CurrentCulture)}``. {member.MemberName.PadLeft(8)} {member.Balance}");
+                builder.Append($"``{idx.ToString(CultureInfo.CurrentCulture)}``. {member.MemberName.PadLeft(8)} {member.BetWins}\r\n");
                 idx++;
             }
 

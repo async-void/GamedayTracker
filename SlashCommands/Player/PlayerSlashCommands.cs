@@ -10,6 +10,7 @@ using Humanizer;
 using Serilog;
 using System.ComponentModel;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using Log = Serilog.Log;
@@ -106,6 +107,8 @@ namespace GamedayTracker.SlashCommands.Player
                 var memRoles = new List<string>();
                 var favTeam = member.FavoriteTeam?.Titleize() ?? "None";
                 var lastDeposit = member.LastDeposit?.ToString("g") ?? "Never";
+                var wins = member.BetWins.ToString();
+
                 var sb = new StringBuilder();
                
                 sb.AppendLine($"**Member Name:** {dMember.Username}");
@@ -116,10 +119,13 @@ namespace GamedayTracker.SlashCommands.Player
                 [
                     new DiscordTextDisplayComponent($"**{dMember.Username}**'s Profile"),
                     new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent(sb.ToString()),
+                    new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"Roles: {string.Join(" ", roles)}"),
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"Balance: {member.Balance:C}"),
                     new DiscordTextDisplayComponent($"Last Deposit: {lastDeposit}"),
+                    new DiscordTextDisplayComponent($"Bet Wins: {wins}"),
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"Favorite Team: {favTeam}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
