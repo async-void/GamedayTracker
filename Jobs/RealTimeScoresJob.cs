@@ -43,7 +43,7 @@ namespace GamedayTracker.Jobs
 
                 foreach (var guild in client.Guilds.Values)
                 {
-                    var channel = guild.GetDefaultChannel();
+                    var channel = guild.GetDefaultChannel(); //TODO: do we want to get the guilds from the json or leave it up to Discord?
                     if (channel is { } chnl)
                     {
                         DiscordComponent[] components =

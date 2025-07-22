@@ -55,6 +55,11 @@ namespace GamedayTracker.Jobs
                     {
                         if (g.IsDailyHeadlinesEnabled)
                         {
+                            if (g.NotificationChannelId is null)
+                            {
+                                Log.Warning($"Guild {g.GuildId} has no notification channel set for daily headlines.");
+                                continue;
+                            }
                             var chnl = await _client.GetChannelAsync(ulong.Parse(g.NotificationChannelId));
                             if (chnl is { } ch)
                             {

@@ -23,6 +23,9 @@ Here are some of the commands you can use with the Gameday Tracker:
 - `/schedule [team]` - Get the schedule for a specific NFL team.
 - more to come...
 
+## Future Features
+
+- **Daily Scores interval selection:** Allow users to select the interval for daily scores (e.g., 24 hours, 12 hours or 4 hours).
 
 ## Usage
 

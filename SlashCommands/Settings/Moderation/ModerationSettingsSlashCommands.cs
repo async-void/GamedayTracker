@@ -4,6 +4,7 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
+using GamedayTracker.Models;
 using Quartz;
 using Quartz.Impl.Matchers;
 using CommandAttribute = DSharpPlus.Commands.CommandAttribute;
@@ -30,27 +31,43 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
 
             if (guildResult.IsOk)
             {
-                var chnlId = ulong.Parse(guildResult.Value.NotificationChannelId!);
-                var chnl = await ctx.Guild.GetChannelAsync(chnlId);
-                if (chnl is { } ch)
+                guildResult.Value.NotificationChannelId = channel.Id.ToString();
+                var notifyResult = await _jsonService.UpdateGuildDataAsync(guildResult.Value);
+
+                if (notifyResult.IsOk)
                 {
-                    // Remove the old notification channel
-                    guildResult.Value.NotificationChannelId = ch.Guild.GetDefaultChannel()!.Id.ToString();
-                    await _jsonService.WriteGuildToJsonAsync(guildResult.Value);
+                    DiscordComponent[] components =
+                    [
+                        new DiscordTextDisplayComponent($"## 👍SUCCESS👍"),
+                        new DiscordSeparatorComponent(true),
+                        new DiscordTextDisplayComponent($"you will now receive notifications in {channel.Name}\r\nGameday Tracker needs write permissions in any channel you set for notifications"),
+                        new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                            new DiscordButtonComponent(DiscordButtonStyle.Primary, "donateId", "Donate"))
+                    ];
+                    var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
+                    var message = new DiscordMessageBuilder()
+                        .EnableV2Components()
+                        .AddContainerComponent(container);
+                    await ctx.RespondAsync(message);
                 }
-                DiscordComponent[] components =
-                [
-                    new DiscordTextDisplayComponent($"## 👍SUCCESS👍"),
+                else
+                {
+                    var errorId = Guid.NewGuid().ToString();
+                    DiscordComponent[] components =
+                    [
+                        new DiscordTextDisplayComponent($"## ❌ FAILURE ❌"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"you will now receive notifications in {channel.Name}\r\nGameday Tracker needs write permissions in any channel you set for notifications"),
+                    new DiscordTextDisplayComponent($"unable to set {channel.Name} as the notification channel, with error id: {errorId}\r\nError Message {guildResult.Error.ErrorMessage}"),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
                         new DiscordButtonComponent(DiscordButtonStyle.Primary, "donateId", "Donate"))
-                ];
-                var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
-                var message = new DiscordMessageBuilder()
-                    .EnableV2Components()
-                    .AddContainerComponent(container);
-                await ctx.RespondAsync(message);
+                    ];
+                    var container = new DiscordContainerComponent(components, false, DiscordColor.DarkRed);
+                    var message = new DiscordMessageBuilder()
+                        .EnableV2Components()
+                        .AddContainerComponent(container);
+                    await ctx.RespondAsync(message);
+                }
+                
             }
             else
             {
