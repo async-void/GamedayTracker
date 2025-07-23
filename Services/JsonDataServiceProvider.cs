@@ -750,5 +750,42 @@ namespace GamedayTracker.Services
             });
         }
         #endregion
+
+        #region UPDATE GUILD DATA
+        public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> RemoveGuildDataAsync(string guildId)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "guilds.json");
+            if (!File.Exists(path))
+            {
+                return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                {
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.FileNotFound),
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedBy = this
+                });
+            }
+            var json = await File.ReadAllTextAsync(path);
+            List<Guild> guilds = JsonSerializer.Deserialize<List<Guild>>(json) ?? [];
+
+            var guildToUpdate = guilds.FirstOrDefault(g => g.GuildId.Equals(guildId));
+            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+            if (guildToUpdate is { })
+            {
+                guilds.Remove(guildToUpdate);
+                json = JsonSerializer.Serialize(guilds, jsonOptions);
+                await File.WriteAllTextAsync(path, json);
+                return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
+            }
+
+            return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+            {
+                ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.GuildNotFound),
+                CreatedAt = DateTimeOffset.UtcNow,
+                ErrorType = ErrorType.INFORMATION,
+                CreatedBy = this
+            });
+        }
+        #endregion
     }
 }

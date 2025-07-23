@@ -100,12 +100,13 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
             if (guildResult.IsOk)
             {
                 guildResult.Value.IsRealTimeScoresEnabled = enable;
-                await _jsonService.WriteGuildToJsonAsync(guildResult.Value);
+                await _jsonService.UpdateGuildDataAsync(guildResult.Value);
                 DiscordComponent[] components =
                 [
                     new DiscordTextDisplayComponent($"## 👍SUCCESS👍"),
-                    new DiscordSeparatorComponent(true),
+                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent($"realtime scores are now {(enable ? "enabled" : "disabled")}"),
+                    new DiscordSeparatorComponent(true),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];

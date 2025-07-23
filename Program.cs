@@ -149,6 +149,8 @@ namespace GamedayTracker
                         #endregion
 
                         #region GUILD EVENT HANDLERS
+
+                        #region GUILD CREATED
                         .HandleGuildCreated(async (sender, args) =>
                         {
                             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -200,10 +202,35 @@ namespace GamedayTracker
                             Log.Information($"New Guild Added: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}");
 
                         })
-                        .HandleGuildDeleted((sender, args) =>
+                        #endregion
+
+                        #region GUILD DELETED
+                        .HandleGuildDeleted(async (sender, args) =>
                         {
-                            return Task.CompletedTask;
+                            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                            var jsonService = sender.ServiceProvider.GetRequiredService<IJsonDataService>();
+                            var guildResult = await jsonService.GetGuildFromJsonAsync(args.Guild.Id.ToString());
+                            if (guildResult.IsOk)
+                            {
+                                var removedResult = await jsonService.RemoveGuildDataAsync(guildResult.Value.GuildId);
+                                var guildOwner = await args.Guild.GetMemberAsync(args.Guild.OwnerId);
+                                if (removedResult.IsOk)
+                                {
+                                    await guildOwner.SendMessageAsync(
+                                        $"``Gameday Tracker has been removed at: [<t:{unixTimestamp}:F>]``\r\nyou will no longer be receiving Daily Headlines or Realtime Scores Updates");
+                                    Log.Information($"GamedayTracker has been removed from: {args.Guild.Name}");
+                                }
+                                else
+                                {
+                                    await args.Guild.GetDefaultChannel()!.SendMessageAsync(
+                                        $"``Error removing Gameday Tracker from {args.Guild.Name} ({args.Guild.Id}) at: [<t:{unixTimestamp}:F>]``\r\n{removedResult.Error.ErrorMessage}");
+                                    Log.Error($"Error removing guild {args.Guild.Name} ({args.Guild.Id}): {removedResult.Error.ErrorMessage}");
+                                }
+                                
+                            }
                         })
+                        #endregion
+
                         #endregion
                     );
                     #endregion

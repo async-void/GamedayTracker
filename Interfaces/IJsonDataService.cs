@@ -35,5 +35,6 @@ namespace GamedayTracker.Interfaces
         Task<Result<Guild, SystemError<JsonDataServiceProvider>>> GetGuildFromJsonAsync(string guildId);
         Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteGuildToJsonAsync(Guild guild);
         Task<Result<bool, SystemError<JsonDataServiceProvider>>> UpdateGuildDataAsync(Guild guild);
+        Task<Result<bool, SystemError<JsonDataServiceProvider>>> RemoveGuildDataAsync(string guildId);
     }
 }

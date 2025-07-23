@@ -22,7 +22,7 @@ namespace GamedayTracker.SlashCommands.Utility
         public async Task Help(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-
+            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             DiscordComponent[] buttons =
             [
                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "scoreboardHelpBtn", "Scoreboard"),
@@ -37,16 +37,17 @@ namespace GamedayTracker.SlashCommands.Utility
                 new DiscordTextDisplayComponent("Help Section"),
                 new DiscordSeparatorComponent(true),
                 new DiscordTextDisplayComponent("below is a list of buttons where you will select a button to get the desired help section."),
-                new DiscordActionRowComponent(buttons)
-                
+                new DiscordActionRowComponent(buttons),
+                 new DiscordSeparatorComponent(true),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+
             ];
 
             var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
             var message = new DiscordMessageBuilder()
                 .EnableV2Components()
                 .AddContainerComponent(container);
-            Log.Information("Help slash command was called!");
-            //loggerService.Log(LogTarget.Console, LogType.Information, DateTime.UtcNow, "Help slash command was called!");
             await ctx.EditResponseAsync(message);
         }
         #endregion
@@ -68,12 +69,23 @@ namespace GamedayTracker.SlashCommands.Utility
             sw.Stop();
             if (savedTimeStamp.IsOk)
             {
-                var uptime = timestamp - savedTimeStamp.Value; 
+                var uptime = timestamp - savedTimeStamp.Value;
+                var featureBuilder = new StringBuilder();
+                featureBuilder.AppendLine("## Features in Development")
+                    .AppendLine("- User Defined Daily Headline Interval")
+                    .AppendLine("- User Defined RealTime Scores Update Interval")
+                    .AppendLine("- Team Injury Report")
+                    .AppendLine("- Betting");
+
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent($"Latency **{sw.Elapsed.Humanize()}** "),
-                    new DiscordTextDisplayComponent($"Discord **{connectionLat.Humanize()}**"),
+                    new DiscordTextDisplayComponent("## Uptime"),
+                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                    new DiscordTextDisplayComponent($"Data Latency **{sw.Elapsed.Humanize()}** "),
+                    new DiscordTextDisplayComponent($"Discord API **{connectionLat.Humanize()}**"),
                     new DiscordTextDisplayComponent($"Uptime **{uptime.Humanize(3, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second)}**"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"{featureBuilder.ToString()}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"GamedayTracker ©️ <t:{unixTimestamp}:F>"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
@@ -107,13 +119,13 @@ namespace GamedayTracker.SlashCommands.Utility
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var bot = ctx.Client.CurrentUser;
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            var buildDate = DateTimeOffset.UtcNow;
+            var buildDate = DateTimeOffset.UtcNow.AddDays(-7);
             var aboutText = new StringBuilder()
                 .AppendLine($"**Version:** {version}")
-                .AppendLine($"**Build Date:** {buildDate:MM-dd-yyyy}")
+                .AppendLine($"**Build Date:** {buildDate:MM-dd-yyyy HH:mm:ss tt zzz}")
                 .AppendLine($"**Guilds:** {ctx.Client.Guilds.Count}")
                 .AppendLine("**Created by:** <@524434302361010186>")
-                .AppendLine("")
+                .AppendLine("----------------------------------------------\r\n")
                 .AppendLine("[Support Server](https://discord.gg/r65JVSs4)")
                 .AppendLine("[GitHub](https://github.com/async-void/GamedayTracker)");
 
