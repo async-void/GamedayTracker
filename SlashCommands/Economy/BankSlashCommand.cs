@@ -4,6 +4,7 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Utility;
 using Humanizer;
 
 namespace GamedayTracker.SlashCommands.Economy
@@ -34,10 +35,10 @@ namespace GamedayTracker.SlashCommands.Economy
 
             if (player.IsOk)
             {
-                var balance = player.Value.Balance!;
+                var balance = player.Value.Bank?.Balance ?? 5.00;
                 DiscordComponent[] components =
                 [
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"**Member: {user.GlobalName!}**\r\n\r\n<:money:1337795714855600188> Balance - {balance}\r<:bank:1366390018423390360> Last Deposit - {player.Value.LastDeposit}"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"**Member: {user.GlobalName!}**\r\n\r\n<:money:1337795714855600188> Balance - {balance}\r<:bank:1366390018423390360> Last Deposit - {player.Value.Bank!.DepositTimestamp}"),
                         new DiscordThumbnailComponent(member!.AvatarUrl.ToString())),
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"Gameday Tracker - {DateTime.UtcNow.ToLongDateString()}"),
@@ -78,70 +79,95 @@ namespace GamedayTracker.SlashCommands.Economy
         {
             await ctx.DeferResponseAsync();
             var member = ctx.Member;
-
-
-            var dbUser = await dataService.GetMemberFromJsonAsync(member!.Id.ToString(), member.Guild.Id.ToString());
            
+            var _user = await dataService.GetMemberFromJsonAsync(member!.Id.ToString(), member.Guild.Id.ToString());
 
-            //user is in db, run daily command.
-            if (dbUser.IsOk)
+            if (_user.IsOk)
             {
-                var dailyTimeStamp = dbUser.Value.LastDeposit;
-                var currentTime = DateTime.UtcNow;
+                var dailyTimeStamp = _user.Value.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;
+                var dailyAgainTimestamp = dailyTimeStamp - DateTimeOffset.UtcNow;
+                var currentTime = DateTimeOffset.UtcNow;
                 var timeElapsed = currentTime - dailyTimeStamp;
-                var timeRemaining = TimeSpan.FromHours(24) - timeElapsed;
+               
 
-                if (timeElapsed.Value.TotalDays >= 1)
+                if (timeElapsed.TotalDays >= 1)
                 {
-                    var balance = dbUser.Value.Balance + 5.00;
-                    timeRemaining = TimeSpan.FromHours(24);
+                    DateTimeOffset lastUsed = _user.Value.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;
+                    DateTimeOffset nextAvailable = lastUsed.AddHours(24);
+                    long unixTimestamp = nextAvailable.ToUnixTimeSeconds();
+
+                    var balance = _user.Value.Bank?.Balance + 5.00 ?? 5.00;
+                    _user.Value.Bank!.Balance = balance;
+                    _user.Value.Bank.DepositTimestamp = DateTimeOffset.UtcNow;
+
+                    var updateUserResult = await dataService.UpdateMemberDataAsync(_user.Value);
 
                     var message = new DiscordMessageBuilder()
                         .AddEmbed(new DiscordEmbedBuilder()
                             .WithTitle($"Daily Command")
-                            .WithDescription($"Done!  **{dbUser.Value.MemberName}'s** balance is <:money:1337795714855600188> ${balance:#.##}\r\nyou can use daily again in ``{timeRemaining}`` from now")
+                            .WithDescription($"Done!  **{_user.Value.MemberName}'s** balance is <:money:1337795714855600188> ${balance:#.##}\r\nyou can use daily again <t:{unixTimestamp}:R> from now")
                             .WithTimestamp(DateTime.UtcNow));
 
-                    dbUser.Value.Balance = balance;
-                    dbUser.Value.LastDeposit = DateTime.UtcNow;
-                    //TODO: write member data to json
-
+                   
                     await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
                 }
                 else
                 {
+                    DateTimeOffset lastUsed = dailyTimeStamp;
+                    DateTimeOffset nextAvailable = lastUsed.AddHours(24);
+                    long unixTimestamp = nextAvailable.ToUnixTimeSeconds();
+
                     var message = new DiscordMessageBuilder()
                         .AddEmbed(new DiscordEmbedBuilder() 
-                            .WithDescription($"you can use daily again in ``{timeRemaining}`` from now")
+                            .WithDescription($"you can use daily again <t:{unixTimestamp}:R>")
                             .WithTimestamp(DateTime.UtcNow));
                    
                     await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
                 }
 
             }
-            //user is not in db, add user to db then run daily.
+            //user is not in json file, add user to the json file then run daily.
             else
             {
                 var bank = new Bank()
                 {
+                    Id = Guid.NewGuid(),
                     Balance = 5.00,
-                    DepositAmount = 5.00,
                     DepositTimestamp = DateTime.UtcNow,
-                    LastDeposit = 5.00
+                    LastDepositAmount = 5.00
                 };
 
-                var picks = new PlayerPicks()
+                var user = new GuildMember()
                 {
-                    Season = 0,
-                    Week = 0,
+                    Id = Guid.NewGuid(),
+                    GuildName = ctx.Guild?.Name ?? "Not Found",
+                    GuildId = member.Guild.Id.ToString(),
+                    MemberName = member.Username,
+                    MemberId = member.Id.ToString(),
+                    Bank = bank,
                 };
 
+                var writeResult = await dataService.WriteMemberToJsonAsync(user);
+                
+                if (!writeResult.IsOk)
+                {
+                    var errorMessage = new DiscordMessageBuilder()
+                        .AddEmbed(new DiscordEmbedBuilder()
+                            .WithDescription($"Error writing user data: {writeResult.Error.ErrorMessage}")
+                            .WithTimestamp(DateTime.UtcNow));
+                    
+                    await ctx.EditResponseAsync(new DiscordWebhookBuilder(errorMessage));
+                    return;
+                }
+                DateTimeOffset lastUsed = user.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;
+                DateTimeOffset nextAvailable = lastUsed.AddHours(24);
+                long unixTimestamp = nextAvailable.ToUnixTimeSeconds();
 
                 var message = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithTitle($"Daily Command")
-                        .WithDescription($"Done! **{member.Username}'s** balance is <:money:1337795714855600188> $me\r\nyou may use daily again in " +
-                                         $"``{TimeSpan.FromHours(24).Humanize(3, minUnit: TimeUnit.Minute)}`` from now")
+                        .WithDescription($"Done! **{member.Username}'s** balance is <:money:1337795714855600188> {user.Bank?.Balance}\r\nyou may use daily again " +
+                                         $"<t:{unixTimestamp}:R> from now")
                         .WithTimestamp(DateTime.UtcNow)
                         );
                

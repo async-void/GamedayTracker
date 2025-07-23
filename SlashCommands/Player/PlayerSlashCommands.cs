@@ -106,7 +106,7 @@ namespace GamedayTracker.SlashCommands.Player
                 var roles = dMember.Roles.Select(r => r.Mention).ToList();
                 var memRoles = new List<string>();
                 var favTeam = member.FavoriteTeam?.Titleize() ?? "None";
-                var lastDeposit = member.LastDeposit?.ToString("g") ?? "Never";
+                var lastDeposit = member.Bank?.DepositTimestamp.ToString("g") ?? "Never";
                 var wins = member.BetWins.ToString();
 
                 var sb = new StringBuilder();
@@ -123,7 +123,7 @@ namespace GamedayTracker.SlashCommands.Player
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"Roles: {string.Join(" ", roles)}"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"Balance: {member.Balance:C}"),
+                    new DiscordTextDisplayComponent($"Balance: {member.Bank?.Balance:C}"),
                     new DiscordTextDisplayComponent($"Last Deposit: {lastDeposit}"),
                     new DiscordTextDisplayComponent($"Bet Wins: {wins}"),
                     new DiscordSeparatorComponent(true),
@@ -141,20 +141,22 @@ namespace GamedayTracker.SlashCommands.Player
             }
             else
             {
-                if (result.Error.ErrorType.Equals(ErrorType.FATAL))
+                var bank = new Bank()
                 {
-                    Log.Error(result.Error.ErrorMessage!);
-                    return;
-                }
-
+                    Id = Guid.NewGuid(),
+                    Balance = 5.00,
+                    LastDepositAmount = 5.00,
+                    DepositTimestamp = DateTimeOffset.UtcNow
+                };
                 await jsonDataService.WriteMemberToJsonAsync(new GuildMember
                 {
                     Id = Guid.NewGuid(),
                     GuildId = dMember.Guild.Id.ToString(),
+                    GuildName = dMember.Guild.Name,
                     MemberId = dMember.Id.ToString(),
                     MemberName = dMember.Username,
-                    Balance = 100,
                     BetWins = 0,
+                    Bank = bank,
                 });
 
                 var m = await jsonDataService.GetMemberFromJsonAsync(dMember.Id.ToString(), dMember.Guild.Id.ToString());
@@ -164,7 +166,7 @@ namespace GamedayTracker.SlashCommands.Player
                     var sb = new StringBuilder();
                     var roles = dMember.Roles.Select(r => r.Mention).ToList();
                     var favTeam = m.Value.FavoriteTeam?.Titleize() ?? "None";
-                    var lastDeposit = m.Value.LastDeposit?.ToString("g") ?? "Never";
+                    var lastDeposit = m.Value.Bank?.DepositTimestamp.ToString("g") ?? "Never";
 
                     components =
                    [
@@ -172,7 +174,7 @@ namespace GamedayTracker.SlashCommands.Player
                         new DiscordSeparatorComponent(true),
                         new DiscordTextDisplayComponent($"Roles: {string.Join(",", roles)}"),
                         new DiscordSeparatorComponent(true),
-                        new DiscordTextDisplayComponent($"Balance: {m.Value.Balance:C}"),
+                        new DiscordTextDisplayComponent($"Balance: {m.Value.Bank?.Balance:C}"),
                         new DiscordTextDisplayComponent($"Last Deposit: {lastDeposit}"),
                         new DiscordSeparatorComponent(true),
                         new DiscordTextDisplayComponent($"Favorite Team: {favTeam}"),

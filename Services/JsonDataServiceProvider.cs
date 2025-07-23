@@ -172,7 +172,9 @@ namespace GamedayTracker.Services
             {
                 var file = await File.ReadAllTextAsync(path);
                 members = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
-                members.Add(member); 
+                var curMember = members.FirstOrDefault(m => m.GuildId.Equals(member.GuildId) && m.MemberId.Equals(member.MemberId));
+                if (curMember is null)
+                    members.Add(member);
             }
             var updatedJson = JsonSerializer.Serialize(members, options);
             await File.WriteAllTextAsync(path, updatedJson);
@@ -276,7 +278,7 @@ namespace GamedayTracker.Services
             var file = await File.ReadAllTextAsync(path);
             var members = JsonSerializer.Deserialize<List<GuildMember>>(file);
             var member = members!
-                .Where(p => p.MemberId.ToString().Equals(memberId))
+                .Where(p => p.MemberId.Equals(memberId) && p.GuildId.Equals(guildId))
                 .FirstOrDefault();
             if (member is { } mem) return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Ok(mem);
 

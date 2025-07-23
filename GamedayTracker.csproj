@@ -161,7 +161,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Attributes\" />
     <Folder Include="Data\Json\" />
     <Folder Include="Data\Migrations\AppDb\" />
     <Folder Include="Data\Migrations\BotDb\" />

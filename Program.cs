@@ -4,6 +4,7 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.Extensions;
+using GamedayTracker.Checks;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Jobs;
@@ -81,7 +82,9 @@ namespace GamedayTracker
                         .AddCommandsExtension((context, config) =>
                         {
                             config.AddCommands(Assembly.GetExecutingAssembly());
+                            config.AddCheck<RequireRoleCheck>();
                         });
+                    
                     services.AddLogging(logging => logging.ClearProviders().AddSerilog(logger));
                     services.AddScoped<ITeamData, TeamDataService>();
                     services.AddScoped<ITimerService, TimerService>();
@@ -95,7 +98,7 @@ namespace GamedayTracker
                     services.AddScoped<IBotTimer, BotTimerDataServiceProvider>();
                     services.AddScoped<IEvaluator, RealTimeScoresModeEvaluatorService>();  
                     services.AddScoped<DailyHeadlinesScheduler>();
-                    
+
                     #region QUARTZ
                     services.AddQuartz(q =>
                     {
@@ -131,7 +134,7 @@ namespace GamedayTracker
                     });
 
                     #endregion
-                    
+
                     #region CONFIGURE EVENT HANDLERS
                     services.ConfigureEventHandlers(
                         e => e.AddEventHandlers<InteractionHandler>(ServiceLifetime.Singleton));

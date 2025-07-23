@@ -127,11 +127,14 @@ namespace GamedayTracker.SlashCommands.Utility
                 .AppendLine("**Created by:** <@524434302361010186>")
                 .AppendLine("----------------------------------------------\r\n")
                 .AppendLine("[Support Server](https://discord.gg/r65JVSs4)")
-                .AppendLine("[GitHub](https://github.com/async-void/GamedayTracker)");
+                .AppendLine("[GitHub](https://github.com/async-void/GamedayTracker)")
+                .AppendLine("----------------------------------------------")
+                .AppendLine("GamedayTracker gets weekly updates - [Sunday at Midnight EST]");
+
 
             DiscordComponent[] components =
             [
-                new DiscordSectionComponent(new DiscordTextDisplayComponent("GamedayTracker"),
+                new DiscordSectionComponent(new DiscordTextDisplayComponent("## GamedayTracker"),
                     new DiscordThumbnailComponent($"{bot.AvatarUrl}")),
                 new DiscordSeparatorComponent(true),
                 new DiscordTextDisplayComponent(aboutText.ToString()),
