@@ -78,7 +78,7 @@ namespace GamedayTracker.SlashCommands.Notifications
                 //}
 
                 var errMessage = new DiscordInteractionResponseBuilder()
-                   .WithContent($"{SystemErrorCodes.GetErrorMessage(ErrorCode.GuildNotFound)} With Error Code: GDT-{ErrorCode.GuildNotFound}")
+                   .WithContent($"{SystemErrorCodes.GetErrorMessage(Guid.Parse("f416e176-85b0-4f94-b172-8dc8f084242e"))} With Error Code: f416e176-85b0-4f94-b172-8dc8f084242e")
                    .AsEphemeral(true);
                 await ctx.EditResponseAsync(errMessage);
             }

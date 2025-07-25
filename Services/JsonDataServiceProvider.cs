@@ -657,7 +657,7 @@ namespace GamedayTracker.Services
             {
                 return Result<Guild, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
                 {
-                    ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.GuildNotFound),
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("2a35e0b1-3f87-4c7a-8e6d-5bc1cf301b1f")),
                     CreatedAt = DateTimeOffset.UtcNow,
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
@@ -670,7 +670,7 @@ namespace GamedayTracker.Services
 
             return Result<Guild, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
-                ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.GuildNotFound),
+                ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("2a35e0b1-3f87-4c7a-8e6d-5bc1cf301b1f")),
                 CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this
@@ -723,7 +723,7 @@ namespace GamedayTracker.Services
             {
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
                 {
-                    ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.FileNotFound),
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("f416e176-85b0-4f94-b172-8dc8f084242e")),
                     CreatedAt = DateTimeOffset.UtcNow,
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
@@ -745,7 +745,7 @@ namespace GamedayTracker.Services
 
             return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
-                ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.GuildNotFound),
+                ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("2a35e0b1-3f87-4c7a-8e6d-5bc1cf301b1f")),
                 CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this
@@ -761,7 +761,7 @@ namespace GamedayTracker.Services
             {
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
                 {
-                    ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.FileNotFound),
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("f416e176-85b0-4f94-b172-8dc8f084242e")),
                     CreatedAt = DateTimeOffset.UtcNow,
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
@@ -782,7 +782,7 @@ namespace GamedayTracker.Services
 
             return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
-                ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.GuildNotFound),
+                ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("2a35e0b1-3f87-4c7a-8e6d-5bc1cf301b1f")),
                 CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this
