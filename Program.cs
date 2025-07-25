@@ -113,7 +113,7 @@ namespace GamedayTracker
                             .WithIdentity("RealTimeScores-trigger")
                             .StartNow()
                             .WithSimpleSchedule(x => x
-                                .WithInterval(TimeSpan.FromHours(4))
+                                .WithInterval(TimeSpan.FromMinutes(30))
                                 .RepeatForever().Build()));
 
                         q.AddJob<DailyHeadlineJob>(opts => opts.WithIdentity(headlinesJobKey)
@@ -124,7 +124,7 @@ namespace GamedayTracker
                             .WithIdentity("DailyHeadlines-trigger")
                             .StartNow()
                             .WithSimpleSchedule(x => x
-                                .WithInterval(TimeSpan.FromHours(4))
+                                .WithInterval(TimeSpan.FromHours(24))
                                 .RepeatForever().Build()));
                     });
 
@@ -171,9 +171,9 @@ namespace GamedayTracker
                                 NotificationChannelId = args.Guild.GetDefaultChannel()!.Id.ToString()
 
                             };
-                            var guildResult = await jsonService.WriteGuildToJsonAsync(guild);
                             var supportChnl = await sender.GetChannelAsync(888659367824601160);
                             var guilds = sender.Guilds.Values;
+                           
                             var newChnl = args.Guild.GetDefaultChannel();
                             if (newChnl is { } chnl)
                             {
@@ -201,8 +201,15 @@ namespace GamedayTracker
 
                             await supportChnl.SendMessageAsync(
                                 $"``New Guild Added: <t:{unixTimestamp}:F> {args.Guild.Name}:({args.Guild.Id}) - Total Guilds: {guilds.Count()}``");
+                            var guildResult = await jsonService.WriteGuildToJsonAsync(guild);
 
-                            Log.Information($"New Guild Added: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}");
+                            if (guildResult.IsOk)
+                                Log.Information($"New Guild Added: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}");
+                            else
+                                Log.Error($"GUild Added to Discord: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}\r\n" +
+                                    $"but unable to write guild info to json file: Error Message - {guildResult.Error.ErrorMessage}");
+
+
 
                         })
                         #endregion

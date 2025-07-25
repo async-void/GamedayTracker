@@ -2,6 +2,7 @@
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
+using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Utility;
@@ -88,13 +89,14 @@ namespace GamedayTracker.SlashCommands.Economy
                 var dailyAgainTimestamp = dailyTimeStamp - DateTimeOffset.UtcNow;
                 var currentTime = DateTimeOffset.UtcNow;
                 var timeElapsed = currentTime - dailyTimeStamp;
-               
 
                 if (timeElapsed.TotalDays >= 1)
                 {
+                   
                     DateTimeOffset lastUsed = _user.Value.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;
-                    DateTimeOffset nextAvailable = lastUsed.AddHours(24);
-                    long unixTimestamp = nextAvailable.ToUnixTimeSeconds();
+                    var nextAvailable = lastUsed + TimeSpan.FromHours(24);
+                   // DateTimeOffset nextAvailable = lastUsed.AddHours(24);
+                    var unixTimestamp = nextAvailable.ToUnixTimeSeconds();
 
                     var balance = _user.Value.Bank?.Balance + 5.00 ?? 5.00;
                     _user.Value.Bank!.Balance = balance;
@@ -114,8 +116,8 @@ namespace GamedayTracker.SlashCommands.Economy
                 else
                 {
                     DateTimeOffset lastUsed = dailyTimeStamp;
-                    DateTimeOffset nextAvailable = lastUsed.AddHours(24);
-                    long unixTimestamp = nextAvailable.ToUnixTimeSeconds();
+                    DateTimeOffset nextAvailable = lastUsed + TimeSpan.FromHours(24);
+                    var unixTimestamp = nextAvailable.ToUnixTimeSeconds();
 
                     var message = new DiscordMessageBuilder()
                         .AddEmbed(new DiscordEmbedBuilder() 
@@ -160,8 +162,8 @@ namespace GamedayTracker.SlashCommands.Economy
                     return;
                 }
                 DateTimeOffset lastUsed = user.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;
-                DateTimeOffset nextAvailable = lastUsed.AddHours(24);
-                long unixTimestamp = nextAvailable.ToUnixTimeSeconds();
+                DateTimeOffset nextAvailable = lastUsed + TimeSpan.FromHours(24);
+                var unixTimestamp = nextAvailable.ToUnixTimeSeconds();
 
                 var message = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()

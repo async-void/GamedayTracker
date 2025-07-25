@@ -199,8 +199,40 @@ namespace GamedayTracker.Utility
                                     new DiscordInteractionResponseBuilder(bMsg));
                                 break;
                             case "headlinesId":
+                                //bring the user to the support server/daily-headlines channel
+                                bComponent =
+                                [
+                                    new DiscordTextDisplayComponent(
+                                        "Daily-Headlines is in development, the devs are hard at work implementing this feature!"),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                   new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
+                                ];
+                                cContainer =
+                                    new DiscordContainerComponent(bComponent, false, DiscordColor.Goldenrod);
+                                bMsg = new DiscordInteractionResponseBuilder()
+                                   .EnableV2Components()
+                                   .AddContainerComponent(cContainer);
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                    new DiscordInteractionResponseBuilder(bMsg));
                                 break;
-                            case "realtimeScoresId":
+                            case "scoresId":
+                                //bring the user to the support server/live-scores channel
+                                bComponent =
+                               [
+                                   new DiscordTextDisplayComponent(
+                                        "Live-Scores is in development, the devs are hard at work implementing this feature!"),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                   new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
+                                ];
+                                cContainer =
+                                    new DiscordContainerComponent(bComponent, false, DiscordColor.Goldenrod);
+                                bMsg = new DiscordInteractionResponseBuilder()
+                                   .EnableV2Components()
+                                   .AddContainerComponent(cContainer);
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                    new DiscordInteractionResponseBuilder(bMsg));
                                 break;
                             case "btnAddPlayer":
                             {

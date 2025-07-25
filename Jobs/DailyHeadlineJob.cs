@@ -15,7 +15,7 @@ namespace GamedayTracker.Jobs
         public async Task Execute(IJobExecutionContext context)
         {
             Log.Information("Executing Daily Headline Job...");
-            var guilds = await _dataService.GetGuildsFromJsonAsync();
+            //var guilds = await _dataService.GetGuildsFromJsonAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var rnd = new Random();
             var articles = _newsService.GetNews();
@@ -45,31 +45,37 @@ namespace GamedayTracker.Jobs
 
                 ];
 
-                var container = new DiscordContainerComponent(components, false, DiscordColor.Gold);
+                var container = new DiscordContainerComponent(components);
                 var message = new DiscordMessageBuilder()
                     .EnableV2Components()
                     .AddContainerComponent(container);
-                if (guilds.IsOk && guilds.Value.Count > 0)
-                {
-                    foreach (var g in guilds.Value)
-                    {
-                        if (g.IsDailyHeadlinesEnabled)
-                        {
-                            if (g.NotificationChannelId is null)
-                            {
-                                Log.Warning($"Guild {g.GuildId} has no notification channel set for daily headlines.");
-                                continue;
-                            }
-                            var chnl = await _client.GetChannelAsync(ulong.Parse(g.NotificationChannelId));
-                            if (chnl is { } ch)
-                            {
-                                await ch.SendMessageAsync(message);
-                                await Task.Delay(200); 
-                            }
-                        }
-                    }
-                }
 
+                #region Depracated Code - I will remove this code soon as I see the new code working.
+                //if (guilds.IsOk && guilds.Value.Count > 0)
+                //{
+                //    foreach (var g in guilds.Value)
+                //    {
+                //        if (g.IsDailyHeadlinesEnabled)
+                //        {
+                //            if (g.NotificationChannelId is null)
+                //            {
+                //                Log.Warning($"Guild {g.GuildId} has no notification channel set for daily headlines.");
+                //                continue;
+                //            }
+                //            var chnl = await _client.GetChannelAsync(ulong.Parse(g.NotificationChannelId));
+                //            if (chnl is { } ch)
+                //            {
+                //                await ch.SendMessageAsync(message);
+                //                await Task.Delay(200); 
+                //            }
+                //        }
+                //    }
+                //}
+                #endregion
+
+                var chnl = await _client.GetChannelAsync(1398021268032196698);
+                var msg = await chnl.SendMessageAsync(message);
+                await chnl.CrosspostMessageAsync(msg);
             }
             else
                 Log.Error("Failed to fetch news articles.");

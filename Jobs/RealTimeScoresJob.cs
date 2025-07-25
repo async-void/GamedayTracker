@@ -9,10 +9,12 @@ namespace GamedayTracker.Jobs
 {
     public class RealTimeScoresJob(IGameData gameDataService, DiscordClient client) : IJob
     {
+        private readonly IGameData _gameDataService = gameDataService;
+        private readonly DiscordClient _client = client;
         public async Task Execute(IJobExecutionContext context)
         {
             Log.Information("Fetching realtime scores....[started]");
-            var scoreboard = gameDataService.GetCurrentScoreboard();
+            var scoreboard = _gameDataService.GetCurrentScoreboard();
            
             if (scoreboard.IsOk && scoreboard.Value.Count > 0)
             {
@@ -41,43 +43,63 @@ namespace GamedayTracker.Jobs
                     }
                 }
 
-                foreach (var guild in client.Guilds.Values)
-                {
-                    var channel = guild.GetDefaultChannel(); //TODO: do we want to get the guilds from the json or leave it up to Discord?
-                    if (channel is { } chnl)
-                    {
-                        DiscordComponent[] components =
-                        [
-                            new DiscordTextDisplayComponent("Current NFL Scores"),
+                //foreach (var guild in client.Guilds.Values)
+                //{
+                //    var channel = guild.GetDefaultChannel(); //TODO: do we want to get the guilds from the json or leave it up to Discord?
+                //    if (channel is { } chnl)
+                //    {
+                //        DiscordComponent[] components =
+                //        [
+                //            new DiscordTextDisplayComponent("Current NFL Scores"),
+                //            new DiscordSeparatorComponent(true),
+                //            new DiscordTextDisplayComponent($"{sb.ToString()}"),
+                //            new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                //            new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by GamedayTracker ©️ <t:{unixTimestamp}:F>"), 
+                //                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))  
+                //        ];  
+                //        var container = new DiscordContainerComponent(components);
+                //        var embed = new DiscordMessageBuilder()
+                //            .EnableV2Components()
+                //            .AddContainerComponent(container);
+
+                //        await chnl.SendMessageAsync(embed);
+                //        await Task.Delay(200);
+                //    }
+                //}
+
+                DiscordComponent[] components =
+                       [
+                           new DiscordTextDisplayComponent("Current NFL Scores"),
                             new DiscordSeparatorComponent(true),
                             new DiscordTextDisplayComponent($"{sb.ToString()}"),
                             new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                            new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by GamedayTracker ©️ <t:{unixTimestamp}:F>"), 
-                                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))  
-                        ];  
-                        var container = new DiscordContainerComponent(components);
-                        var embed = new DiscordMessageBuilder()
-                            .EnableV2Components()
-                            .AddContainerComponent(container);
+                            new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by GamedayTracker ©️ <t:{unixTimestamp}:F>"),
+                                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                       ];
+                var container = new DiscordContainerComponent(components);
+                var embed = new DiscordMessageBuilder()
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
 
-                        await chnl.SendMessageAsync(embed);
-                        await Task.Delay(200);
-                    }
-                }
-                Log.Information("Fetching realtime scores....[success]");
+                var chnl = await _client.GetChannelAsync(1398021337498390539);
+               
+                var msg = await chnl.SendMessageAsync(embed);
+                await chnl.CrosspostMessageAsync(msg);
+
+                Log.Information("Fetching realtime scores....[success] - scores sent to live-scores channel");
             }
             else
             {
                 Log.Error("Fetching realtime scores....[failed]");
-                foreach (var guild in client.Guilds.Values)
-                {
-                    var channel = guild.GetDefaultChannel();
-                    if (channel is { } chnl)
-                    {
-                        await chnl.SendMessageAsync("``could not fetch real time updated scores...``");
-                        await Task.Delay(200);
-                    }
-                }
+                //foreach (var guild in client.Guilds.Values)
+                //{
+                //    var channel = guild.GetDefaultChannel();
+                //    if (channel is { } chnl)
+                //    {
+                //        await chnl.SendMessageAsync("``could not fetch real time updated scores...``");
+                //        await Task.Delay(200);
+                //    }
+                //}
             }
         }
     }

@@ -70,12 +70,7 @@ namespace GamedayTracker.SlashCommands.Utility
             if (savedTimeStamp.IsOk)
             {
                 var uptime = timestamp - savedTimeStamp.Value;
-                var featureBuilder = new StringBuilder();
-                featureBuilder.AppendLine("## Features in Development")
-                    .AppendLine("- User Defined Daily Headline Interval")
-                    .AppendLine("- User Defined RealTime Scores Update Interval")
-                    .AppendLine("- Team Injury Report")
-                    .AppendLine("- Betting");
+                
 
                 DiscordComponent[] components =
                 [
@@ -84,8 +79,6 @@ namespace GamedayTracker.SlashCommands.Utility
                     new DiscordTextDisplayComponent($"Data Latency **{sw.Elapsed.Humanize()}** "),
                     new DiscordTextDisplayComponent($"Discord API **{connectionLat.Humanize()}**"),
                     new DiscordTextDisplayComponent($"Uptime **{uptime.Humanize(3, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second)}**"),
-                    new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"{featureBuilder.ToString()}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"GamedayTracker ©️ <t:{unixTimestamp}:F>"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
@@ -121,20 +114,25 @@ namespace GamedayTracker.SlashCommands.Utility
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             var buildDate = DateTimeOffset.UtcNow.AddDays(-7);
             var aboutText = new StringBuilder()
-                .AppendLine($"**Version:** {version}")
+                .AppendLine($"**Version:** -# {version}")
                 .AppendLine($"**Build Date:** {buildDate:MM-dd-yyyy HH:mm:ss tt zzz}")
                 .AppendLine($"**Guilds:** {ctx.Client.Guilds.Count}")
                 .AppendLine("**Created by:** <@524434302361010186>")
-                .AppendLine("----------------------------------------------\r\n")
-                .AppendLine("[Support Server](https://discord.gg/r65JVSs4)")
-                .AppendLine("[GitHub](https://github.com/async-void/GamedayTracker)")
                 .AppendLine("----------------------------------------------")
-                .AppendLine("GamedayTracker gets weekly updates - [Sunday at Midnight EST]");
-
+                .AppendLine("### Features in Development")
+                .AppendLine("- User Defined Daily Headline Interval")
+                .AppendLine("- User Defined RealTime Scores Update Interval")
+                .AppendLine("- Team Injury Report")
+                .AppendLine("- Betting")
+                .AppendLine("----------------------------------------------")
+                .AppendLine("[Support](https://discord.gg/vBqnpvS6)")
+                .AppendLine("[GitHub](https://github.com/async-void/GamedayTracker)")
+                .AppendLine("----------------------------------------------\r\n")
+                .AppendLine("`GamedayTracker gets weekly updates - [Sunday at Midnight EST]`");
 
             DiscordComponent[] components =
             [
-                new DiscordSectionComponent(new DiscordTextDisplayComponent("## GamedayTracker"),
+                new DiscordSectionComponent(new DiscordTextDisplayComponent("## GamedayTracker\r\n-# NFL Gameday Tracker"),
                     new DiscordThumbnailComponent($"{bot.AvatarUrl}")),
                 new DiscordSeparatorComponent(true),
                 new DiscordTextDisplayComponent(aboutText.ToString()),

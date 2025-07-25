@@ -126,5 +126,22 @@ namespace GamedayTracker.Helpers
             return Result<List<Page>, SystemError<SlashCommandHelper>>.Ok(pages);
         }
         #endregion
+        public static string GetCooldownMessage(DateTimeOffset lastUsed, TimeSpan cooldown)
+        {
+            var nextAvailable = lastUsed + cooldown;
+            var now = DateTimeOffset.UtcNow;
+
+            if (now >= nextAvailable)
+            {
+                return "✅ You're good to go! Use the command now.";
+            }
+
+            var unixTime = nextAvailable.ToUnixTimeSeconds();
+            return $"⏳ You can deposit again <t:{unixTime}:R>";
+        }
+
+        #region GET COOLDOWN MESSAGE
+
+        #endregion
     }
 }
