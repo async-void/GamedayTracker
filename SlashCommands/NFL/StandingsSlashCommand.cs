@@ -47,16 +47,16 @@ namespace GamedayTracker.SlashCommands.NFL
                 {
                     var emoji = NflEmojiService.GetEmoji(standing.Abbr);
                     if (standing.Abbr.Length == 2)
-                        sBuilder.Append($"{emoji}`{standing.Abbr.PadLeft(2).PadRight(2)}\t{standing.Wins.PadLeft(3)}\t{standing.Loses}\t{standing.Pct}`\r\n");
+                        sBuilder.Append($"{emoji}`{standing.Abbr.PadLeft(3, ' ').PadRight(2)}\t{standing.Wins.PadLeft(3)}\t{standing.Loses}\t{standing.Pct}`\r\n");
                     else
-                        sBuilder.Append($"{emoji}`{standing.Abbr.PadLeft(2)}\t{standing.Wins.PadLeft(2)}\t{standing.Loses}\t{standing.Pct}`\r\n");
+                        sBuilder.Append($"{emoji}`{standing.Abbr.PadLeft(2, ' ')}\t{standing.Wins.PadLeft(2)}\t{standing.Loses}\t{standing.Pct}`\r\n");
                 }
 
                 DiscordComponent[] components =
                 [
                     new DiscordTextDisplayComponent($"**Standings for Season {season}**"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"__``Team\tW\tL\t Pct``__\r\n"),
+                    new DiscordTextDisplayComponent($"__``Team\t W\t L\t  Pct``__\r\n"),
                     new DiscordTextDisplayComponent(sBuilder.ToString()),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyy hh:mm:ss tt zzz}"),

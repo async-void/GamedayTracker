@@ -53,17 +53,17 @@ namespace GamedayTracker.Jobs
                 for (var i = 0; i < grouped.Count; i++)
                 {
                     sb.AppendLine($"-# {grouped[i].Division}");
-                    sb.AppendLine("__`Team\tW\tL\t     Pct`__");
+                    sb.AppendLine("__`Team\t W\t L\tPct`__");
                     for (var j = 0; j < grouped[i].Teams.Count(); j++)
                     {
                         var abbr = grouped[i].Teams.ElementAt(j).TeamName.ToAbbr();
                         var emoji = NflEmojiService.GetEmoji(abbr);
-                        sb.AppendLine($"{emoji} `{abbr}: {grouped[i].Teams.ElementAt(j).Wins, -5}{grouped[i].Teams.ElementAt(j).Loses, -5}\t{grouped[i].Teams.ElementAt(j).Pct, -11}`");
+                        sb.AppendLine($"{emoji} `{abbr, -3}:{grouped[i].Teams.ElementAt(j).Wins, 4} {grouped[i].Teams.ElementAt(j).Loses, 4} {grouped[i].Teams.ElementAt(j).Pct, 7}`");
                     }
                 }
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent("## Current NFL Standings"),
+                    new DiscordTextDisplayComponent($"## NFL Standings\r\n-# {curSeason}"),
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"{sb}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),

@@ -114,7 +114,7 @@ namespace GamedayTracker
                             .WithIdentity("RealTimeScores-trigger")
                             .StartNow()
                             .WithSimpleSchedule(x => x
-                                .WithInterval(TimeSpan.FromMinutes(30))
+                                .WithInterval(TimeSpan.FromHours(6))
                                 .RepeatForever().Build()));
 
                         q.AddJob<DailyHeadlineJob>(opts => opts.WithIdentity(headlinesJobKey)
@@ -125,7 +125,7 @@ namespace GamedayTracker
                             .WithIdentity("DailyHeadlines-trigger")
                             .StartNow()
                             .WithSimpleSchedule(x => x
-                                .WithInterval(TimeSpan.FromHours(24))
+                                .WithInterval(TimeSpan.FromHours(6))
                                 .RepeatForever().Build()));
 
                         q.AddJob<DailyStandingsJob>(opts => opts.WithIdentity(dailyStandingsJobKey)
@@ -136,7 +136,7 @@ namespace GamedayTracker
                             .WithIdentity("DailyStandings-trigger")
                             .StartNow()
                             .WithSimpleSchedule(x => x
-                                .WithInterval(TimeSpan.FromHours(12))
+                                .WithInterval(TimeSpan.FromHours(6))
                                 .RepeatForever().Build()));
                     });
 
@@ -252,11 +252,14 @@ namespace GamedayTracker
                             }
                         })
                         #endregion
+
+                        #region GUILD DOWNLOAD COMPLETED
                         .HandleGuildDownloadCompleted(async (sender, args) =>
                         {
                             var count = sender.Guilds.Count;
                             await sender.UpdateStatusAsync(new DiscordActivity($"Scores in {count} Servers", DiscordActivityType.Watching));
                         })
+                        #endregion
 
                         #endregion
                     );

@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Serilog;
+using GamedayTracker.Utility;
 
 
 namespace GamedayTracker.Services
@@ -49,8 +50,24 @@ namespace GamedayTracker.Services
             var web = new HtmlWeb();
             var doc = web.Load(link);
             var seasonNode = doc.DocumentNode.SelectSingleNode(".//button[@id='dropdownMenuYear']");
-            var season = int.Parse(seasonNode?.InnerText.Replace("\n", string.Empty).Trim() ?? "2024");
-            return season;
+
+            if (seasonNode is null)
+            {
+                return Result<int, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
+                {
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("94807acb-8869-4648-a05d-c258af989e2f")),
+                    ErrorCode = Guid.Parse("94807acb-8869-4648-a05d-c258af989e2f"),
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = this
+                });
+            }
+            var seasonResult = int.TryParse(seasonNode.InnerText.Replace("\n", string.Empty).Trim(), out int season);
+            if (seasonResult)
+            {
+                return season;
+            }
+            return 0;
         }
         #endregion
 
