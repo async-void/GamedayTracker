@@ -26,7 +26,7 @@ namespace GamedayTracker.SlashCommands.Economy
             //TODO: finish betting command
             await ctx.DeferResponseAsync();
             var member = await _jsonService.GetMemberFromJsonAsync(ctx.User.Id.ToString(), ctx.Guild!.Id.ToString());
-            await ctx.RespondAsync($"You bet {amount} on {teamName}");
+            await ctx.RespondAsync($"-# You bet {amount} on {teamName}");
         }
 
         #region LEADERBOARD
@@ -65,7 +65,7 @@ namespace GamedayTracker.SlashCommands.Economy
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent($"{leaderboard.Error.ErrorMessage}"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLocalTime()}")
+                    new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {DateTime.UtcNow.ToLocalTime()}")
                 ];
                 var errContainer = new DiscordContainerComponent(errComponents, false, DiscordColor.DarkRed);
                 var errEmbed = new DiscordMessageBuilder()

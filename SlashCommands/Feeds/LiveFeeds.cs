@@ -30,7 +30,7 @@ namespace GamedayTracker.SlashCommands.Feeds
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"Daily Headlines"),
                     new DiscordButtonComponent(DiscordButtonStyle.Secondary, "headlinesId", "Headlines")),
                 new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                new DiscordSectionComponent(new DiscordTextDisplayComponent($"GamedayTracker ©️ <t:{unixTimestamp}:F>"),
+                new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# GamedayTracker ©️ <t:{unixTimestamp}:F>"),
                     new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
             ];
             var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);

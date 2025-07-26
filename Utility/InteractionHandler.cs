@@ -95,20 +95,16 @@ namespace GamedayTracker.Utility
                             #region SCOREBOARD
                             case "scoreboardHelpBtn": //TODO: here I would like to abstract this code to a method call to build the embed. not sure if it will make a difference in readability?
                             {
-                                DiscordComponent[] buttons =
-                                [
-                                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")
-                                ];
-
                                 DiscordComponent[] components =
                                 [
                                 new DiscordTextDisplayComponent("Scoreboard Help Section"),
                                 new DiscordSeparatorComponent(true),
-                                new DiscordTextDisplayComponent("1. Select the Season\r2.Select the Week"),
+                                new DiscordTextDisplayComponent("1. Select the Season\r2. Select the Week"),
                                 new DiscordSeparatorComponent(true),
                                 new DiscordTextDisplayComponent("this slash command will fetch ``All`` the game totals for the selected ``Season`` and ``Week``"),
-                                new DiscordSeparatorComponent(true),
-                                new DiscordActionRowComponent(buttons)
+                                new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                                 ];
 
                                 var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
@@ -128,7 +124,7 @@ namespace GamedayTracker.Utility
                                     new DiscordTextDisplayComponent(
                                         "Donate is in development, the devs are hard at work implementing this feature!"),
                                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ <t:{unixTimestamp}:F>")
+                                    new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:F>")
                                 ];
                                 var cContainer =
                                     new DiscordContainerComponent(bComponent, false, DiscordColor.LightGray);
@@ -164,7 +160,7 @@ namespace GamedayTracker.Utility
                                     new DiscordSectionComponent(new DiscordTextDisplayComponent("help keep GamedayTracker alive!"),
                                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
                                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ <t:{unixTimestamp}:F>")
+                                    new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:F>")
                                 ];
                                  cContainer =
                                     new DiscordContainerComponent(bComponent, false, DiscordColor.Goldenrod);
@@ -186,7 +182,7 @@ namespace GamedayTracker.Utility
                                     new DiscordTextDisplayComponent(
                                         "Settings is in development, the devs are hard at work implementing this feature!"),
                                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                                   new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                                   new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
                                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
                                 ];
                                  cContainer =
@@ -205,7 +201,7 @@ namespace GamedayTracker.Utility
                                     new DiscordTextDisplayComponent(
                                         "Daily-Headlines is in development, the devs are hard at work implementing this feature!"),
                                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                                   new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                                   new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
                                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
                                 ];
                                 cContainer =
@@ -223,7 +219,7 @@ namespace GamedayTracker.Utility
                                    new DiscordTextDisplayComponent(
                                         "Live-Scores is in development, the devs are hard at work implementing this feature!"),
                                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                                   new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                                   new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
                                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
                                 ];
                                 cContainer =

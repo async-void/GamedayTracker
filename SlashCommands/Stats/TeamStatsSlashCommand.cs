@@ -54,7 +54,8 @@ namespace GamedayTracker.SlashCommands.Stats
                         $"``PYds/G: {stats.Value.PassYardsPerGame}``\r``Total Yds: {stats.Value.TotalYards:#,##0}``\r" +
                         $"``Yds/G: {stats.Value.YardsPerGame}``"), new DiscordThumbnailComponent(logoUrl)),
                     new DiscordSeparatorComponent(true),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}"),  new DiscordButtonComponent(DiscordButtonStyle.Success, "donateId", "Donate")),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}"),  
+                        new DiscordButtonComponent(DiscordButtonStyle.Success, "donateId", "Donate")),
                 ];
 
                 var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
@@ -65,8 +66,6 @@ namespace GamedayTracker.SlashCommands.Stats
                 return;
             }
 
-            Console.WriteLine(
-                $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray($"{stats.Error.ErrorMessage}")}");
             await ctx.EditResponseAsync($"Error: {stats.Error.ErrorMessage}");
         }
     }

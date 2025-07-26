@@ -40,7 +40,7 @@ namespace GamedayTracker.Jobs
                     new DiscordSeparatorComponent(true),
                     new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem(imgList[rnd.Next(0, imgList.Count)], "news", false)),
                     new DiscordSeparatorComponent(true),
-                    new DiscordSectionComponent( new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                    new DiscordSectionComponent( new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
 
                 ];
@@ -49,29 +49,6 @@ namespace GamedayTracker.Jobs
                 var message = new DiscordMessageBuilder()
                     .EnableV2Components()
                     .AddContainerComponent(container);
-
-                #region Depracated Code - I will remove this code soon as I see the new code working.
-                //if (guilds.IsOk && guilds.Value.Count > 0)
-                //{
-                //    foreach (var g in guilds.Value)
-                //    {
-                //        if (g.IsDailyHeadlinesEnabled)
-                //        {
-                //            if (g.NotificationChannelId is null)
-                //            {
-                //                Log.Warning($"Guild {g.GuildId} has no notification channel set for daily headlines.");
-                //                continue;
-                //            }
-                //            var chnl = await _client.GetChannelAsync(ulong.Parse(g.NotificationChannelId));
-                //            if (chnl is { } ch)
-                //            {
-                //                await ch.SendMessageAsync(message);
-                //                await Task.Delay(200); 
-                //            }
-                //        }
-                //    }
-                //}
-                #endregion
 
                 var chnl = await _client.GetChannelAsync(1398021268032196698);
                 var msg = await chnl.SendMessageAsync(message);

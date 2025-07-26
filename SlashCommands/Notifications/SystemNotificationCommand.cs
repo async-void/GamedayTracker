@@ -24,7 +24,7 @@ namespace GamedayTracker.SlashCommands.Notifications
 
             if (userId != 524434302361010186)
             {
-                await ctx.EditResponseAsync("unable to execute command!");
+                await ctx.EditResponseAsync($"unable to execute command | {SystemErrorCodes.GetErrorMessage(Guid.Parse("e1f54bcb-3e9c-4784-af4c-44b97af1d0e2"))}");
                 return;
             }
             var guildResult = await _jsonDataService.GetGuildsFromJsonAsync();

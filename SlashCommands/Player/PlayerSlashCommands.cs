@@ -129,7 +129,7 @@ namespace GamedayTracker.SlashCommands.Player
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"Favorite Team: {favTeam}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
                                                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
                 Log.Information($"Player Exists, profile found for - {member.MemberName}");
