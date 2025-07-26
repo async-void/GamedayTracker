@@ -104,6 +104,7 @@ namespace GamedayTracker
                     {
                         var rtJobKey = new JobKey("RealTimeScoresJob");
                         var headlinesJobKey = new JobKey("DailyHeadlinesJob");
+                        var dailyStandingsJobKey = new JobKey("DailyStandingsJob");
 
                         q.AddJob<RealTimeScoresJob>(opts => opts.WithIdentity(rtJobKey)
                         .WithDescription("get realtime scores : user-defined intervals").Build());
@@ -126,6 +127,17 @@ namespace GamedayTracker
                             .WithSimpleSchedule(x => x
                                 .WithInterval(TimeSpan.FromHours(24))
                                 .RepeatForever().Build()));
+
+                        q.AddJob<DailyStandingsJob>(opts => opts.WithIdentity(dailyStandingsJobKey)
+                        .WithDescription("get daily standings : 12 hour interval").Build());
+
+                        q.AddTrigger(opts => opts
+                            .ForJob(dailyStandingsJobKey)
+                            .WithIdentity("DailyStandings-trigger")
+                            .StartNow()
+                            .WithSimpleSchedule(x => x
+                                .WithInterval(TimeSpan.FromHours(12))
+                                .RepeatForever().Build()));
                     });
 
                     services.AddQuartzHostedService(q =>
@@ -140,7 +152,7 @@ namespace GamedayTracker
                         e => e.AddEventHandlers<InteractionHandler>(ServiceLifetime.Singleton));
                     services.ConfigureEventHandlers(
 
-                        #region MESSAGE EVENT HANDLERS
+                    #region MESSAGE EVENT HANDLERS
                         e => e.HandleMessageCreated((sender, args) =>
                         {
                             return Task.CompletedTask;
@@ -158,7 +170,7 @@ namespace GamedayTracker
                         {
                             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                             var jsonService = sender.ServiceProvider.GetRequiredService<IJsonDataService>();
-                            
+
                             var guild = new Guild()
                             {
                                 GuildId = args.Guild.Id.ToString(),
@@ -173,7 +185,7 @@ namespace GamedayTracker
                             };
                             var supportChnl = await sender.GetChannelAsync(888659367824601160);
                             var guilds = sender.Guilds.Values;
-                           
+
                             var newChnl = args.Guild.GetDefaultChannel();
                             if (newChnl is { } chnl)
                             {
@@ -236,16 +248,22 @@ namespace GamedayTracker
                                         $"``Error removing Gameday Tracker from {args.Guild.Name} ({args.Guild.Id}) at: [<t:{unixTimestamp}:F>]``\r\n{removedResult.Error.ErrorMessage}");
                                     Log.Error($"Error removing guild {args.Guild.Name} ({args.Guild.Id}): {removedResult.Error.ErrorMessage}");
                                 }
-                                
+
                             }
                         })
                         #endregion
+                        .HandleGuildDownloadCompleted(async (sender, args) =>
+                        {
+                            var count = sender.Guilds.Count;
+                            await sender.UpdateStatusAsync(new DiscordActivity($"Scores in {count} Servers", DiscordActivityType.Watching));
+                        })
 
                         #endregion
                     );
                     #endregion
 
                 })
+                
                 .RunConsoleAsync();
             
             await Log.CloseAndFlushAsync();

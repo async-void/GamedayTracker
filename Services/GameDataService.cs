@@ -42,6 +42,18 @@ namespace GamedayTracker.Services
 
         #endregion
 
+        #region GET CURRENT SEASON
+        public Result<int, SystemError<GameDataService>> GetCurSeason()
+        {
+            const string link = "https://www.footballdb.com/standings/index.html";
+            var web = new HtmlWeb();
+            var doc = web.Load(link);
+            var seasonNode = doc.DocumentNode.SelectSingleNode(".//button[@id='dropdownMenuYear']");
+            var season = int.Parse(seasonNode?.InnerText.Replace("\n", string.Empty).Trim() ?? "2024");
+            return season;
+        }
+        #endregion
+
         #region GET CURRENT SCOREBOARD
         public Result<List<Matchup>, SystemError<GameDataService>> GetCurrentScoreboard()
         {

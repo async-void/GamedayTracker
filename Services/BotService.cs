@@ -21,7 +21,7 @@ namespace GamedayTracker.Services
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             logger.LogInformation("Connecting to Discord...");
-            await dClient.ConnectAsync(new DiscordActivity("Watching Scores"), DiscordUserStatus.Online);      
+            await dClient.ConnectAsync(new DiscordActivity($"Scores", DiscordActivityType.Watching), DiscordUserStatus.Online);      
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)

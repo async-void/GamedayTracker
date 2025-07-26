@@ -29,7 +29,7 @@ namespace GamedayTracker.SlashCommands.NFL
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent(standings.Error.ErrorMessage!),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyy hh:mm:ss tt zzz}"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyy hh:mm:ss tt zzz}"),
                                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
                 var container = new DiscordContainerComponent(components, false, DiscordColor.Cyan);
@@ -59,7 +59,7 @@ namespace GamedayTracker.SlashCommands.NFL
                     new DiscordTextDisplayComponent($"__``Team\tW\tL\t Pct``__\r\n"),
                     new DiscordTextDisplayComponent(sBuilder.ToString()),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyy hh:mm:ss tt zzz}"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyy hh:mm:ss tt zzz}"),
                                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
                 var container = new DiscordContainerComponent(components, false, DiscordColor.Cyan);
