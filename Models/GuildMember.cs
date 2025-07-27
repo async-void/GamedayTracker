@@ -17,5 +17,6 @@ namespace GamedayTracker.Models
         public string? FavoriteTeam { get; set; }
         public int BetWins { get; set; }
         public Bank? Bank { get; set; }
+        public List<Bet> Bets { get; set; } = [];
     }
 }

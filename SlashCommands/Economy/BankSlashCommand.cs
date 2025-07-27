@@ -163,6 +163,8 @@ namespace GamedayTracker.SlashCommands.Economy
                     LastDepositAmount = 5.00
                 };
 
+                var bets = new List<Bet>();
+
                 var user = new GuildMember()
                 {
                     Id = Guid.NewGuid(),
@@ -171,9 +173,10 @@ namespace GamedayTracker.SlashCommands.Economy
                     MemberName = member.Username,
                     MemberId = member.Id.ToString(),
                     Bank = bank,
+                    Bets = bets,
                 };
 
-                DateTimeOffset lastUsed = _user.Value.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;
+                DateTimeOffset lastUsed = user.Bank.DepositTimestamp;
                 var nextAvailable = lastUsed + TimeSpan.FromHours(24);
 
                 var writeResult = await _dataService.WriteMemberToJsonAsync(user);

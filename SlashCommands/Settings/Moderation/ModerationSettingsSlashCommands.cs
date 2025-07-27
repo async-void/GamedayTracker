@@ -153,7 +153,6 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
             if (jobs is { } jKeys)
             {
                 var sb = new StringBuilder();
-                sb.AppendLine("### Scheduled Jobs:");
                 foreach (var job in jKeys)
                 {
                     var jobDetail = await scheduler.GetJobDetail(job);
@@ -165,8 +164,8 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
                     new DiscordTextDisplayComponent($"## Scheduled Jobs"),
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"{sb}"),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
-                        new DiscordButtonComponent(DiscordButtonStyle.Primary, "donateId", "Donate"))
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
                 var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
                 var message = new DiscordMessageBuilder()

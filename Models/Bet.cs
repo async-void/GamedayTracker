@@ -8,12 +8,10 @@ namespace GamedayTracker.Models
 {
     public class Bet
     {
-        public int Id { get; set; }
-        public required PoolPlayer Player { get; set; }
-        public int GuildMemberId { get; set; }
-        public string? AwayTeamName { get; set; }
-        public string? HomeTeamName { get; set; }
+        public Guid BetId { get; set; }
+        public required string MemberId { get; set; }
+        public required string GuildId { get; set; }
         public double BetAmount { get; set; }
-
+        public required Matchup Matchup { get; set; }
     }
 }

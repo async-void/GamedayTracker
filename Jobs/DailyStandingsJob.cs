@@ -63,7 +63,7 @@ namespace GamedayTracker.Jobs
                 }
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent($"## NFL Standings\r\n-# {curSeason}"),
+                    new DiscordTextDisplayComponent($"## NFL Standings\r\n-# {curSeason.Value}"),
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"{sb}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
@@ -76,7 +76,8 @@ namespace GamedayTracker.Jobs
                     .AddContainerComponent(container);
                 var chnl = await _client.GetChannelAsync(1398735401048608960);
                 _logger.LogInformation("Sending daily standings for NFL season {season}.", curSeason);
-                await chnl.SendMessageAsync(embed);
+                var msg = await chnl.SendMessageAsync(embed);
+                await chnl.CrosspostMessageAsync(msg);
             }
         }
     } 
