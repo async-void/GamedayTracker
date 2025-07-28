@@ -46,10 +46,7 @@ namespace GamedayTracker.SlashCommands.NFL
                 foreach (var standing in sorted)
                 {
                     var emoji = NflEmojiService.GetEmoji(standing.Abbr);
-                    if (standing.Abbr.Length == 2)
-                        sBuilder.Append($"{emoji} `{standing.Abbr, -3} {standing.Wins, 4} {standing.Loses, 4} {standing.Pct, 7}`");
-                    else
-                        sBuilder.Append($"{emoji}`{standing.Abbr.PadLeft(2, ' ')}\t{standing.Wins.PadLeft(2)}\t{standing.Loses}\t{standing.Pct}`\r\n");
+                    sBuilder.Append($"{emoji} `{standing.Abbr, -3} {standing.Wins, 4} {standing.Loses, 4} {standing.Pct, 7}`\r\n");
                 }
 
                 DiscordComponent[] components =

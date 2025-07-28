@@ -65,7 +65,7 @@ namespace GamedayTracker.SlashCommands.Economy
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent($"{leaderboard.Error.ErrorMessage}"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {DateTime.UtcNow.ToLocalTime()}")
+                    new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyyy hh:mm:ss tt zzz}")
                 ];
                 var errContainer = new DiscordContainerComponent(errComponents, false, DiscordColor.DarkRed);
                 var errEmbed = new DiscordMessageBuilder()
@@ -83,7 +83,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                 new DiscordTextDisplayComponent($"{embedDesc}"),
                 new DiscordSeparatorComponent(true),
-                new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLocalTime()}")
+                new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyyy hh:mm:ss tt zzz}")
             ];
             var container = new DiscordContainerComponent(components, false, DiscordColor.Teal);
             var ldbEmbed = new DiscordMessageBuilder()

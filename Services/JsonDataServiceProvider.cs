@@ -316,8 +316,8 @@ namespace GamedayTracker.Services
             {
                 members.Remove(memberToUpdate);
                 members.Add(member);
-                json = JsonSerializer.Serialize(members, jsonOptions);
-                await File.WriteAllTextAsync(path, json);
+                var updatedJson = JsonSerializer.Serialize(members, jsonOptions);
+                await File.WriteAllTextAsync(path, updatedJson);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
             }
             return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>

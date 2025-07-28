@@ -118,6 +118,7 @@ namespace GamedayTracker.Utility
                             #endregion
 
                             #region BUTTONS
+                            #region DONATE
                             case "donateId":
                                 DiscordComponent[] bComponent =
                                 [
@@ -135,6 +136,9 @@ namespace GamedayTracker.Utility
                                     DiscordInteractionResponseType.UpdateMessage,
                                     new DiscordInteractionResponseBuilder(bMsg));
                                 break;
+                            #endregion
+
+                            #region HELP - doesn't get fired at all because we don't have a [Help] Button
                             case "helpId":
                                 unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                                 bComponent =                                 
@@ -155,6 +159,9 @@ namespace GamedayTracker.Utility
                                 await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage, 
                                     new DiscordInteractionResponseBuilder(bMsg));
                                 break;
+                            #endregion
+
+                            #region SETTINGS
                             case "settingsId":
                                 unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                                 DiscordButtonComponent[] btns =
@@ -179,6 +186,9 @@ namespace GamedayTracker.Utility
                                 await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
                                     new DiscordInteractionResponseBuilder(bMsg));
                                 break;
+                            #endregion
+
+                            #region ADD PLAYER
                             case "btnAddPlayer":
                             {
                                 
@@ -186,10 +196,149 @@ namespace GamedayTracker.Utility
                                 break;
                             #endregion
 
+                            #region STANDINGS
+                            case "standingsHelpBtn":
+                                unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                                bComponent =
+                                [
+                                    new DiscordTextDisplayComponent(
+                                        "Standings is in development, the devs are hard at work implementing this feature!"),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                                ];
+                                 cContainer =
+                                    new DiscordContainerComponent(bComponent, false, DiscordColor.DarkGray);
+                                 bMsg = new DiscordInteractionResponseBuilder()
+                                    .EnableV2Components()
+                                    .AddContainerComponent(cContainer);
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                    new DiscordInteractionResponseBuilder(bMsg));
+                                break;
+                            #endregion
+
+                            #region DRAFT
+                            case "draftHelpBtn":
+                                unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                                bComponent =
+                                [
+                                    new DiscordTextDisplayComponent(
+                                        "Draft is in development, the devs are hard at work implementing this feature!"),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                                ];
+                                 cContainer =
+                                    new DiscordContainerComponent(bComponent, false, DiscordColor.DarkGray);
+                                 bMsg = new DiscordInteractionResponseBuilder()
+                                    .EnableV2Components()
+                                    .AddContainerComponent(cContainer);
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                    new DiscordInteractionResponseBuilder(bMsg));
+                                break;
+                            #endregion
+
+                            #region USER SETTINGS
+                            case "userSettingsHelpBtn":
+                                unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                                bComponent =
+                                [
+                                    new DiscordTextDisplayComponent(
+                                        "User Settings is in development, the devs are hard at work implementing this feature!"),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                                ];
+                                 cContainer =
+                                    new DiscordContainerComponent(bComponent, false, DiscordColor.DarkGray);
+                                 bMsg = new DiscordInteractionResponseBuilder()
+                                    .EnableV2Components()
+                                    .AddContainerComponent(cContainer);
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                    new DiscordInteractionResponseBuilder(bMsg));
+                                break;
+                            #endregion
+
+                            #region LIVE FEEDS - DONE
+                            case "liveFeedsBtn":
+                                unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                                bComponent =
+                                [
+                                    new DiscordTextDisplayComponent("## Live Feeds Help"),
+                                    new DiscordSeparatorComponent(true),
+                                    new DiscordTextDisplayComponent("Get real-time updates on your favorite teams directly in Discord."),
+                                    new DiscordSeparatorComponent(true),
+                                    new DiscordTextDisplayComponent("- Realtime Scores: get up to the minute game scores\r\n- Daily Headlines: get daily NFL news articles.\r\n- Daily Standings: " +
+                                    "get daily divisional standings"),
+                                    new DiscordTextDisplayComponent("### More Info\r\nrun command ``/live-feeds``"),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                                ];
+                                 cContainer =
+                                    new DiscordContainerComponent(bComponent, false, DiscordColor.DarkGray);
+                                 bMsg = new DiscordInteractionResponseBuilder()
+                                    .EnableV2Components()
+                                    .AddContainerComponent(cContainer);
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                    new DiscordInteractionResponseBuilder(bMsg));
+                                break;
+                            #endregion
+
+                            #region NEWS
+                            case "newsHelpBtn":
+                                unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                                bComponent =
+                                [
+                                    new DiscordTextDisplayComponent(
+                                        "News is in development, the devs are hard at work implementing this feature!"),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                                ];
+                                 cContainer =
+                                    new DiscordContainerComponent(bComponent, false, DiscordColor.DarkGray);
+                                 bMsg = new DiscordInteractionResponseBuilder()
+                                    .EnableV2Components()
+                                    .AddContainerComponent(cContainer);
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                    new DiscordInteractionResponseBuilder(bMsg));
+                                break;
+                            #endregion
+
+                            #region COMMANDS HELP
+                            case "commandsBtn":
+                                unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                                var cmdsDescBuilder = new StringBuilder();
+                                cmdsDescBuilder.AppendLine("-# GamedayTracker supports auto complete - start typing and I will auto complete the commands available.");
+
+                                bComponent =
+                                [
+                                    new DiscordTextDisplayComponent("## Commands Help"),
+                                    new DiscordTextDisplayComponent("-# GamedayTracker uses `/` slash commands"),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                    new DiscordTextDisplayComponent(cmdsDescBuilder.ToString()),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                                ];
+                                 cContainer =
+                                    new DiscordContainerComponent(bComponent, false, DiscordColor.DarkGray);
+                                 bMsg = new DiscordInteractionResponseBuilder()
+                                    .EnableV2Components()
+                                    .AddContainerComponent(cContainer);
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                    new DiscordInteractionResponseBuilder(bMsg));
+                                break;
+                            #endregion
+
+                            #endregion
+
                             default:
                                 {
                                     break;
                                 }
+
                         }
                     break;
                 }

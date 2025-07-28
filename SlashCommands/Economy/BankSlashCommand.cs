@@ -27,26 +27,26 @@ namespace GamedayTracker.SlashCommands.Economy
         {
             await ctx.DeferResponseAsync();
             var member = await ctx.Channel.Guild.GetMemberAsync(user.Id) as DiscordMember;
-
             var player = await _dataService.GetMemberFromJsonAsync(member.Id.ToString(), ctx.Channel.Guild.Id.ToString());
-
+            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             DiscordComponent[] buttons =
             [
-                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "btnAddPlayer", "Add Player"),
                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")
             ];
 
             if (player.IsOk)
             {
                 var balance = player.Value.Bank?.Balance ?? 5.00;
+                var depositTimestamp = player.Value.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;  
+                var depositedTimestamp = depositTimestamp.ToUnixTimeSeconds();
+
                 DiscordComponent[] components =
                 [
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"**Member: {user.GlobalName!}**\r\n\r\n<:money:1337795714855600188> Balance - {balance}\r<:bank:1366390018423390360> Last Deposit - {player.Value.Bank!.DepositTimestamp}"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"**{user.GlobalName!}**\r\n<:money:1337795714855600188> Balance - {balance}\r\n<:bank:1366390018423390360> Last Deposit: {depositTimestamp.Humanize()}"),
                         new DiscordThumbnailComponent(member!.AvatarUrl.ToString())),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"Gameday Tracker - {DateTime.UtcNow.ToLongDateString()}"),
-                    new DiscordActionRowComponent(buttons)
-                   
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                        new DiscordActionRowComponent(buttons))  
                 ];
 
                 var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGreen);
@@ -55,7 +55,6 @@ namespace GamedayTracker.SlashCommands.Economy
                     .AddContainerComponent(container);
 
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
-                
                 return;
             }
 
@@ -63,8 +62,8 @@ namespace GamedayTracker.SlashCommands.Economy
             [
                 new DiscordTextDisplayComponent($"Error fetching player data: {player.Error.ErrorMessage!} with ErrorCode: {player.Error.ErrorCode}"),
                 new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                new DiscordTextDisplayComponent($"-# Gameday Tracker - {DateTime.UtcNow.ToLongDateString()}"),
-                new DiscordActionRowComponent(buttons)
+                new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                        new DiscordActionRowComponent(buttons))
             ];
             var msgContainer = new DiscordContainerComponent(msgComp, false, DiscordColor.DarkGray);
             var message1 = new DiscordMessageBuilder()
@@ -75,7 +74,7 @@ namespace GamedayTracker.SlashCommands.Economy
         }
         #endregion
 
-        #region DAILY SLASHCOMMAND
+        #region DAILY
         [Command("daily")]
         [Description("adds the daily [$5.00] to the user account")]
         public async ValueTask RunDaily(SlashCommandContext ctx)
@@ -109,13 +108,13 @@ namespace GamedayTracker.SlashCommands.Economy
                         if (updatedUser.IsOk)
                         {
                             lastUsed = updatedUser.Value.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;
-                            nextAvailable = lastUsed + TimeSpan.FromHours(24);
+                            nextAvailable = lastUsed + TimeSpan.FromHours(2);
                             var unixTimestamp = nextAvailable.ToUnixTimeSeconds();
 
                             var message = new DiscordMessageBuilder()
                             .AddEmbed(new DiscordEmbedBuilder()
                                 .WithTitle($"Daily Command")
-                                .WithDescription($"Done!  **{_user.Value.MemberName}'s** balance is <:money:1337795714855600188> ${balance:#.##}\r\nyou can use daily again <t:{unixTimestamp}:R> from now")
+                                .WithDescription($"Done!  **{updatedUser.Value.MemberName}'s** balance is <:money:1337795714855600188> ${balance:#.##}\r\nyou can use daily again <t:{unixTimestamp}:R> from now")
                                 .WithTimestamp(DateTime.UtcNow));
 
                             await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
@@ -143,7 +142,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 else
                 {
                     lastUsed = dailyTimeStamp;
-                    nextAvailable = lastUsed + TimeSpan.FromHours(24);
+                    nextAvailable = lastUsed + TimeSpan.FromHours(2);
                     var unixTimestamp = nextAvailable.ToUnixTimeSeconds();
 
                     await ctx.FollowupAsync(new DiscordFollowupMessageBuilder()

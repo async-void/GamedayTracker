@@ -19,6 +19,12 @@ namespace GamedayTracker.SlashCommands.Feeds
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
+            DiscordComponent[] btns =
+            [
+                new DiscordLinkButtonComponent("https://discord.com/channels/1384428811805921301/1398021337498390539", "Live Scores"),
+                new DiscordLinkButtonComponent("https://discord.com/channels/1384428811805921301/1398021268032196698", "Daily Headlines"),
+                new DiscordLinkButtonComponent("https://discord.com/channels/1384428811805921301/1398735401048608960", "Daily Standings")
+            ];
             DiscordComponent[] components =
             [
                 new DiscordTextDisplayComponent("## Live Feeds\r\n-# live feeds for Scores, Standings and Headlines"),
@@ -27,12 +33,10 @@ namespace GamedayTracker.SlashCommands.Feeds
                 "daily headlines and standings in your server.\r\n-# Note: Once you follow the channel, " +
                 "you will only get the messages on the next day/week due to how announcement channels work."),
                 new DiscordSeparatorComponent(true),
-                new DiscordTextDisplayComponent($"[Live Scores](https://discord.com/channels/1384428811805921301/1398021337498390539)"),
-                new DiscordTextDisplayComponent($"[Daily Headlines](https://discord.com/channels/1384428811805921301/1398021268032196698)"),
-                new DiscordTextDisplayComponent($"[Daily Standings](https://discord.com/channels/1384428811805921301/1398735401048608960)"),
-                new DiscordSeparatorComponent(true),
                 new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem("https://i.imgur.com/10HHPHh.png")),
                 new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                new DiscordActionRowComponent(btns),
+                 new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                 new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# GamedayTracker ©️ <t:{unixTimestamp}:F>"),
                     new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
             ];

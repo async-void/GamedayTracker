@@ -31,7 +31,8 @@ namespace GamedayTracker.Utility
             { Guid.Parse("ff80cb50-a3dc-4de7-a9df-0c58f395b0f0"), "Command execution interrupted by shutdown signal." },
             { Guid.Parse("f416e176-85b0-4f94-b172-8dc8f084242e"), "File Not Found" },
             { Guid.Parse("6b24c3ac-0a78-49fd-9c6e-40d749e6559e"), "Member Not Found" }, 
-            { Guid.Parse("94807acb-8869-4648-a05d-c258af989e2f"), "Unknown Error Occurred" }
+            { Guid.Parse("94807acb-8869-4648-a05d-c258af989e2f"), "Unknown Error Occurred" },
+            { Guid.Parse("3996dbaf-2da8-45ae-9fad-e7e48fb0916b"), "Scoreboard Data Not Found" }
         };
 
         public static string GetErrorMessage(Guid errorCode)

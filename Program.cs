@@ -114,7 +114,7 @@ namespace GamedayTracker
                             .WithIdentity("RealTimeScores-trigger")
                             .StartNow()
                             .WithSimpleSchedule(x => x
-                                .WithInterval(TimeSpan.FromHours(6))
+                                .WithInterval(TimeSpan.FromHours(4))
                                 .RepeatForever().Build()));
 
                         q.AddJob<DailyHeadlineJob>(opts => opts.WithIdentity(headlinesJobKey)
@@ -125,7 +125,7 @@ namespace GamedayTracker
                             .WithIdentity("DailyHeadlines-trigger")
                             .StartNow()
                             .WithSimpleSchedule(x => x
-                                .WithInterval(TimeSpan.FromHours(6))
+                                .WithInterval(TimeSpan.FromHours(4))
                                 .RepeatForever().Build()));
 
                         q.AddJob<DailyStandingsJob>(opts => opts.WithIdentity(dailyStandingsJobKey)
@@ -136,7 +136,7 @@ namespace GamedayTracker
                             .WithIdentity("DailyStandings-trigger")
                             .StartNow()
                             .WithSimpleSchedule(x => x
-                                .WithInterval(TimeSpan.FromHours(6))
+                                .WithInterval(TimeSpan.FromHours(4))
                                 .RepeatForever().Build()));
                     });
 
@@ -157,9 +157,27 @@ namespace GamedayTracker
                         {
                             return Task.CompletedTask;
                         })
-                        .HandleMessageDeleted((sender, args) =>
+                        .HandleMessageDeleted(async (sender, args) =>
                         {
-                            return Task.CompletedTask;
+                            var logChnl = await sender.GetChannelAsync(1384436855524692048);
+                            if (logChnl is { } channel)
+                            {
+                                var message = "";
+                                if (args.Message.Embeds.Count > 0)
+                                    message = "message was embed, cannot retrieve message content";
+                                else
+                                    message = args.Message.Content.Length > 0 ? args.Message.Content : message;
+                                DiscordComponent[] comps =
+                                [
+                                    new DiscordTextDisplayComponent($"{args.Message.Author} deleted message: [{message}] from: {args.Message.Channel!.Name}:``{args.Message.Channel.Id}``"),
+                                    new DiscordTextDisplayComponent($"Guild: {args.Guild.Name}:``{args.Guild.Id}``"),
+                                ];
+                                var container = new DiscordContainerComponent(comps, false, DiscordColor.Red);
+                                var embed = new DiscordMessageBuilder()
+                                    .EnableV2Components()
+                                    .AddContainerComponent(container);
+                                await logChnl.SendMessageAsync(embed);
+                            }
                         })
                         #endregion
 

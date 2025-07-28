@@ -19,7 +19,7 @@ namespace GamedayTracker.SlashCommands.Utility
         #region HELP
         [Command("help")]//TODO: fix me
         [Description("help commands and a brief explaination")]
-        public async Task Help(SlashCommandContext ctx)
+        public async ValueTask Help(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -29,15 +29,21 @@ namespace GamedayTracker.SlashCommands.Utility
                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "standingsHelpBtn", "Standings"),
                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "draftHelpBtn", "Draft"),
                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "userSettingsHelpBtn", "User Settings"),
-                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "newsHelpBtn", "News")
+                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "newsHelpBtn", "News"),
+                
             ];
-
+            DiscordComponent[] buttons2 =
+            [
+                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "liveFeedsBtn", "Live Feeds"),
+                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "commandsBtn", "Commands Help"),
+            ];
             DiscordComponent[] components =
             [
                 new DiscordTextDisplayComponent("Help Section"),
                 new DiscordSeparatorComponent(true),
                 new DiscordTextDisplayComponent("below is a list of buttons where you will select a button to get the desired help section."),
                 new DiscordActionRowComponent(buttons),
+                new DiscordActionRowComponent(buttons2),
                  new DiscordSeparatorComponent(true),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))

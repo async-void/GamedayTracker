@@ -91,7 +91,8 @@ namespace GamedayTracker.Services
 
             foreach (var node in gameNodes)
             {
-                var dateNode = node.SelectSingleNode("thead/tr/th");
+                var dateNode = node.SelectSingleNode("thead/tr");
+                var gameTimeNode = node.SelectSingleNode("thead/tr");
                 var scoreBoardNode = node.SelectNodes("tbody/tr");
 
                 var awayScoreValue = scoreBoardNode[0].ChildNodes.Last().InnerText;
@@ -99,11 +100,15 @@ namespace GamedayTracker.Services
                 var awayNode = scoreBoardNode[0].ChildNodes[1];
                 var homeNode = scoreBoardNode[1].ChildNodes[1];
 
+                var gameDate = dateNode?.ChildNodes[1].InnerText.Trim();
+                var gameTime = gameTimeNode?.ChildNodes[3].InnerText.Trim();
+
                 var matchup = new Matchup
                 {
                     Week = GetCurWeek().Value,
                     Season = DateTime.UtcNow.Year,
-                    GameDate = dateNode!.InnerText,
+                    GameDate = gameDate.ToString(),
+                    GameTime = gameTime.ToString(),
                     Opponents = new Opponent
                     {
                         AwayTeam = new Team
