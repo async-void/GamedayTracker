@@ -106,7 +106,7 @@ namespace GamedayTracker.SlashCommands.Player
                 var roles = dMember.Roles.Select(r => r.Mention).ToList();
                 var memRoles = new List<string>();
                 var favTeam = member.FavoriteTeam?.Titleize() ?? "None";
-                var lastDeposit = member.Bank?.DepositTimestamp.ToString("g") ?? "Never";
+                var lastDeposit = member.Bank?.DepositTimestamp.Humanize() ?? "Never";
                 var wins = member.BetWins.ToString();
 
                 var sb = new StringBuilder();
@@ -129,7 +129,7 @@ namespace GamedayTracker.SlashCommands.Player
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"Favorite Team: {favTeam}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:R>"),
                                                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
                 Log.Information($"Player Exists, profile found for - {member.MemberName}");
@@ -166,7 +166,7 @@ namespace GamedayTracker.SlashCommands.Player
                     var sb = new StringBuilder();
                     var roles = dMember.Roles.Select(r => r.Mention).ToList();
                     var favTeam = m.Value.FavoriteTeam?.Titleize() ?? "None";
-                    var lastDeposit = m.Value.Bank?.DepositTimestamp.ToString("g") ?? "Never";
+                    var lastDeposit = m.Value.Bank?.DepositTimestamp.Humanize() ?? "Never";
 
                     components =
                    [
@@ -179,7 +179,7 @@ namespace GamedayTracker.SlashCommands.Player
                         new DiscordSeparatorComponent(true),
                         new DiscordTextDisplayComponent($"Favorite Team: {favTeam}"),
                         new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                        new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                        new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ <t:{unixTimestamp}:R>"),
                                                                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                    ];
                     Log.Information($"Player profile found for - {m.Value.MemberName}");
@@ -197,7 +197,7 @@ namespace GamedayTracker.SlashCommands.Player
                         new DiscordSeparatorComponent(true),
                         new DiscordTextDisplayComponent($"{m.Error.ErrorMessage}"),
                         new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                        new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                        new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ <t:{unixTimestamp}:R>"),
                                                                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                     ];
                     Log.Warning($"Error: {m.Error.ErrorMessage} in Guild: {ctx.Guild!.Name}");

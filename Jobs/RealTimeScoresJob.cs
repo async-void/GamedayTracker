@@ -49,7 +49,7 @@ namespace GamedayTracker.Jobs
                             new DiscordSeparatorComponent(true),
                             new DiscordTextDisplayComponent($"{sb.ToString()}"),
                             new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                            new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by GamedayTracker ©️ <t:{unixTimestamp}:F>"),
+                            new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by GamedayTracker ©️ <t:{unixTimestamp}:R>"),
                                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                        ];
                 var container = new DiscordContainerComponent(components);

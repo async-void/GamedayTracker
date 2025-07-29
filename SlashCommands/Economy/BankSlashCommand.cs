@@ -80,8 +80,9 @@ namespace GamedayTracker.SlashCommands.Economy
         public async ValueTask RunDaily(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync(ephemeral: true);
+            TimeSpan TIMESPAN = TimeSpan.FromHours(2);
+
             var member = ctx.Member;
-           
             var _user = await _dataService.GetMemberFromJsonAsync(member!.Id.ToString(), member.Guild.Id.ToString());
 
             if (_user.IsOk)
@@ -89,7 +90,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 var dailyTimeStamp = _user.Value.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;
                 var currentTime = DateTimeOffset.UtcNow;
                 var lastUsed = _user.Value.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;
-                var nextAvailable = lastUsed + TimeSpan.FromHours(24);
+                var nextAvailable = lastUsed + TIMESPAN;
                 var timeElapsed = currentTime - dailyTimeStamp;
 
                 if (timeElapsed.TotalDays >= 1)
@@ -108,9 +109,10 @@ namespace GamedayTracker.SlashCommands.Economy
                         if (updatedUser.IsOk)
                         {
                             lastUsed = updatedUser.Value.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;
-                            nextAvailable = lastUsed + TimeSpan.FromHours(2);
+                            nextAvailable = lastUsed + TIMESPAN;
                             var unixTimestamp = nextAvailable.ToUnixTimeSeconds();
 
+                            //TODO: change this to the V2 embed
                             var message = new DiscordMessageBuilder()
                             .AddEmbed(new DiscordEmbedBuilder()
                                 .WithTitle($"Daily Command")
@@ -121,8 +123,6 @@ namespace GamedayTracker.SlashCommands.Economy
                         }
                         else
                         {
-                            //await ctx.FollowupAsync(new DiscordFollowupMessageBuilder()
-                            //    .WithContent($"GamedayTracker [working]"));
                             await ctx.FollowupAsync(new DiscordFollowupMessageBuilder()
                                 .WithContent($"Error fetching updated user data: {updatedUser.Error.ErrorMessage!} with ErrorCode: {updatedUser.Error.ErrorCode}")
                                 .AsEphemeral(true));
@@ -134,15 +134,10 @@ namespace GamedayTracker.SlashCommands.Economy
                                 .WithContent($"Error fetching updated user data: {updateUserResult.Error.ErrorMessage!} with ErrorCode: {updateUserResult.Error.ErrorCode}")
                                 .AsEphemeral(true));
                         _logger.LogInformation("unable to update {MemberName}'s daily - error: {ErrorMessage}", _user.Value.MemberName, updateUserResult.Error.ErrorMessage);
-                    }
-                       
-
-                    
+                    }   
                 }
                 else
                 {
-                    lastUsed = dailyTimeStamp;
-                    nextAvailable = lastUsed + TimeSpan.FromHours(2);
                     var unixTimestamp = nextAvailable.ToUnixTimeSeconds();
 
                     await ctx.FollowupAsync(new DiscordFollowupMessageBuilder()
@@ -176,7 +171,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 };
 
                 DateTimeOffset lastUsed = user.Bank.DepositTimestamp;
-                var nextAvailable = lastUsed + TimeSpan.FromHours(24);
+                var nextAvailable = lastUsed + TIMESPAN;
 
                 var writeResult = await _dataService.WriteMemberToJsonAsync(user);
 

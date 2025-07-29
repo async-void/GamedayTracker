@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
+using GamedayTracker.Utility;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -17,7 +18,7 @@ namespace GamedayTracker.SlashCommands.Feeds
         public async ValueTask GetLiveFeeds(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
 
             DiscordComponent[] btns =
             [
@@ -37,7 +38,7 @@ namespace GamedayTracker.SlashCommands.Feeds
                 new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                 new DiscordActionRowComponent(btns),
                  new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# GamedayTracker ©️ <t:{unixTimestamp}:F>"),
+                new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# GamedayTracker ©️ {unixTimestamp}"),
                     new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
             ];
             var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);

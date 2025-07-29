@@ -8,6 +8,7 @@ using GamedayTracker.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
+using GamedayTracker.Utility;
 using Humanizer;
 
 namespace GamedayTracker.SlashCommands.Settings.User
@@ -23,7 +24,8 @@ namespace GamedayTracker.SlashCommands.Settings.User
             var teamNameMatch = NflTeamMatcher.MatchTeam(teamName);
             var abbr = teamNameMatch!.ToAbbr();
             var logoPath = LogoPathService.GetLogoPath(abbr);
-            
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
+
             var memResult = await jsonDataService.GetMemberFromJsonAsync(ctx.Member!.Id.ToString(), ctx.Guild!.Id.ToString());
             if (memResult.IsOk)
             {
@@ -31,6 +33,7 @@ namespace GamedayTracker.SlashCommands.Settings.User
                 member.FavoriteTeam = teamNameMatch;
                 var teamEmoji = NflEmojiService.GetEmoji(abbr);
                 var writeResult = await jsonDataService.UpdateMemberDataAsync(member);
+                var fullName = teamName.ToTeamFullName();
 
                 if (writeResult.IsOk)
                 {
@@ -38,12 +41,12 @@ namespace GamedayTracker.SlashCommands.Settings.User
                     [
                         new DiscordTextDisplayComponent("### User Settings - Favorite Team"),
                         new DiscordSeparatorComponent(true),
-                        new DiscordTextDisplayComponent($"Favorite Team set to: {teamName.Titleize()} {teamEmoji}"),
+                        new DiscordTextDisplayComponent($"Favorite Team set to: {fullName.Titleize()} {teamEmoji}"),
                         new DiscordSeparatorComponent(true),
-                        new DiscordSectionComponent(new DiscordTextDisplayComponent($"{teamName}"),
+                        new DiscordSectionComponent(new DiscordTextDisplayComponent($"{fullName.Titleize()}"),
                             new DiscordThumbnailComponent(logoPath)),
                         new DiscordSeparatorComponent(true),
-                        new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToShortDateString()}"),
+                        new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {timestamp}"),
                             new DiscordButtonComponent(DiscordButtonStyle.Primary, label: "Donate", customId: "donateId"))
                     ];
 
@@ -55,7 +58,7 @@ namespace GamedayTracker.SlashCommands.Settings.User
 
                     await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
 
-                    await ctx.User.SendMessageAsync($"favorite team ``{teamName.Titleize()}`` {teamEmoji} has been set!");
+                    await ctx.User.SendMessageAsync($"favorite team ``{fullName.Titleize()}`` {teamEmoji} has been set!");
                 }
                 else
                 {
@@ -63,7 +66,7 @@ namespace GamedayTracker.SlashCommands.Settings.User
                         .AddEmbed(new DiscordEmbedBuilder()
                             .WithTitle($"User Setting - Set Favorite Team Command")
                             .WithDescription($"{writeResult.Error.ErrorMessage}")
-                            .WithTimestamp(DateTime.UtcNow));
+                            .WithTimestamp(DateTimeOffset.UtcNow));
                     await ctx.EditResponseAsync(message);
                 }
             }
@@ -73,7 +76,7 @@ namespace GamedayTracker.SlashCommands.Settings.User
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithTitle($"NOT FOUND")
                         .WithDescription("WIP: member is not in db\r\nwould you like to add the member now?")
-                        .WithTimestamp(DateTime.UtcNow));
+                        .WithTimestamp(DateTimeOffset.UtcNow));
 
                 await ctx.EditResponseAsync(message);
             }

@@ -6,6 +6,7 @@ using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
+using GamedayTracker.Utility;
 using Humanizer;
 using Serilog;
 
@@ -22,7 +23,7 @@ namespace GamedayTracker.SlashCommands.Utility
         public async ValueTask Help(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             DiscordComponent[] buttons =
             [
                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "scoreboardHelpBtn", "Scoreboard"),
@@ -45,7 +46,7 @@ namespace GamedayTracker.SlashCommands.Utility
                 new DiscordActionRowComponent(buttons),
                 new DiscordActionRowComponent(buttons2),
                  new DiscordSeparatorComponent(true),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ {unixTimestamp}"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
 
             ];
@@ -64,7 +65,7 @@ namespace GamedayTracker.SlashCommands.Utility
         public async ValueTask Ping(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var sw = new Stopwatch();
             sw.Start();
             
@@ -86,7 +87,7 @@ namespace GamedayTracker.SlashCommands.Utility
                     new DiscordTextDisplayComponent($"Discord API **{connectionLat.Humanize()}**"),
                     new DiscordTextDisplayComponent($"Uptime **{uptime.Humanize(3, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second)}**"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# GamedayTracker ©️ <t:{unixTimestamp}:F>"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# GamedayTracker ©️ {unixTimestamp}"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
                 ];
                 DiscordContainerComponent container = new(components, false, DiscordColor.Blurple);
@@ -115,13 +116,14 @@ namespace GamedayTracker.SlashCommands.Utility
         public async ValueTask About(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var bot = ctx.Client.CurrentUser;
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            var buildDate = DateTimeOffset.UtcNow.AddDays(-7);
+            var buildDate = File.GetLastWriteTime(Assembly.GetExecutingAssembly().Location);
+
             var aboutText = new StringBuilder()
                 .AppendLine($"**Version:** {version}")
-                .AppendLine($"**Build Date:** {buildDate:MM-dd-yyyy HH:mm:ss tt zzz}")
+                .AppendLine($"**Build Date:** {buildDate.ToLongDateString()}")
                 .AppendLine($"**Guilds:** {ctx.Client.Guilds.Count}")
                 .AppendLine("**Created by:** <@524434302361010186>")
                 .AppendLine("---------------------------------------------------")
@@ -130,20 +132,24 @@ namespace GamedayTracker.SlashCommands.Utility
                 .AppendLine("- User Defined RealTime Scores Update Interval")
                 .AppendLine("- Team Injury Report")
                 .AppendLine("- Betting")
-                .AppendLine("---------------------------------------------------")
-                .AppendLine("[Support](https://discord.gg/vBqnpvS6)")
-                .AppendLine("[GitHub](https://github.com/async-void/GamedayTracker)")
-                .AppendLine("---------------------------------------------------")
+                .AppendLine("- Daily Modifier")
                 .AppendLine("-# GamedayTracker gets weekly updates - [Sunday at Midnight EST]");
 
+            DiscordComponent[] linkBtns =
+            [
+                new DiscordLinkButtonComponent("https://discord.gg/vBqnpvS6", "Support"),
+                new DiscordLinkButtonComponent("https://github.com/async-void/GamedayTracker", "Github"),
+            ];
             DiscordComponent[] components =
             [
                 new DiscordSectionComponent(new DiscordTextDisplayComponent("## GamedayTracker\r\n-# NFL Gameday Tracker"),
                     new DiscordThumbnailComponent($"{bot.AvatarUrl}")),
                 new DiscordSeparatorComponent(true),
                 new DiscordTextDisplayComponent(aboutText.ToString()),
+                new DiscordSeparatorComponent(true),
+                new DiscordActionRowComponent(linkBtns),
                 new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# GamedayTracker ©️ <t:{unixTimestamp}:F>"),
+                new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# GamedayTracker ©️ {unixTimestamp}"),
                     new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
             ];
             var container = new DiscordContainerComponent(components, false, DiscordColor.Goldenrod); 

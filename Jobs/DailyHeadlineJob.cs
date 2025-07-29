@@ -40,7 +40,7 @@ namespace GamedayTracker.Jobs
                     new DiscordSeparatorComponent(true),
                     new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem(imgList[rnd.Next(0, imgList.Count)], "news", false)),
                     new DiscordSeparatorComponent(true),
-                    new DiscordSectionComponent( new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                    new DiscordSectionComponent( new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:R>"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
 
                 ];
