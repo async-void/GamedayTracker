@@ -93,7 +93,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 var nextAvailable = lastUsed + TIMESPAN;
                 var timeElapsed = currentTime - dailyTimeStamp;
 
-                if (timeElapsed.TotalDays >= 1)
+                if (timeElapsed.TotalHours >= 2)
                 {
                     var balance = _user.Value.Bank?.Balance + 5.00 ?? 5.00;
                     _user.Value.Bank!.Balance = balance;

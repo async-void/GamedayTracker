@@ -48,11 +48,11 @@ namespace GamedayTracker.SlashCommands.Stats
                 [
                     new DiscordTextDisplayComponent($"{teamEmoji} **{stats.Value.TeamName!}**\r**{stats.Value.Season} {isOffense} Stats**\r\r"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"``Games: {stats.Value.GamesPlayed}``\r" +
-                        $"``Total Pts: {stats.Value.TotalPoints}``\r``Pts/G: {stats.Value.PointsPerGame}``\r``RushYds: {stats.Value.RushYardsTotal:#,##0}``\r" +
-                        $"``RYds/G: {stats.Value.RushPerGame}``\r``PassYds: {stats.Value.PassYardsTotal:#,##0}``\r" +
-                        $"``PYds/G: {stats.Value.PassYardsPerGame}``\r``Total Yds: {stats.Value.TotalYards:#,##0}``\r" +
-                        $"``Yds/G: {stats.Value.YardsPerGame}``"), new DiscordThumbnailComponent(logoUrl)),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"``Games: {stats.Value.GamesPlayed, 12}``\r" +
+                        $"``Total Pts: {stats.Value.TotalPoints, 12}``\r``Pts/G: {stats.Value.PointsPerGame, 12}``\r``RushYds: {stats.Value.RushYardsTotal, 12:#,##0}``\r" +
+                        $"``RYds/G: {stats.Value.RushPerGame , 12}``\r``PassYds: {stats.Value.PassYardsTotal, 12:#,##0}``\r" +
+                        $"``PYds/G: {stats.Value.PassYardsPerGame ,12}``\r``Total Yds: {stats.Value.TotalYards, 12:#,##0}``\r" +
+                        $"``Yds/G: {stats.Value.YardsPerGame , 12}``"), new DiscordThumbnailComponent(logoUrl)),
                     new DiscordSeparatorComponent(true),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}"),  
                         new DiscordButtonComponent(DiscordButtonStyle.Success, "donateId", "Donate")),
