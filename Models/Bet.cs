@@ -12,6 +12,10 @@ namespace GamedayTracker.Models
         public required string MemberId { get; set; }
         public required string GuildId { get; set; }
         public double BetAmount { get; set; }
+        public int Season { get; set; }
+        public int Week { get; set; }
+        public decimal Multiplier { get; set; }
+        public required string TeamPickedToWinName { get; set; }
         public required Matchup Matchup { get; set; }
     }
 }

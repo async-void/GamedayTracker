@@ -10,10 +10,13 @@ namespace GamedayTracker.Services
         private readonly IGameData _gameDataService = gameDataService;
         private readonly IJsonDataService _jsonDataService = jsonDataService;
 
-        public async Task<Result<bool, SystemError<BettingDataServiceProvider>>> PlaceBet(Matchup matchup, Bet bet, GuildMember member)
+        public async Task<Result<bool, SystemError<BettingDataServiceProvider>>> CanPlaceBet(Matchup matchup, Bet bet, GuildMember member)
         {
             //1. get current scoreboard data
-            var games = _gameDataService.GetCurrentScoreboard();
+            var week = _gameDataService.GetCurWeek();
+            var season = _gameDataService.GetCurSeason();
+
+            var games = await _gameDataService.GetCurrentScoreboard();
 
             if (!games.IsOk)
             {
@@ -26,13 +29,28 @@ namespace GamedayTracker.Services
                     CreatedBy = this,
                 });
             }
-            //1. a matchup must exist in the current scoreboard data
+           
+            //1. matchup must exist in the current scoreboard data
+            var validMatchup = games.Value.FirstOrDefault(x => x.Opponents.AwayTeam.Name.Equals(matchup.Opponents.AwayTeam.Name, StringComparison.InvariantCultureIgnoreCase) 
+            || x.Opponents.HomeTeam.Name.Equals(matchup.Opponents.HomeTeam.Name, StringComparison.InvariantCultureIgnoreCase));
+           
+            //1. a the matchup must not have started
+            if (validMatchup is null)
+                return Result<bool, SystemError<BettingDataServiceProvider>>.Err(new SystemError<BettingDataServiceProvider>()
+                {
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("3996dbaf-2da8-45ae-9fad-e7e48fb0916b")),
+                    ErrorCode = Guid.Parse("3996dbaf-2da8-45ae-9fad-e7e48fb0916b"),
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedBy = this,
+                });
 
-            //1. b the matchup must not have started
-            var currentMatchup = games.Value.FirstOrDefault(g => g.Opponents.AwayTeam.Name.Equals(matchup.Opponents.AwayTeam.Name));
+            var now = DateTimeOffset.UtcNow;
+            var gameTime = DateTimeOffset.Parse(validMatchup.GameTime!);
+            var hasGameStarted = gameTime <= now;
+
             //2. check to see if member has enough bank balance to place the bet
             var _member = await _jsonDataService.GetMemberFromJsonAsync(member.MemberId, member.GuildId);
-            
             if (!_member.IsOk)// if member is null - return false.
             {
                 return Result<bool, SystemError<BettingDataServiceProvider>>.Err(new SystemError<BettingDataServiceProvider>()
@@ -44,8 +62,20 @@ namespace GamedayTracker.Services
                     CreatedBy = this,
                 });
             }
-            //3. if both are true return ok(true) otherwise return Err(new SystemError<BettingDataServiceProvider>);
-
+            //3. member must not have the same bet twice, so check for multiple bets.
+            var memberBets = member.Bets.FirstOrDefault(x => x.Matchup.Opponents.AwayTeam.Name.Equals(matchup.Opponents.AwayTeam.Name, StringComparison.OrdinalIgnoreCase) ||
+                x.Matchup.Opponents.HomeTeam.Name.Equals(matchup.Opponents.HomeTeam.Name));
+            if (memberBets is not null)
+                return Result<bool, SystemError<BettingDataServiceProvider>>.Err(new SystemError<BettingDataServiceProvider>()
+                {
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("8857a4c9-1775-4e26-a4be-0a3cb20ff4dd")),
+                    ErrorCode = Guid.Parse("8857a4c9-1775-4e26-a4be-0a3cb20ff4dd"),
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedBy = this,
+                });
+            //4. if we get this far bet is valid
+            var balance = _member.Value.Bank?.Balance ?? 0;
             return Result<bool, SystemError<BettingDataServiceProvider>>.Ok(true);
         }
 

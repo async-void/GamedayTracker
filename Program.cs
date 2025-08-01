@@ -96,7 +96,8 @@ namespace GamedayTracker
                     services.AddScoped<INewsService, NFLNewsService>();
                     services.AddScoped<ICommandHelper, SlashCommandHelper>();
                     services.AddScoped<IBotTimer, BotTimerDataServiceProvider>();
-                    services.AddScoped<IEvaluator, RealTimeScoresModeEvaluatorService>();  
+                    services.AddScoped<IEvaluator, RealTimeScoresModeEvaluatorService>(); 
+                    services.AddScoped<IBetting, BettingDataServiceProvider>();
                     services.AddScoped<DailyHeadlinesScheduler>();
 
                     #region QUARTZ

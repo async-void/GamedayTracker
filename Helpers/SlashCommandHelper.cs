@@ -126,6 +126,8 @@ namespace GamedayTracker.Helpers
             return Result<List<Page>, SystemError<SlashCommandHelper>>.Ok(pages);
         }
         #endregion
+
+        #region COOLDOWN MESSAGE
         public static string GetCooldownMessage(DateTimeOffset lastUsed, TimeSpan cooldown)
         {
             var nextAvailable = lastUsed + cooldown;
@@ -139,8 +141,26 @@ namespace GamedayTracker.Helpers
             var unixTime = nextAvailable.ToUnixTimeSeconds();
             return $"⏳ You can deposit again <t:{unixTime}:R>";
         }
+        #endregion
+        public static StringBuilder BuildCommandsDescription()
+        {
+            var builder = new StringBuilder();
 
-        #region GET COOLDOWN MESSAGE
+            builder.AppendLine("GamedayTracker supports auto complete - start typing and I will auto complete the commands available.");
+            builder.AppendLine();
+            builder.AppendLine("### Utility Commands");
+            builder.AppendLine("``/help`` ``/about`` ``/ping``");
+            builder.AppendLine("### Bank Commands");
+            builder.AppendLine("``/daily`` ``/bet`` ``/leaderboard``");
+            builder.AppendLine("### Gameday Commands");
+            builder.AppendLine("``/scoreboard`` ``/teamstats`` ``/standings`` ``/draft`` ``/schedule`` ");
+            builder.AppendLine("``/live_feeds`` ``/news`` ");
+            builder.AppendLine("### Player Commands");
+            builder.AppendLine("``/profile");
+
+            return builder;
+        }
+        #region BUILD COMMANDS DESCRIPTION 
 
         #endregion
     }

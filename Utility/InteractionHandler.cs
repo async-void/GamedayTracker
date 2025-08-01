@@ -3,6 +3,7 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using GamedayTracker.Extensions;
+using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Services;
@@ -310,17 +311,11 @@ namespace GamedayTracker.Utility
                                 break;
                             #endregion
 
-                            #region COMMANDS HELP
+                            #region COMMANDS HELP - DONE
                             case "commandsBtn":
                                 unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                                var cmdsDescBuilder = new StringBuilder();
-                                cmdsDescBuilder.AppendLine("GamedayTracker supports auto complete - start typing and I will auto complete the commands available.");
-                                cmdsDescBuilder.AppendLine();
-                                cmdsDescBuilder.AppendLine("### Utility Commands");
-                                cmdsDescBuilder.AppendLine("``/help`` ``/about`` ``/ping``");
-                                cmdsDescBuilder.AppendLine("### Bank Commands");
-                                cmdsDescBuilder.AppendLine("``/daily`` ``/bet`` ``/leaderboard``");
-
+                                var cmdsDescBuilder = SlashCommandHelper.BuildCommandsDescription();
+                                
                                 bComponent =
                                 [
                                     new DiscordTextDisplayComponent("## Commands Help"),

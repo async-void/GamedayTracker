@@ -1,12 +1,14 @@
-﻿using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using DSharpPlus.Commands;
+﻿using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
+using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
+using System.ComponentModel;
+using System.Linq;
+using System.Text;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
@@ -15,11 +17,11 @@ namespace GamedayTracker.SlashCommands.NFL
         [Command("standings")]
         [Description("get season Team Standings")]
         public async Task GetStandings(SlashCommandContext ctx,
-            [Parameter("season")] string season)
+            [SlashChoiceProvider<SeasonChoiceProvider>] int season)
         {
             await ctx.DeferResponseAsync();
 
-            var standings = await teamDataService.GetAllTeamStandings(int.Parse(season));
+            var standings = await teamDataService.GetAllTeamStandings(season);
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             if (!standings.IsOk)
             {

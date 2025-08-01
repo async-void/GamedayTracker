@@ -116,7 +116,7 @@ namespace GamedayTracker.SlashCommands.Economy
                             var message = new DiscordMessageBuilder()
                             .AddEmbed(new DiscordEmbedBuilder()
                                 .WithTitle($"Daily Command")
-                                .WithDescription($"Done!  **{updatedUser.Value.MemberName}'s** balance is <:money:1337795714855600188> ${balance:#.##}\r\nyou can use daily again <t:{unixTimestamp}:R> from now")
+                                .WithDescription($"Done!  **{updatedUser.Value.MemberName}'s** balance is <:money:1337795714855600188> ${balance:C}\r\nyou can use daily again <t:{unixTimestamp}:R> from now")
                                 .WithTimestamp(DateTime.UtcNow));
 
                             await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));

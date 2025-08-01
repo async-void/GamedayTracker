@@ -10,6 +10,6 @@ namespace GamedayTracker.Interfaces
 {
     public interface IBetting
     {
-        Task<Result<bool, SystemError<BettingDataServiceProvider>>> PlaceBet(Matchup matchup, Bet bet, GuildMember member);
+        Task<Result<bool, SystemError<BettingDataServiceProvider>>> CanPlaceBet(Matchup matchup, Bet bet, GuildMember member);
     }
 }

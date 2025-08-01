@@ -119,14 +119,14 @@ namespace GamedayTracker.SlashCommands.Utility
             var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var bot = ctx.Client.CurrentUser;
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            var buildDate = File.GetLastWriteTime(Assembly.GetExecutingAssembly().Location);
+            DateTimeOffset buildDate = File.GetLastWriteTime(Assembly.GetExecutingAssembly().Location);
+            var buildText = new StringBuilder()
+                .AppendLine($"**Version:** {version}")
+                .AppendLine($"**Last Build:** {buildDate:ddd MMM yyyy hh:mm:ss tt}")
+                .AppendLine($"**Guilds:** {ctx.Client.Guilds.Count}");
 
             var aboutText = new StringBuilder()
-                .AppendLine($"**Version:** {version}")
-                .AppendLine($"**Build Date:** {buildDate.ToLongDateString()}")
-                .AppendLine($"**Guilds:** {ctx.Client.Guilds.Count}")
                 .AppendLine("**Created by:** <@524434302361010186>")
-                .AppendLine("---------------------------------------------------")
                 .AppendLine("### Features in Development")
                 .AppendLine("- User Defined Daily Headline Interval")
                 .AppendLine("- User Defined RealTime Scores Update Interval")
@@ -142,8 +142,11 @@ namespace GamedayTracker.SlashCommands.Utility
             ];
             DiscordComponent[] components =
             [
-                new DiscordSectionComponent(new DiscordTextDisplayComponent("## GamedayTracker\r\n-# NFL Gameday Tracker"),
+                new DiscordSectionComponent(new DiscordTextDisplayComponent("## GamedayTracker\r\n-# NFL Gameday Tracker\r\ntrack realtime scores, " +
+                "get daily news articles, get up to date weekly divisional standings\r\n...and much more."),
                     new DiscordThumbnailComponent($"{bot.AvatarUrl}")),
+                new DiscordSeparatorComponent(true),
+                new DiscordTextDisplayComponent(buildText.ToString()),
                 new DiscordSeparatorComponent(true),
                 new DiscordTextDisplayComponent(aboutText.ToString()),
                 new DiscordSeparatorComponent(true),
