@@ -28,7 +28,7 @@ namespace GamedayTracker.SlashCommands.NFL
             var scoreBoardResult = await gameService.GetScoreboard(season, week);
            
             var newWeek = week.ToString();
-            if (scoreBoardResult.IsOk)
+            if (scoreBoardResult.IsOk && scoreBoardResult.Value.Count > 0)
             {
                 for (int i = 0; i < scoreBoardResult.Value.Count; i++)
                 {
@@ -41,7 +41,7 @@ namespace GamedayTracker.SlashCommands.NFL
                     var homeScore = scoreBoardResult.Value[i].Opponents!.HomeTeam.Score;
                     var homeRecord = scoreBoardResult.Value[i].Opponents!.HomeTeam.Record;
                     var homeEmoji = scoreBoardResult.Value[i].Opponents!.HomeTeam.Emoji;
-
+                   
                     if (awayScore > homeScore)
                     {
                         sBuilder.Append(
@@ -53,12 +53,9 @@ namespace GamedayTracker.SlashCommands.NFL
                     else
                     {
                         sBuilder.Append(
-                            $"{awayEmoji} {awayScore} -" +
-                            $"**{homeScore}** {homeEmoji.PadRight(8)} - **FINAL**\r\n");
-                        //Console.WriteLine($"{awayEmoji} {awayScore} -" +
-                        //    $"**{homeScore}** {homeEmoji.PadRight(8)} - **FINAL**\r\n");
-                    }
-                       
+                        $"{awayEmoji} {awayScore} -" +
+                        $"**{homeScore}** {homeEmoji.PadRight(8)} - **FINAL**\r\n");
+                    } 
                 }
  
                 newWeek = week switch
@@ -67,7 +64,7 @@ namespace GamedayTracker.SlashCommands.NFL
                     20 => "Divisional Playoffs",
                     21 => "Conference Playoffs",
                     22 => "Super Bowl",
-                    _ => $"Week {week.ToString()}"
+                    _ => $"Week {week}"
                 };
 
                 var components = new DiscordComponent[]
@@ -77,24 +74,24 @@ namespace GamedayTracker.SlashCommands.NFL
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent(sBuilder.ToString()),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyy hh:mm:ss tt zzz}"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}"),
                                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 };
 
                 var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
-                var message = new DiscordInteractionResponseBuilder()
+                var message = new DiscordMessageBuilder()
                     .EnableV2Components()
                     .AddContainerComponent(container);
 
-                await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
+                await ctx.RespondAsync(message);
             }
             else
             {
-                var message = new DiscordInteractionResponseBuilder()
+                var message = new DiscordMessageBuilder()
                     .EnableV2Components()
-                    .AddTextDisplayComponent($"unable to fetch scoreboard for season: {season} {newWeek}");
+                    .AddTextDisplayComponent($"No data found for Season: {season} Week {week}");
 
-                await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
+                await ctx.RespondAsync(message);
             }
             
         }

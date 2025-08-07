@@ -25,7 +25,7 @@ namespace GamedayTracker.Services
             return Result<bool, SystemError<BotTimerDataServiceProvider>>.Ok(true);
         }
 
-        public async Task<Result<DateTime, SystemError<BotTimerDataServiceProvider>>> GetTimestampFromTextAsync()
+        public async Task<Result<DateTime, SystemError<BotTimerDataServiceProvider>>> GetTimestampAsync()
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "timestamp.txt");
             if (!File.Exists(path))
@@ -39,7 +39,7 @@ namespace GamedayTracker.Services
                 });
             }
             var lines = await File.ReadAllLinesAsync(path);
-            var timestamp = DateTime.Parse(lines.LastOrDefault() ?? DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
+            var timestamp = DateTime.Parse(lines.LastOrDefault() ?? DateTimeOffset.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
             return Result<DateTime, SystemError<BotTimerDataServiceProvider>>.Ok(timestamp);
         }
     }

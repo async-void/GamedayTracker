@@ -65,7 +65,7 @@ namespace GamedayTracker
             var intents = TextCommandProcessor.RequiredIntents | SlashCommandProcessor.RequiredIntents | DiscordIntents.All;
 
             var logger = Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Verbose()
+                .MinimumLevel.Debug()
                 .MinimumLevel.Override("System.Net.Http", Serilog.Events.LogEventLevel.Error)
                 .WriteTo.Console(theme: AnsiConsoleTheme.Code, outputTemplate: "[{Timestamp:yyyy-MM-dd hh:mm:ss.fff tt zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
                 .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "Logs", "bot_logs.txt"), rollingInterval: RollingInterval.Day,
@@ -106,6 +106,7 @@ namespace GamedayTracker
                         var rtJobKey = new JobKey("RealTimeScoresJob");
                         var headlinesJobKey = new JobKey("DailyHeadlinesJob");
                         var dailyStandingsJobKey = new JobKey("DailyStandingsJob");
+                        var updateBotStatusJobKey = new JobKey("UpdateBotStatusJob");   
 
                         q.AddJob<RealTimeScoresJob>(opts => opts.WithIdentity(rtJobKey)
                         .WithDescription("get realtime scores : user-defined intervals").Build());
@@ -119,7 +120,7 @@ namespace GamedayTracker
                                 .RepeatForever().Build()));
 
                         q.AddJob<DailyHeadlineJob>(opts => opts.WithIdentity(headlinesJobKey)
-                        .WithDescription("get daily headlines : 24 hour interval").Build());
+                        .WithDescription("get daily headlines : 4 hour interval").Build());
 
                         q.AddTrigger(opts => opts
                             .ForJob(headlinesJobKey)
@@ -130,7 +131,7 @@ namespace GamedayTracker
                                 .RepeatForever().Build()));
 
                         q.AddJob<DailyStandingsJob>(opts => opts.WithIdentity(dailyStandingsJobKey)
-                        .WithDescription("get daily standings : 12 hour interval").Build());
+                        .WithDescription("get daily standings : 4 hour interval").Build());
 
                         q.AddTrigger(opts => opts
                             .ForJob(dailyStandingsJobKey)
@@ -138,6 +139,16 @@ namespace GamedayTracker
                             .StartNow()
                             .WithSimpleSchedule(x => x
                                 .WithInterval(TimeSpan.FromHours(4))
+                                .RepeatForever().Build()));
+
+                        q.AddJob<UpdateBotStatusJob>(opts => opts.WithIdentity(updateBotStatusJobKey)
+                            .WithDescription("update bot status : 10 minute interval").Build());
+                        q.AddTrigger(opts => opts
+                            .ForJob(updateBotStatusJobKey)
+                            .WithIdentity("UpdateBotStatus-trigger")
+                            .StartAt(DateTimeOffset.UtcNow.AddMinutes(10))
+                            .WithSimpleSchedule(x => x
+                                .WithInterval(TimeSpan.FromMinutes(10))
                                 .RepeatForever().Build()));
                     });
 
@@ -184,6 +195,20 @@ namespace GamedayTracker
 
                         #region GUILD EVENT HANDLERS
 
+                        #region SESSION RESUMED
+                        .HandleSessionResumed(async (sender, args) =>
+                        {
+                            var guildCount = sender.Guilds.Count;
+                            var userCount = sender.Guilds.Values.Sum(g => g.Members.Count);
+                            var statusMessage = $"Serving {guildCount} Servers";
+                            await sender.UpdateStatusAsync(new DiscordActivity($"Scores in {guildCount} Servers", DiscordActivityType.Watching));
+                            var logChnl = await sender.GetChannelAsync(1384436855524692048);
+                            await logChnl.SendMessageAsync(
+                                $"Updated bot status: {statusMessage} with a total of ``{userCount}`` users.");
+                            Log.Information($"Session Resumed");
+                        })
+                        #endregion
+
                         #region GUILD CREATED
                         .HandleGuildCreated(async (sender, args) =>
                         {
@@ -202,7 +227,7 @@ namespace GamedayTracker
                                 NotificationChannelId = args.Guild.GetDefaultChannel()!.Id.ToString()
 
                             };
-                            var supportChnl = await sender.GetChannelAsync(888659367824601160);
+                            var supportChnl = await sender.GetChannelAsync(1384436855524692048); 
                             var guilds = sender.Guilds.Values;
 
                             var newChnl = args.Guild.GetDefaultChannel();
@@ -229,13 +254,14 @@ namespace GamedayTracker
                                     .AddContainerComponent(container);
                                 await chnl.SendMessageAsync(embed);
                             }
-
+                            var guildOwner = await args.Guild.GetMemberAsync(args.Guild.OwnerId);
                             await supportChnl.SendMessageAsync(
-                                $"``New Guild Added: <t:{unixTimestamp}:F> {args.Guild.Name}:({args.Guild.Id}) - Total Guilds: {guilds.Count()}``");
+                                $"Guild Added: <t:{unixTimestamp}:R> ``{args.Guild.Name}:({args.Guild.Id}) - Total Guilds: {guilds.Count()}``\r\n" +
+                                $"``OwnerId: {guildOwner.Id} Owner Membername: {guildOwner.Username}``");
                             var guildResult = await jsonService.WriteGuildToJsonAsync(guild);
 
                             if (guildResult.IsOk)
-                                Log.Information($"New Guild Added: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}");
+                                Log.Information($"Guild Added: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}");
                             else
                                 Log.Error($"GUild Added to Discord: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}\r\n" +
                                     $"but unable to write guild info to json file: Error Message - {guildResult.Error.ErrorMessage}");

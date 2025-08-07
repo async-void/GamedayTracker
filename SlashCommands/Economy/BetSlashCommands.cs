@@ -40,7 +40,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 var matchups = await _gameDataService.GetScoreboard(2024, 1);
                 if (matchups.IsOk)
                 {
-                    var matchup = matchups.Value.FirstOrDefault(m => m.Opponents.AwayTeam.Name.Equals(teamName) || m.Opponents.HomeTeam.Name.Equals(teamName));
+                    var matchup = matchups.Value.FirstOrDefault(m => m.Opponents!.AwayTeam.Name.Equals(teamName) || m.Opponents.HomeTeam.Name.Equals(teamName));
                     if (matchup is { } m)
                     {
                         var multiplier = new BetMultiplier();
@@ -62,6 +62,16 @@ namespace GamedayTracker.SlashCommands.Economy
                         if (isValidBet.IsOk)
                         {
                             //TODO: save the bet to the members json file.
+                            member.Value.Bets = [bet];
+                            var updatedMember = await _jsonService.UpdateMemberDataAsync(member.Value);
+
+                            if (!updatedMember.IsOk)
+                            {
+                                await ctx.RespondAsync("Unable to update member data, bet not saved!");
+                                return;
+                            }
+                            
+                            //if we get this far ...we win.
                             DiscordComponent[] cmps =
                             [
                                 new DiscordTextDisplayComponent($"### Member [{member.Value.MemberName}] Bet Info"),
@@ -76,6 +86,7 @@ namespace GamedayTracker.SlashCommands.Economy
                         else
                         {
                             await ctx.RespondAsync($"-# this will eventually be an embed.\r\n{isValidBet.Error.ErrorCode} : {isValidBet.Error.ErrorMessage}");
+                            return;
                         }
                     }
                     else

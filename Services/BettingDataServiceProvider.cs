@@ -46,8 +46,8 @@ namespace GamedayTracker.Services
                 });
 
             var now = DateTimeOffset.UtcNow;
-            var gameTime = DateTimeOffset.Parse(validMatchup.GameTime!);
-            var hasGameStarted = gameTime <= now;
+           // var gameTime = DateTimeOffset.Parse(validMatchup.GameTime!);
+            //var hasGameStarted = gameTime <= now;
 
             //2. check to see if member has enough bank balance to place the bet
             var _member = await _jsonDataService.GetMemberFromJsonAsync(member.MemberId, member.GuildId);

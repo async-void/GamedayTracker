@@ -14,7 +14,7 @@ namespace GamedayTracker.Jobs
         public async Task Execute(IJobExecutionContext context)
         {
             Log.Information("Fetching realtime scores....[started]");
-            var scoreboard = _gameDataService.GetCurrentScoreboard();
+            var scoreboard = await _gameDataService.GetCurrentScoreboard();
            
             if (scoreboard.IsOk && scoreboard.Value.Count > 0)
             {
@@ -60,7 +60,7 @@ namespace GamedayTracker.Jobs
                 var chnl = await _client.GetChannelAsync(1398021337498390539);
                
                 var msg = await chnl.SendMessageAsync(embed);
-               // await chnl.CrosspostMessageAsync(msg);
+                await chnl.CrosspostMessageAsync(msg);
 
                 Log.Information("Fetching realtime scores....[success] - scores sent to live-scores channel");
             }

@@ -216,7 +216,16 @@ namespace GamedayTracker.Services
 
                 var scoreboardNodes = doc.DocumentNode.SelectNodes(".//div[@class='lngame']//table");
 
-                if (scoreboardNodes is null) continue;
+                if (scoreboardNodes is null)
+                {
+                    return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>()
+                    {
+                        ErrorMessage = $"No data found for Season: {season} Week: {week}",
+                        ErrorType = ErrorType.INFORMATION,
+                        CreatedAt = DateTimeOffset.UtcNow,
+                        CreatedBy = this
+                    });
+                }
                    
                 for (var i = 0; i <= scoreboardNodes.Count - 1; i++)
                 {
@@ -265,7 +274,7 @@ namespace GamedayTracker.Services
 
             sw.Stop();
             
-            return Result<List<Matchup>, SystemError<GameDataService>>.Ok(matchups.Where(m => m.Week.Equals(week)).ToList());
+            return Result<List<Matchup>, SystemError<GameDataService>>.Ok([.. matchups.Where(m => m.Week.Equals(week) && m.Season.Equals(season))]);
 
         }
         #endregion
@@ -304,7 +313,7 @@ namespace GamedayTracker.Services
                 var awayTeam = new Team()
                 {
                     Name = awayNameFinal.Value,
-                    Score = int.Parse(awayScore),
+                    Score = int.TryParse(awayScore, out var finalAwayScore) ? finalAwayScore : 0,
                     Record = awayRecord.Value,
                     Division = awayNameFinal.Value.ToDivision(),
                     Abbreviation = awayAbbr,
@@ -315,7 +324,7 @@ namespace GamedayTracker.Services
                 var homeTeam = new Team()
                 {
                     Name = homeNameFinal.Value,
-                    Score = int.Parse(homeScore),
+                    Score = int.TryParse(homeScore, out var finalHomeScore) ? finalHomeScore : 0,
                     Record = homeRecord.Value,
                     Division = homeNameFinal.Value.ToDivision(),
                     Abbreviation = homeAbbr,

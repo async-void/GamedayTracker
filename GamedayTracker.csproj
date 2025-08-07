@@ -9,12 +9,12 @@
 
   <ItemGroup>
     <PackageReference Include="ChalkDotNET" Version="1.0.0" />
-    <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02533" />
-    <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02533" />
-    <PackageReference Include="DSharpPlus.CommandsNext" Version="5.0.0-nightly-02533" />
-    <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02533" />
+    <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02538" />
+    <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02538" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="5.0.0-nightly-02538" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02538" />
     <PackageReference Include="DSharpPlus.Natives.Zstd" Version="1.5.7.21" />
-    <PackageReference Include="DSharpPlus.VoiceNext" Version="5.0.0-nightly-02533" />
+    <PackageReference Include="DSharpPlus.VoiceNext" Version="5.0.0-nightly-02538" />
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
     <PackageReference Include="HtmlAgilityPack" Version="1.12.1" />
     <PackageReference Include="Humanizer.Core" Version="3.0.0-beta.96" />

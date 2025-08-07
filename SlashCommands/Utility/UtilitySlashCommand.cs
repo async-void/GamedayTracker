@@ -5,6 +5,7 @@ using System.Text;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
+using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Utility;
 using Humanizer;
@@ -17,6 +18,9 @@ namespace GamedayTracker.SlashCommands.Utility
     [Description("Utility Slash Commands")]
     public class UtilitySlashCommand(IBotTimer botTimer)
     {
+        private readonly IBotTimer _botTimer = botTimer;
+        private readonly BotUptimeHelper _botUptimeHelper = new BotUptimeHelper(botTimer);
+
         #region HELP
         [Command("help")]//TODO: fix me
         [Description("help commands and a brief explaination")]
@@ -72,7 +76,9 @@ namespace GamedayTracker.SlashCommands.Utility
             var guildId = ctx.Guild!.Id;
             var connectionLat = ctx.Client.GetConnectionLatency(guildId);
             var timestamp = DateTime.UtcNow;
-            var savedTimeStamp = await botTimer.GetTimestampFromTextAsync();
+            var savedTimeStamp = await _botTimer.GetTimestampAsync();
+            var uptimePercentage = await _botUptimeHelper.GetUptimePercentage(TimeSpan.FromDays(30));
+
             sw.Stop();
             if (savedTimeStamp.IsOk)
             {
@@ -81,11 +87,12 @@ namespace GamedayTracker.SlashCommands.Utility
 
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent("## Uptime"),
+                    new DiscordTextDisplayComponent("## Latency & Uptime"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent($"Data Latency **{sw.Elapsed.Humanize()}** "),
                     new DiscordTextDisplayComponent($"Discord API **{connectionLat.Humanize()}**"),
                     new DiscordTextDisplayComponent($"Uptime **{uptime.Humanize(3, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second)}**"),
+                     new DiscordTextDisplayComponent($"Percentage **{uptimePercentage}%**"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# GamedayTracker ©️ {unixTimestamp}"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
@@ -133,11 +140,12 @@ namespace GamedayTracker.SlashCommands.Utility
                 .AppendLine("- Team Injury Report")
                 .AppendLine("- Betting")
                 .AppendLine("- Daily Modifier")
+                .AppendLine("- Daily Numbers [lottery]")
                 .AppendLine("-# GamedayTracker gets weekly updates - [Sunday at Midnight EST]");
 
             DiscordComponent[] linkBtns =
             [
-                new DiscordLinkButtonComponent("https://discord.gg/vBqnpvS6", "Support"),
+                new DiscordLinkButtonComponent("https://discord.gg/jqztXGMNBW", "Support"),
                 new DiscordLinkButtonComponent("https://github.com/async-void/GamedayTracker", "Github"),
             ];
             DiscordComponent[] components =

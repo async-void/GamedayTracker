@@ -77,7 +77,7 @@ namespace GamedayTracker.Jobs
                 var chnl = await _client.GetChannelAsync(1398735401048608960);
                 _logger.LogInformation("Sending daily standings for NFL season {season}.", curSeason);
                 var msg = await chnl.SendMessageAsync(embed);
-                //await chnl.CrosspostMessageAsync(msg);
+                await chnl.CrosspostMessageAsync(msg);
             }
         }
     } 
