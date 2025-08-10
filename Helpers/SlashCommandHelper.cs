@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DSharpPlus.Interactivity;
+﻿using DSharpPlus.Interactivity;
+using DSharpPlus.Net;
 using GamedayTracker.Enums;
-using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
-using Microsoft.EntityFrameworkCore;
-
+using System.Globalization;
+using System.Text;
+using RestSharp;
+using System.Text.Json;
+using GamedayTracker.Models.API;
 namespace GamedayTracker.Helpers
 {
     public class SlashCommandHelper(IJsonDataService dataService): ICommandHelper

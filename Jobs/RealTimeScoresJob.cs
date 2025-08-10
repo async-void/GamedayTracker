@@ -38,20 +38,20 @@ namespace GamedayTracker.Jobs
                     sb.Append($"### {grouped[i].GameDate}\n");
                     for (var j = 0; j < grouped[i].Opponents.Count(); j++)
                     {
-                        sb.AppendLine($"{grouped[i].Opponents.ElementAt(j).AwayTeam.Emoji} **{grouped[i].Opponents.ElementAt(j).AwayTeam.Name}** : {grouped[i].Opponents.ElementAt(j).AwayTeam.Score} at " +
-                            $"{grouped[i].Opponents.ElementAt(j).HomeTeam.Emoji} **{grouped[i].Opponents.ElementAt(j).HomeTeam.Name}** : {grouped[i].Opponents.ElementAt(j).HomeTeam.Score}");
+                        sb.AppendLine($"{grouped[i].Opponents.ElementAt(j).AwayTeam.Emoji} **{grouped[i].Opponents.ElementAt(j).AwayTeam.Score}**" +
+                            $"**{grouped[i].Opponents.ElementAt(j).HomeTeam.Score}** {grouped[i].Opponents.ElementAt(j).HomeTeam.Emoji}");
                     }
                 }
 
                 DiscordComponent[] components =
-                       [
-                           new DiscordTextDisplayComponent("Current NFL Scores"),
-                            new DiscordSeparatorComponent(true),
-                            new DiscordTextDisplayComponent($"{sb.ToString()}"),
-                            new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                            new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by GamedayTracker ©️ <t:{unixTimestamp}:R>"),
-                                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
-                       ];
+                [
+                    new DiscordTextDisplayComponent("Current NFL Scores"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"{sb}"),
+                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by GamedayTracker ©️ <t:{unixTimestamp}:R>"),
+                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                ];
                 var container = new DiscordContainerComponent(components);
                 var embed = new DiscordMessageBuilder()
                     .EnableV2Components()

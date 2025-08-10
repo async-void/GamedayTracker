@@ -47,7 +47,7 @@ namespace GamedayTracker
 
 ");
             Console.ResetColor();
-
+            
             var configService = new ConfigurationDataService();
             var botTimerService = new BotTimerDataServiceProvider();
             var token = configService.GetBotToken();
@@ -106,7 +106,7 @@ namespace GamedayTracker
                         var rtJobKey = new JobKey("RealTimeScoresJob");
                         var headlinesJobKey = new JobKey("DailyHeadlinesJob");
                         var dailyStandingsJobKey = new JobKey("DailyStandingsJob");
-                        var updateBotStatusJobKey = new JobKey("UpdateBotStatusJob");   
+                        var updateBotStatusJobKey = new JobKey("UpdateBotStatusJob");
 
                         q.AddJob<RealTimeScoresJob>(opts => opts.WithIdentity(rtJobKey)
                         .WithDescription("get realtime scores : user-defined intervals").Build());

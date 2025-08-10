@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using GamedayTracker.Helpers;
 using GamedayTracker.Models;
+using GamedayTracker.Models.API;
 
 namespace GamedayTracker.Interfaces
 {

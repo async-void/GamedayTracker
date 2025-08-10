@@ -31,9 +31,6 @@ namespace GamedayTracker.SlashCommands.Economy
         {
             //TODO: finish betting command
             await ctx.DeferResponseAsync();
-            var week = _gameDataService.GetCurWeek();
-            var season = _gameDataService.GetCurSeason();
-
             var member = await _jsonService.GetMemberFromJsonAsync(ctx.User.Id.ToString(), ctx.Guild!.Id.ToString());
             if (member.IsOk)
             {
