@@ -17,7 +17,7 @@ namespace GamedayTracker.API.Endpoints
             var client = new RestClient(options);
             var request = new RestRequest("");
             request.AddHeader("accept", "application/json");
-            request.AddHeader("x-api-key", "l6ynU88ZqfPOZdJGXQmvEUdlezxJIXTbeEOuqwDq");
+            request.AddHeader("x-api-key", "api key");
             var response = await client.GetAsync(request);
 
             Console.WriteLine("{0}", response.Content);

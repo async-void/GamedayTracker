@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="GamedayTracker.API\**" />
+    <EmbeddedResource Remove="GamedayTracker.API\**" />
+    <None Remove="GamedayTracker.API\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="ChalkDotNET" Version="1.0.0" />
     <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02538" />
     <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02538" />

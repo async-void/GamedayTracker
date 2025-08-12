@@ -92,7 +92,7 @@ namespace GamedayTracker.SlashCommands.Utility
                     new DiscordTextDisplayComponent($"Data Latency **{sw.Elapsed.Humanize()}** "),
                     new DiscordTextDisplayComponent($"Discord API **{connectionLat.Humanize()}**"),
                     new DiscordTextDisplayComponent($"Uptime **{uptime.Humanize(3, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second)}**"),
-                     new DiscordTextDisplayComponent($"Percentage **{uptimePercentage}%**"),
+                    new DiscordTextDisplayComponent($"Percentage **{uptimePercentage}%** -# (based on 30 days)"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# GamedayTracker ©️ {unixTimestamp}"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),

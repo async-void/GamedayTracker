@@ -171,25 +171,7 @@ namespace GamedayTracker
                         })
                         .HandleMessageDeleted(async (sender, args) =>
                         {
-                            var logChnl = await sender.GetChannelAsync(1384436855524692048);
-                            if (logChnl is { } channel)
-                            {
-                                var message = "";
-                                if (args.Message.Embeds.Count > 0)
-                                    message = "message was embed, cannot retrieve message content";
-                                else
-                                    message = args.Message.Content.Length > 0 ? args.Message.Content : message;
-                                DiscordComponent[] comps =
-                                [
-                                    new DiscordTextDisplayComponent($"{args.Message.Author} deleted message: [{message}] from: {args.Message.Channel!.Name}:``{args.Message.Channel.Id}``"),
-                                    new DiscordTextDisplayComponent($"Guild: {args.Guild.Name}:``{args.Guild.Id}``"),
-                                ];
-                                var container = new DiscordContainerComponent(comps, false, DiscordColor.Red);
-                                var embed = new DiscordMessageBuilder()
-                                    .EnableV2Components()
-                                    .AddContainerComponent(container);
-                                await logChnl.SendMessageAsync(embed);
-                            }
+                           
                         })
                         #endregion
 

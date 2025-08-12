@@ -50,8 +50,6 @@ namespace GamedayTracker.SlashCommands.Economy
                             Matchup = matchup,
                             BetAmount = amount,
                             Multiplier = bonus,
-                            Season = season.Value,
-                            Week = week.Value,
                             TeamPickedToWinName = teamName,
                             GuildId = ctx.Guild.Id.ToString()
                         };

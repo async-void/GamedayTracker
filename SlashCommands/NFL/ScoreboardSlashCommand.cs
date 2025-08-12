@@ -23,7 +23,7 @@ namespace GamedayTracker.SlashCommands.NFL
             [SlashChoiceProvider<WeekChoiceProvider>] int week)
         {
             await ctx.DeferResponseAsync();
-            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var sBuilder = new StringBuilder();
             var scoreBoardResult = await gameService.GetScoreboard(season, week);
            

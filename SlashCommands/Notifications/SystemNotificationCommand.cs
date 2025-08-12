@@ -72,11 +72,6 @@ namespace GamedayTracker.SlashCommands.Notifications
             }
             else
             {
-                //await foreach (var g in ctx.Client.GetGuildsAsync())
-                //{
-                    //TODO: eventially I will send the message to all guilds in the client cashe!
-                //}
-
                 var errMessage = new DiscordInteractionResponseBuilder()
                    .WithContent($"{SystemErrorCodes.GetErrorMessage(Guid.Parse("f416e176-85b0-4f94-b172-8dc8f084242e"))} With Error Code: f416e176-85b0-4f94-b172-8dc8f084242e")
                    .AsEphemeral(true);

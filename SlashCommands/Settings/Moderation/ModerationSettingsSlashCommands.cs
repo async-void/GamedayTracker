@@ -90,7 +90,7 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
         #endregion
 
         #region ENABLE/DISABLE REALTIME SCORES
-        [Command("toggle-realtime-scores")]
+        //[Command("toggle-realtime-scores")]
         [Description("enable or disable realtime scores")]
         public async ValueTask EnableRealtimeScores(SlashCommandContext ctx, [Description("true : false")] bool enable)
         {
