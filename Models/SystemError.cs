@@ -10,6 +10,7 @@ namespace GamedayTracker.Models
     public class SystemError<T>
     {
         public int Id { get; set; }
+        public Guid? ErrorCode { get; set; }
         public string? ErrorMessage { get; set; }
         public T? CreatedBy { get; set; }
         public DateTimeOffset? CreatedAt { get; set; }

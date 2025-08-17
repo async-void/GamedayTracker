@@ -11,11 +11,12 @@ namespace GamedayTracker.Models
     {
         public Guid Id { get; set; }
         public required string MemberName { get; set; }
+        public required string GuildName { get; set; }
         public required string MemberId { get; set; }
         public required string GuildId { get; set; }
         public string? FavoriteTeam { get; set; }
-        public double? Balance { get; set; }
         public int BetWins { get; set; }
-        public DateTimeOffset? LastDeposit { get; set; }
+        public Bank? Bank { get; set; }
+        public List<Bet> Bets { get; set; } = [];
     }
 }

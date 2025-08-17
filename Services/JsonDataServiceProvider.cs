@@ -55,7 +55,7 @@ namespace GamedayTracker.Services
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = JsonHelper.DefaultJsonOptions;
                 var json = JsonSerializer.Serialize(matchup, options);
                 await File.WriteAllTextAsync(path, json);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
@@ -65,7 +65,7 @@ namespace GamedayTracker.Services
                 var file = await File.ReadAllTextAsync(path);
                 var json = JsonSerializer.Deserialize<List<Matchup>>(file);
                 json!.Add(matchup);
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = JsonHelper.DefaultJsonOptions;
                 var updatedJson = JsonSerializer.Serialize(json, options);
                 await File.WriteAllTextAsync(path, updatedJson);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
@@ -90,7 +90,7 @@ namespace GamedayTracker.Services
                 var file = await File.ReadAllTextAsync(path);
                 var existingMatchups = JsonSerializer.Deserialize<List<Matchup>>(file);
                 existingMatchups!.AddRange(matchups);
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = JsonHelper.DefaultJsonOptions;
                 var updatedJson = JsonSerializer.Serialize(existingMatchups, options);
                 await File.WriteAllTextAsync(path, updatedJson);
                 return Result<List<Matchup>, SystemError<JsonDataServiceProvider>>.Ok(existingMatchups);
@@ -134,7 +134,7 @@ namespace GamedayTracker.Services
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = JsonHelper.DefaultJsonOptions;
                 var json = JsonSerializer.Serialize(standings, options);
                 await File.WriteAllTextAsync(path, json);
                 return Result<List<TeamStanding>, SystemError<JsonDataServiceProvider>>.Ok(standings);
@@ -144,7 +144,7 @@ namespace GamedayTracker.Services
                 var file = await File.ReadAllTextAsync(path);
                 var existingStandings = JsonSerializer.Deserialize<List<TeamStanding>>(file) ?? [];
                 existingStandings.AddRange(standings);
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = JsonHelper.DefaultJsonOptions;
                 var updatedJson = JsonSerializer.Serialize(existingStandings, options);
                 await File.WriteAllTextAsync(path, updatedJson);
                 return Result<List<TeamStanding>, SystemError<JsonDataServiceProvider>>.Ok(existingStandings);
@@ -157,7 +157,7 @@ namespace GamedayTracker.Services
         public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteMemberToJsonAsync(GuildMember member)
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "members.json");
-            var options = new JsonSerializerOptions { WriteIndented = true };
+            var options = JsonHelper.DefaultJsonOptions;
             List<GuildMember> members;
 
             if (!File.Exists(path))
@@ -172,7 +172,9 @@ namespace GamedayTracker.Services
             {
                 var file = await File.ReadAllTextAsync(path);
                 members = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
-                members.Add(member); 
+                var curMember = members.FirstOrDefault(m => m.GuildId.Equals(member.GuildId) && m.MemberId.Equals(member.MemberId));
+                if (curMember is null)
+                    members.Add(member);
             }
             var updatedJson = JsonSerializer.Serialize(members, options);
             await File.WriteAllTextAsync(path, updatedJson);
@@ -276,7 +278,7 @@ namespace GamedayTracker.Services
             var file = await File.ReadAllTextAsync(path);
             var members = JsonSerializer.Deserialize<List<GuildMember>>(file);
             var member = members!
-                .Where(p => p.MemberId.ToString().Equals(memberId))
+                .Where(p => p.MemberId.Equals(memberId) && p.GuildId.Equals(guildId))
                 .FirstOrDefault();
             if (member is { } mem) return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Ok(mem);
 
@@ -305,24 +307,23 @@ namespace GamedayTracker.Services
                     CreatedBy = this
                 });
             }
-            var json = File.ReadAllText(path);
-            JsonArray? members = JsonNode.Parse(json)?.AsArray();
-            if (members is not null)
+            var json = await File.ReadAllTextAsync(path);
+            List<GuildMember> members = JsonSerializer.Deserialize<List<GuildMember>>(json) ?? [];
+
+            var memberToUpdate = members.FirstOrDefault(g => g.GuildId.Equals(member.GuildId.ToString()) && g.MemberId.Equals(member.MemberId.ToString()));
+            var jsonOptions = JsonHelper.DefaultJsonOptions;;
+            if (memberToUpdate is { })
             {
-                var mem = members.OfType<JsonObject>()
-                    .FirstOrDefault(m => m["MemberId"]!.ToString().Equals(member.MemberId.ToString()) && m["GuildId"]!.ToString().Equals(member.GuildId.ToString()));
-
-                if (mem is not null)
-                {
-                    mem["FavoriteTeam"] = member.FavoriteTeam;
-
-                    await File.WriteAllTextAsync(path, members.ToJsonString(new JsonSerializerOptions {  WriteIndented = true}));
-                    return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
-                }
+                members.Remove(memberToUpdate);
+                members.Add(member);
+                var updatedJson = JsonSerializer.Serialize(members, jsonOptions);
+                await File.WriteAllTextAsync(path, updatedJson);
+                return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
             }
             return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
-                ErrorMessage = "Member data not found.",
+                ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("6b24c3ac-0a78-49fd-9c6e-40d749e6559e")),
+                ErrorCode = Guid.Parse("6b24c3ac-0a78-49fd-9c6e-40d749e6559e"),
                 CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this
@@ -435,7 +436,7 @@ namespace GamedayTracker.Services
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = JsonHelper.DefaultJsonOptions;
                 var json = JsonSerializer.Serialize(source, options);
                 await File.WriteAllTextAsync(path, json);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
@@ -446,7 +447,7 @@ namespace GamedayTracker.Services
             if (stats is not null && stats.Count > 0)
             {
                 stats.AddRange(source);
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = JsonHelper.DefaultJsonOptions;
                 var updatedJson = JsonSerializer.Serialize(stats, options);
                 await File.WriteAllTextAsync(path, updatedJson);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
@@ -468,7 +469,7 @@ namespace GamedayTracker.Services
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = JsonHelper.DefaultJsonOptions;
                 var json = JsonSerializer.Serialize(stats, options);
                 await File.WriteAllTextAsync(path, json);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
@@ -478,7 +479,7 @@ namespace GamedayTracker.Services
                 var file = await File.ReadAllTextAsync(path);
                 var existingStats = JsonSerializer.Deserialize<List<TeamStats>>(file) ?? [];
                 existingStats.Add(stats);
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = JsonHelper.DefaultJsonOptions;
                 var updatedJson = JsonSerializer.Serialize(existingStats, options);
                 await File.WriteAllTextAsync(path, updatedJson);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
@@ -493,7 +494,7 @@ namespace GamedayTracker.Services
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = JsonHelper.DefaultJsonOptions;;
                 var json = JsonSerializer.Serialize(matchups, options);
                 await File.WriteAllTextAsync(path, json);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
@@ -570,7 +571,7 @@ namespace GamedayTracker.Services
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = JsonHelper.DefaultJsonOptions;;
                 var json = JsonSerializer.Serialize(source, options);
                 await File.WriteAllTextAsync(path, json);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
@@ -655,7 +656,7 @@ namespace GamedayTracker.Services
             {
                 return Result<Guild, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
                 {
-                    ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.GuildNotFound),
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("2a35e0b1-3f87-4c7a-8e6d-5bc1cf301b1f")),
                     CreatedAt = DateTimeOffset.UtcNow,
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
@@ -668,7 +669,7 @@ namespace GamedayTracker.Services
 
             return Result<Guild, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
-                ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.GuildNotFound),
+                ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("2a35e0b1-3f87-4c7a-8e6d-5bc1cf301b1f")),
                 CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this
@@ -683,7 +684,7 @@ namespace GamedayTracker.Services
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = JsonHelper.DefaultJsonOptions;;
                 var json = JsonSerializer.Serialize(new List<Guild> { guild }, options);
                 await File.WriteAllTextAsync(path, json);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
@@ -697,7 +698,7 @@ namespace GamedayTracker.Services
                 if (!guildExists)
                 {
                     existingGuilds.Add(guild);
-                    var options = new JsonSerializerOptions { WriteIndented = true };
+                    var options = JsonHelper.DefaultJsonOptions;;
                     var updatedJson = JsonSerializer.Serialize(existingGuilds, options);
                     await File.WriteAllTextAsync(path, updatedJson);
                     return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
@@ -721,7 +722,7 @@ namespace GamedayTracker.Services
             {
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
                 {
-                    ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.FileNotFound),
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("f416e176-85b0-4f94-b172-8dc8f084242e")),
                     CreatedAt = DateTimeOffset.UtcNow,
                     ErrorType = ErrorType.INFORMATION,
                     CreatedBy = this
@@ -731,7 +732,7 @@ namespace GamedayTracker.Services
             List<Guild> guilds = JsonSerializer.Deserialize<List<Guild>>(json) ?? [];
 
             var guildToUpdate = guilds.FirstOrDefault(g => g.GuildId.Equals(guild.GuildId.ToString()));
-            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+            var jsonOptions = JsonHelper.DefaultJsonOptions;;
             if (guildToUpdate is { })
             {
                 guilds.Remove(guildToUpdate);
@@ -743,7 +744,44 @@ namespace GamedayTracker.Services
 
             return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
-                ErrorMessage = SystemErrorCodes.GetErrorMessage(ErrorCode.GuildNotFound),
+                ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("2a35e0b1-3f87-4c7a-8e6d-5bc1cf301b1f")),
+                CreatedAt = DateTimeOffset.UtcNow,
+                ErrorType = ErrorType.INFORMATION,
+                CreatedBy = this
+            });
+        }
+        #endregion
+
+        #region REMOVE GUILD DATA
+        public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> RemoveGuildDataAsync(string guildId)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "guilds.json");
+            if (!File.Exists(path))
+            {
+                return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                {
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("f416e176-85b0-4f94-b172-8dc8f084242e")),
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedBy = this
+                });
+            }
+            var json = await File.ReadAllTextAsync(path);
+            List<Guild> guilds = JsonSerializer.Deserialize<List<Guild>>(json) ?? [];
+
+            var guildToUpdate = guilds.FirstOrDefault(g => g.GuildId.Equals(guildId));
+            var jsonOptions = JsonHelper.DefaultJsonOptions;;
+            if (guildToUpdate is { })
+            {
+                guilds.Remove(guildToUpdate);
+                json = JsonSerializer.Serialize(guilds, jsonOptions);
+                await File.WriteAllTextAsync(path, json);
+                return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
+            }
+
+            return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+            {
+                ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("2a35e0b1-3f87-4c7a-8e6d-5bc1cf301b1f")),
                 CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
                 CreatedBy = this

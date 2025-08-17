@@ -8,10 +8,9 @@ namespace GamedayTracker.Models
 {
     public class Bank
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public double Balance { get; set; }
-        public double DepositAmount { get; set; }
-        public double LastDeposit { get; set; }
-        public DateTime DepositTimestamp { get; set; }
+        public double LastDepositAmount { get; set; }
+        public DateTimeOffset DepositTimestamp { get; set; }
     }
 }

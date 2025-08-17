@@ -4,6 +4,7 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.Extensions;
+using GamedayTracker.Checks;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Jobs;
@@ -46,7 +47,7 @@ namespace GamedayTracker
 
 ");
             Console.ResetColor();
-
+            
             var configService = new ConfigurationDataService();
             var botTimerService = new BotTimerDataServiceProvider();
             var token = configService.GetBotToken();
@@ -64,7 +65,7 @@ namespace GamedayTracker
             var intents = TextCommandProcessor.RequiredIntents | SlashCommandProcessor.RequiredIntents | DiscordIntents.All;
 
             var logger = Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Verbose()
+                .MinimumLevel.Debug()
                 .MinimumLevel.Override("System.Net.Http", Serilog.Events.LogEventLevel.Error)
                 .WriteTo.Console(theme: AnsiConsoleTheme.Code, outputTemplate: "[{Timestamp:yyyy-MM-dd hh:mm:ss.fff tt zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
                 .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "Logs", "bot_logs.txt"), rollingInterval: RollingInterval.Day,
@@ -81,7 +82,9 @@ namespace GamedayTracker
                         .AddCommandsExtension((context, config) =>
                         {
                             config.AddCommands(Assembly.GetExecutingAssembly());
+                            config.AddCheck<RequireRoleCheck>();
                         });
+                    
                     services.AddLogging(logging => logging.ClearProviders().AddSerilog(logger));
                     services.AddScoped<ITeamData, TeamDataService>();
                     services.AddScoped<ITimerService, TimerService>();
@@ -93,14 +96,17 @@ namespace GamedayTracker
                     services.AddScoped<INewsService, NFLNewsService>();
                     services.AddScoped<ICommandHelper, SlashCommandHelper>();
                     services.AddScoped<IBotTimer, BotTimerDataServiceProvider>();
-                    services.AddScoped<IEvaluator, RealTimeScoresModeEvaluatorService>();  
+                    services.AddScoped<IEvaluator, RealTimeScoresModeEvaluatorService>(); 
+                    services.AddScoped<IBetting, BettingDataServiceProvider>();
                     services.AddScoped<DailyHeadlinesScheduler>();
-                    
+
                     #region QUARTZ
                     services.AddQuartz(q =>
                     {
                         var rtJobKey = new JobKey("RealTimeScoresJob");
                         var headlinesJobKey = new JobKey("DailyHeadlinesJob");
+                        var dailyStandingsJobKey = new JobKey("DailyStandingsJob");
+                        var updateBotStatusJobKey = new JobKey("UpdateBotStatusJob");
 
                         q.AddJob<RealTimeScoresJob>(opts => opts.WithIdentity(rtJobKey)
                         .WithDescription("get realtime scores : user-defined intervals").Build());
@@ -114,7 +120,7 @@ namespace GamedayTracker
                                 .RepeatForever().Build()));
 
                         q.AddJob<DailyHeadlineJob>(opts => opts.WithIdentity(headlinesJobKey)
-                        .WithDescription("get daily headlines : 24 hour interval").Build());
+                        .WithDescription("get daily headlines : 4 hour interval").Build());
 
                         q.AddTrigger(opts => opts
                             .ForJob(headlinesJobKey)
@@ -122,6 +128,27 @@ namespace GamedayTracker
                             .StartNow()
                             .WithSimpleSchedule(x => x
                                 .WithInterval(TimeSpan.FromHours(4))
+                                .RepeatForever().Build()));
+
+                        q.AddJob<DailyStandingsJob>(opts => opts.WithIdentity(dailyStandingsJobKey)
+                        .WithDescription("get daily standings : 4 hour interval").Build());
+
+                        q.AddTrigger(opts => opts
+                            .ForJob(dailyStandingsJobKey)
+                            .WithIdentity("DailyStandings-trigger")
+                            .StartNow()
+                            .WithSimpleSchedule(x => x
+                                .WithInterval(TimeSpan.FromHours(4))
+                                .RepeatForever().Build()));
+
+                        q.AddJob<UpdateBotStatusJob>(opts => opts.WithIdentity(updateBotStatusJobKey)
+                            .WithDescription("update bot status : 10 minute interval").Build());
+                        q.AddTrigger(opts => opts
+                            .ForJob(updateBotStatusJobKey)
+                            .WithIdentity("UpdateBotStatus-trigger")
+                            .StartAt(DateTimeOffset.UtcNow.AddMinutes(10))
+                            .WithSimpleSchedule(x => x
+                                .WithInterval(TimeSpan.FromMinutes(10))
                                 .RepeatForever().Build()));
                     });
 
@@ -131,29 +158,45 @@ namespace GamedayTracker
                     });
 
                     #endregion
-                    
+
                     #region CONFIGURE EVENT HANDLERS
                     services.ConfigureEventHandlers(
                         e => e.AddEventHandlers<InteractionHandler>(ServiceLifetime.Singleton));
                     services.ConfigureEventHandlers(
 
-                        #region MESSAGE EVENT HANDLERS
+                    #region MESSAGE EVENT HANDLERS
                         e => e.HandleMessageCreated((sender, args) =>
                         {
                             return Task.CompletedTask;
                         })
-                        .HandleMessageDeleted((sender, args) =>
+                        .HandleMessageDeleted(async (sender, args) =>
                         {
-                            return Task.CompletedTask;
+                           
                         })
                         #endregion
 
                         #region GUILD EVENT HANDLERS
+
+                        #region SESSION RESUMED
+                        .HandleSessionResumed(async (sender, args) =>
+                        {
+                            var guildCount = sender.Guilds.Count;
+                            var userCount = sender.Guilds.Values.Sum(g => g.Members.Count);
+                            var statusMessage = $"Serving {guildCount} Servers";
+                            await sender.UpdateStatusAsync(new DiscordActivity($"Scores in {guildCount} Servers", DiscordActivityType.Watching));
+                            var logChnl = await sender.GetChannelAsync(1384436855524692048);
+                            await logChnl.SendMessageAsync(
+                                $"Updated bot status: {statusMessage} with a total of ``{userCount}`` users.");
+                            Log.Information($"Session Resumed");
+                        })
+                        #endregion
+
+                        #region GUILD CREATED
                         .HandleGuildCreated(async (sender, args) =>
                         {
                             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                             var jsonService = sender.ServiceProvider.GetRequiredService<IJsonDataService>();
-                            
+
                             var guild = new Guild()
                             {
                                 GuildId = args.Guild.Id.ToString(),
@@ -166,9 +209,9 @@ namespace GamedayTracker
                                 NotificationChannelId = args.Guild.GetDefaultChannel()!.Id.ToString()
 
                             };
-                            var guildResult = await jsonService.WriteGuildToJsonAsync(guild);
-                            var supportChnl = await sender.GetChannelAsync(888659367824601160);
+                            var supportChnl = await sender.GetChannelAsync(1384436855524692048); 
                             var guilds = sender.Guilds.Values;
+
                             var newChnl = args.Guild.GetDefaultChannel();
                             if (newChnl is { } chnl)
                             {
@@ -193,22 +236,64 @@ namespace GamedayTracker
                                     .AddContainerComponent(container);
                                 await chnl.SendMessageAsync(embed);
                             }
-
+                            var guildOwner = await args.Guild.GetMemberAsync(args.Guild.OwnerId);
                             await supportChnl.SendMessageAsync(
-                                $"``New Guild Added: <t:{unixTimestamp}:F> {args.Guild.Name}:({args.Guild.Id}) - Total Guilds: {guilds.Count()}``");
+                                $"Guild Added: <t:{unixTimestamp}:R> ``{args.Guild.Name}:({args.Guild.Id}) - Total Guilds: {guilds.Count()}``\r\n" +
+                                $"``OwnerId: {guildOwner.Id} Owner Membername: {guildOwner.Username}``");
+                            var guildResult = await jsonService.WriteGuildToJsonAsync(guild);
 
-                            Log.Information($"New Guild Added: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}");
+                            if (guildResult.IsOk)
+                                Log.Information($"Guild Added: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}");
+                            else
+                                Log.Error($"GUild Added to Discord: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}\r\n" +
+                                    $"but unable to write guild info to json file: Error Message - {guildResult.Error.ErrorMessage}");
+
+
 
                         })
-                        .HandleGuildDeleted((sender, args) =>
+                        #endregion
+
+                        #region GUILD DELETED
+                        .HandleGuildDeleted(async (sender, args) =>
                         {
-                            return Task.CompletedTask;
+                            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                            var jsonService = sender.ServiceProvider.GetRequiredService<IJsonDataService>();
+                            var guildResult = await jsonService.GetGuildFromJsonAsync(args.Guild.Id.ToString());
+                            if (guildResult.IsOk)
+                            {
+                                var removedResult = await jsonService.RemoveGuildDataAsync(guildResult.Value.GuildId);
+                                var guildOwner = await args.Guild.GetMemberAsync(args.Guild.OwnerId);
+                                if (removedResult.IsOk)
+                                {
+                                    await guildOwner.SendMessageAsync(
+                                        $"``Gameday Tracker has been removed at: [<t:{unixTimestamp}:F>]``\r\nyou will no longer be receiving Daily Headlines or Realtime Scores Updates");
+                                    Log.Information($"GamedayTracker has been removed from: {args.Guild.Name}");
+                                }
+                                else
+                                {
+                                    await args.Guild.GetDefaultChannel()!.SendMessageAsync(
+                                        $"``Error removing Gameday Tracker from {args.Guild.Name} ({args.Guild.Id}) at: [<t:{unixTimestamp}:F>]``\r\n{removedResult.Error.ErrorMessage}");
+                                    Log.Error($"Error removing guild {args.Guild.Name} ({args.Guild.Id}): {removedResult.Error.ErrorMessage}");
+                                }
+
+                            }
                         })
+                        #endregion
+
+                        #region GUILD DOWNLOAD COMPLETED
+                        .HandleGuildDownloadCompleted(async (sender, args) =>
+                        {
+                            var count = sender.Guilds.Count;
+                            await sender.UpdateStatusAsync(new DiscordActivity($"Scores in {count} Servers", DiscordActivityType.Watching));
+                        })
+                        #endregion
+
                         #endregion
                     );
                     #endregion
 
                 })
+                
                 .RunConsoleAsync();
             
             await Log.CloseAndFlushAsync();

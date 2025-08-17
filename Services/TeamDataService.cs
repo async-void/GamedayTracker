@@ -486,18 +486,7 @@ namespace GamedayTracker.Services
                 .Where(parsedNode => parsedNode.IsOk)
                 .SelectMany(parsedNode => parsedNode.Value).ToList();
 
-           // var found = await xmlDataService.WriteSeasonStandingsToXmlAsync(nodeList, season);
             var jsonFound = await jsonDataService.WriteStandingsToJsonAsync(nodeList, season);
-
-            //var aEast = ParseStandingNode(statTableNodes[0], season);
-            //var aNorth = ParseStandingNode(statTableNodes[1], season);
-            //var aSouth = ParseStandingNode(statTableNodes[2], season);
-            //var aWest = ParseStandingNode(statTableNodes[3], season);
-
-            //var nEast = ParseStandingNode(statTableNodes[4], season);
-            //var nNorth = ParseStandingNode(statTableNodes[5], season);
-            //var nSouth = ParseStandingNode(statTableNodes[6], season);
-            //var nWest = ParseStandingNode(statTableNodes[7], season);
 
             return Result<List<TeamStanding>, SystemError<TeamDataService>>.Ok(nodeList);
         }

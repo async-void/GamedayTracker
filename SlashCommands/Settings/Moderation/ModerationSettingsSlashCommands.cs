@@ -90,7 +90,7 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
         #endregion
 
         #region ENABLE/DISABLE REALTIME SCORES
-        [Command("enable-realtime-scores")]
+        //[Command("toggle-realtime-scores")]
         [Description("enable or disable realtime scores")]
         public async ValueTask EnableRealtimeScores(SlashCommandContext ctx, [Description("true : false")] bool enable)
         {
@@ -100,12 +100,13 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
             if (guildResult.IsOk)
             {
                 guildResult.Value.IsRealTimeScoresEnabled = enable;
-                await _jsonService.WriteGuildToJsonAsync(guildResult.Value);
+                await _jsonService.UpdateGuildDataAsync(guildResult.Value);
                 DiscordComponent[] components =
                 [
                     new DiscordTextDisplayComponent($"## 👍SUCCESS👍"),
-                    new DiscordSeparatorComponent(true),
+                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent($"realtime scores are now {(enable ? "enabled" : "disabled")}"),
+                    new DiscordSeparatorComponent(true),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
@@ -152,7 +153,6 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
             if (jobs is { } jKeys)
             {
                 var sb = new StringBuilder();
-                sb.AppendLine("### Scheduled Jobs:");
                 foreach (var job in jKeys)
                 {
                     var jobDetail = await scheduler.GetJobDetail(job);
@@ -164,8 +164,8 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
                     new DiscordTextDisplayComponent($"## Scheduled Jobs"),
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"{sb}"),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
-                        new DiscordButtonComponent(DiscordButtonStyle.Primary, "donateId", "Donate"))
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
                 var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
                 var message = new DiscordMessageBuilder()

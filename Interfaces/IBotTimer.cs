@@ -11,6 +11,6 @@ namespace GamedayTracker.Interfaces
     public interface IBotTimer
     {
         Task<Result<bool, SystemError<BotTimerDataServiceProvider>>> WriteTimestampToTextAsync();
-        Task<Result<DateTime, SystemError<BotTimerDataServiceProvider>>> GetTimestampFromTextAsync();
+        Task<Result<DateTime, SystemError<BotTimerDataServiceProvider>>> GetTimestampAsync();
     }
 }

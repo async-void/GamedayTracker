@@ -1,16 +1,17 @@
 ﻿using GamedayTracker.Interfaces;
 using GamedayTracker.Jobs;
+using Microsoft.Extensions.Logging;
 using Quartz;
 using Serilog;
 
 namespace GamedayTracker.Schedules
 {
     public class RealTimeScoresJobScheduler(IScheduler scheduler, 
-        IEvaluator evaluatorService, IServiceProvider services)
+        IEvaluator evaluatorService, ILogger<RealTimeScoresJobScheduler> logger)
     {
         private readonly IScheduler _scheduler = scheduler;
         private readonly IEvaluator _evaluatorService = evaluatorService;
-        private readonly IServiceProvider _services = services;
+        private readonly ILogger<RealTimeScoresJobScheduler> _logger = logger;
 
         public async Task StartAsync()
         {
@@ -24,7 +25,7 @@ namespace GamedayTracker.Schedules
                     .WithInterval(_evaluatorService.GetInterval(_evaluatorService.Evaluate(DateTimeOffset.Now)))
                     .RepeatForever())
                 .Build();
-            Log.Information($"Starting Daily Headline Job...{job.Key}");
+            _logger.LogInformation($"Starting Daily Headline Job...{job.Key}");
             await _scheduler.ScheduleJob(job, trigger);
             await _scheduler.Start();
         }

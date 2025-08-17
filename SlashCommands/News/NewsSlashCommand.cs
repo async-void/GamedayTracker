@@ -47,7 +47,7 @@ namespace GamedayTracker.SlashCommands.News
                     new DiscordSeparatorComponent(true),
                     new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem(imgList[rnd.Next(0, imgList.Count)], "news", false)),
                     new DiscordSeparatorComponent(true),
-                    new DiscordSectionComponent( new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                    new DiscordSectionComponent( new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                    
                 ];
@@ -119,7 +119,7 @@ namespace GamedayTracker.SlashCommands.News
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent("The default interval for setting daily news headlines is 24 hours. The developers are working hard to implement user-defined intervals in the future!"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"GamedayTracker ©️ <t:{unixTimestamp}:F>" ),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# GamedayTracker ©️ <t:{unixTimestamp}:F>" ),
                         new DiscordButtonComponent(DiscordButtonStyle.Success, "donateId", "Donate"))
                 ];
                 var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);

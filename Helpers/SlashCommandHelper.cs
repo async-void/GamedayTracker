@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DSharpPlus.Interactivity;
+﻿using DSharpPlus.Interactivity;
+using DSharpPlus.Net;
 using GamedayTracker.Enums;
-using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
-using Microsoft.EntityFrameworkCore;
-
+using System.Globalization;
+using System.Text;
+using RestSharp;
+using System.Text.Json;
+using GamedayTracker.Models.API;
 namespace GamedayTracker.Helpers
 {
     public class SlashCommandHelper(IJsonDataService dataService): ICommandHelper
@@ -92,11 +89,11 @@ namespace GamedayTracker.Helpers
             const string prefix = "#";
             const string uName = "Username";
             const string wins = "Wins";
-            builder.Append($"``{prefix.PadRight(2)} {uName} {wins.PadLeft(10)}``\r\n");
+            builder.Append($"``{prefix.PadRight(2)} {uName} {wins, 12}``\r\n");
 
             foreach (var member in members)
             {
-                builder.Append($"``{idx.ToString(CultureInfo.CurrentCulture)}``. {member.MemberName.PadLeft(8)} {member.BetWins}\r\n");
+                builder.Append($"``{idx.ToString(CultureInfo.CurrentCulture)}``. {member.MemberName} {member.BetWins, 20}\r\n");
                 idx++;
             }
 
@@ -125,6 +122,43 @@ namespace GamedayTracker.Helpers
             };
             return Result<List<Page>, SystemError<SlashCommandHelper>>.Ok(pages);
         }
+        #endregion
+
+        #region COOLDOWN MESSAGE
+        public static string GetCooldownMessage(DateTimeOffset lastUsed, TimeSpan cooldown)
+        {
+            var nextAvailable = lastUsed + cooldown;
+            var now = DateTimeOffset.UtcNow;
+
+            if (now >= nextAvailable)
+            {
+                return "✅ You're good to go! Use the command now.";
+            }
+
+            var unixTime = nextAvailable.ToUnixTimeSeconds();
+            return $"⏳ You can deposit again <t:{unixTime}:R>";
+        }
+        #endregion
+        public static StringBuilder BuildCommandsDescription()
+        {
+            var builder = new StringBuilder();
+
+            builder.AppendLine("GamedayTracker supports auto complete - start typing and I will auto complete the commands available.");
+            builder.AppendLine();
+            builder.AppendLine("### Utility Commands");
+            builder.AppendLine("``/help`` ``/about`` ``/ping``");
+            builder.AppendLine("### Bank Commands");
+            builder.AppendLine("``/daily`` ``/bet`` ``/leaderboard``");
+            builder.AppendLine("### Gameday Commands");
+            builder.AppendLine("``/scoreboard`` ``/teamstats`` ``/standings`` ``/draft`` ``/schedule`` ");
+            builder.AppendLine("``/live_feeds`` ``/news`` ");
+            builder.AppendLine("### Player Commands");
+            builder.AppendLine("``/profile");
+
+            return builder;
+        }
+        #region BUILD COMMANDS DESCRIPTION 
+
         #endregion
     }
 }

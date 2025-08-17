@@ -22,7 +22,7 @@ namespace GamedayTracker.SlashCommands.NFL
         {
             
             await ctx.DeferResponseAsync();
-
+            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var normalizedName = NflTeamMatcher.MatchTeam(teamName);
             if (!teamData.IsValidTeamName(normalizedName!.ToLower()))
             {
@@ -49,11 +49,12 @@ namespace GamedayTracker.SlashCommands.NFL
 
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent($"{season} Schedule for {normalizedName}{titleEmoji}"),
+                    new DiscordTextDisplayComponent($"{normalizedName} {titleEmoji}"),
+                    new DiscordTextDisplayComponent($"-# {season} Schedule"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent($"{sb}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyy hh:mm:ss tt zzz}"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
                                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
 
@@ -73,7 +74,7 @@ namespace GamedayTracker.SlashCommands.NFL
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent($"{teamSchedule.Error.ErrorMessage} for season **{season}**"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}:{DateTime.Now.ToShortTimeString()}")
+                    new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:F>")
                 ];
 
                 var container = new DiscordContainerComponent(components, false, DiscordColor.IndianRed);

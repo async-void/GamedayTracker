@@ -24,7 +24,7 @@ namespace GamedayTracker.SlashCommands.Notifications
 
             if (userId != 524434302361010186)
             {
-                await ctx.EditResponseAsync("unable to execute command!");
+                await ctx.EditResponseAsync($"unable to execute command | {SystemErrorCodes.GetErrorMessage(Guid.Parse("e1f54bcb-3e9c-4784-af4c-44b97af1d0e2"))}");
                 return;
             }
             var guildResult = await _jsonDataService.GetGuildsFromJsonAsync();
@@ -72,13 +72,8 @@ namespace GamedayTracker.SlashCommands.Notifications
             }
             else
             {
-                //await foreach (var g in ctx.Client.GetGuildsAsync())
-                //{
-                    //TODO: eventially I will send the message to all guilds in the client cashe!
-                //}
-
                 var errMessage = new DiscordInteractionResponseBuilder()
-                   .WithContent($"{SystemErrorCodes.GetErrorMessage(ErrorCode.GuildNotFound)} With Error Code: GDT-{ErrorCode.GuildNotFound}")
+                   .WithContent($"{SystemErrorCodes.GetErrorMessage(Guid.Parse("f416e176-85b0-4f94-b172-8dc8f084242e"))} With Error Code: f416e176-85b0-4f94-b172-8dc8f084242e")
                    .AsEphemeral(true);
                 await ctx.EditResponseAsync(errMessage);
             }

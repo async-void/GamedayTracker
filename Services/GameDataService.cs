@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Serilog;
+using GamedayTracker.Utility;
 
 
 namespace GamedayTracker.Services
@@ -42,8 +43,36 @@ namespace GamedayTracker.Services
 
         #endregion
 
+        #region GET CURRENT SEASON
+        public Result<int, SystemError<GameDataService>> GetCurSeason()
+        {
+            const string link = "https://www.footballdb.com/standings/index.html";
+            var web = new HtmlWeb();
+            var doc = web.Load(link);
+            var seasonNode = doc.DocumentNode.SelectSingleNode(".//button[@id='dropdownMenuYear']");
+
+            if (seasonNode is null)
+            {
+                return Result<int, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
+                {
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("94807acb-8869-4648-a05d-c258af989e2f")),
+                    ErrorCode = Guid.Parse("94807acb-8869-4648-a05d-c258af989e2f"),
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = this
+                });
+            }
+            var seasonResult = int.TryParse(seasonNode.InnerText.Replace("\n", string.Empty).Trim(), out int season);
+            if (seasonResult)
+            {
+                return season;
+            }
+            return 0;
+        }
+        #endregion
+
         #region GET CURRENT SCOREBOARD
-        public Result<List<Matchup>, SystemError<GameDataService>> GetCurrentScoreboard()
+        public async Task<Result<List<Matchup>, SystemError<GameDataService>>> GetCurrentScoreboard()
         {
             const string scoreboardLink = "https://www.footballdb.com/scores/index.html";
             var web = new HtmlWeb();
@@ -62,19 +91,35 @@ namespace GamedayTracker.Services
 
             foreach (var node in gameNodes)
             {
-                var dateNode = node.SelectSingleNode("thead/tr/th");
+                var dateNode = node.SelectSingleNode("thead/tr");
+                var gameTimeNode = node.SelectSingleNode("thead/tr");
                 var scoreBoardNode = node.SelectNodes("tbody/tr");
 
+                if (scoreBoardNode is null)
+                    return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
+                    {
+                        ErrorCode = Guid.Parse("3996dbaf-2da8-45ae-9fad-e7e48fb0916b"),
+                        ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("3996dbaf-2da8-45ae-9fad-e7e48fb0916b")),
+                        ErrorType = ErrorType.INFORMATION,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = this
+                    });
+
+                //scoreBoardNode is not null, proceed.
                 var awayScoreValue = scoreBoardNode[0].ChildNodes.Last().InnerText;
                 var homeScoreValue = scoreBoardNode[1].ChildNodes.Last().InnerText;
                 var awayNode = scoreBoardNode[0].ChildNodes[1];
                 var homeNode = scoreBoardNode[1].ChildNodes[1];
 
+                var gameDate = dateNode?.ChildNodes[1].InnerText.Trim();
+                var gameTime = gameTimeNode?.ChildNodes[3].InnerText.Trim();
+
                 var matchup = new Matchup
                 {
                     Week = GetCurWeek().Value,
                     Season = DateTime.UtcNow.Year,
-                    GameDate = dateNode!.InnerText,
+                    GameDate = gameDate.ToString(),
+                    GameTime = gameTime.ToString(),
                     Opponents = new Opponent
                     {
                         AwayTeam = new Team
@@ -132,7 +177,7 @@ namespace GamedayTracker.Services
  
                 return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>()
                 {
-                    ErrorMessage = "Something went wrong while fetching the XML data!",
+                    ErrorMessage = "Something went wrong while fetching the Scoreboard data!",
                     ErrorType = ErrorType.INFORMATION,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = this
@@ -141,7 +186,6 @@ namespace GamedayTracker.Services
             }
             sw.Start();
            
-
             for (var j = 1; j < 23; j++)
             {
                 var link = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr={season}&type=reg&wk={j}";
@@ -172,7 +216,16 @@ namespace GamedayTracker.Services
 
                 var scoreboardNodes = doc.DocumentNode.SelectNodes(".//div[@class='lngame']//table");
 
-                if (scoreboardNodes is null) continue;
+                if (scoreboardNodes is null)
+                {
+                    return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>()
+                    {
+                        ErrorMessage = $"No data found for Season: {season} Week: {week}",
+                        ErrorType = ErrorType.INFORMATION,
+                        CreatedAt = DateTimeOffset.UtcNow,
+                        CreatedBy = this
+                    });
+                }
                    
                 for (var i = 0; i <= scoreboardNodes.Count - 1; i++)
                 {
@@ -204,7 +257,6 @@ namespace GamedayTracker.Services
                
             }
 
-            //xmlData.WriteAllMatchupsToXmlAsync(matchups, season.ToString()).Wait();
             for (int i = 0; i < matchups.Count; i++)
             {
                 matchups[i].Id = i + 1;
@@ -222,7 +274,7 @@ namespace GamedayTracker.Services
 
             sw.Stop();
             
-            return Result<List<Matchup>, SystemError<GameDataService>>.Ok(matchups.Where(m => m.Week.Equals(week)).ToList());
+            return Result<List<Matchup>, SystemError<GameDataService>>.Ok([.. matchups.Where(m => m.Week.Equals(week) && m.Season.Equals(season))]);
 
         }
         #endregion
@@ -261,18 +313,18 @@ namespace GamedayTracker.Services
                 var awayTeam = new Team()
                 {
                     Name = awayNameFinal.Value,
-                    Score = int.Parse(awayScore),
+                    Score = int.TryParse(awayScore, out var finalAwayScore) ? finalAwayScore : 0,
                     Record = awayRecord.Value,
                     Division = awayNameFinal.Value.ToDivision(),
                     Abbreviation = awayAbbr,
                     LogoPath = LogoPathService.GetLogoPath(awayAbbr),
-                    Emoji = NflEmojiService.GetEmoji(awayAbbr)
+                    Emoji = NflEmojiService.GetEmoji(awayAbbr),
                 };
 
                 var homeTeam = new Team()
                 {
                     Name = homeNameFinal.Value,
-                    Score = int.Parse(homeScore),
+                    Score = int.TryParse(homeScore, out var finalHomeScore) ? finalHomeScore : 0,
                     Record = homeRecord.Value,
                     Division = homeNameFinal.Value.ToDivision(),
                     Abbreviation = homeAbbr,

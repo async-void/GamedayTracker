@@ -8,6 +8,7 @@ using GamedayTracker.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
+using GamedayTracker.Utility;
 using System.ComponentModel;
 
 namespace GamedayTracker.SlashCommands.Stats
@@ -21,6 +22,7 @@ namespace GamedayTracker.SlashCommands.Stats
             
         {
             await ctx.DeferResponseAsync();
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var isOffense = "";
 
             switch (choice)
@@ -44,17 +46,19 @@ namespace GamedayTracker.SlashCommands.Stats
                 var teamAbbr = stats.Value.TeamName!.ToAbbr();
                 var teamEmoji = NflEmojiService.GetEmoji(teamAbbr);
                 var logoUrl = LogoPathService.GetLogoPath(teamAbbr);
+             
                 DiscordComponent[] components =
                 [
                     new DiscordTextDisplayComponent($"{teamEmoji} **{stats.Value.TeamName!}**\r**{stats.Value.Season} {isOffense} Stats**\r\r"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"``Games: {stats.Value.GamesPlayed}``\r" +
-                        $"``Total Pts: {stats.Value.TotalPoints}``\r``Pts/G: {stats.Value.PointsPerGame}``\r``RushYds: {stats.Value.RushYardsTotal:#,##0}``\r" +
-                        $"``RYds/G: {stats.Value.RushPerGame}``\r``PassYds: {stats.Value.PassYardsTotal:#,##0}``\r" +
-                        $"``PYds/G: {stats.Value.PassYardsPerGame}``\r``Total Yds: {stats.Value.TotalYards:#,##0}``\r" +
-                        $"``Yds/G: {stats.Value.YardsPerGame}``"), new DiscordThumbnailComponent(logoUrl)),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"``Games: {stats.Value.GamesPlayed, 10}``\r" +
+                        $"``Total Pts: {stats.Value.TotalPoints, 7}``\r``Pts/G: {stats.Value.PointsPerGame, 12}``\r``RushYds: {stats.Value.RushYardsTotal, 11:F2}``\r" +
+                        $"``RYds/G: {stats.Value.RushPerGame , 12}``\r``PassYds: {stats.Value.PassYardsTotal, 11:F2}``\r" +
+                        $"``PYds/G: {stats.Value.PassYardsPerGame , 12}``\r``Yds/G: {stats.Value.YardsPerGame, 11:F2}``\r" +
+                        $"``Total Yards: {stats.Value.TotalYards , 6}``"), new DiscordThumbnailComponent(logoUrl)),
                     new DiscordSeparatorComponent(true),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {DateTime.UtcNow.ToLongDateString()}"),  new DiscordButtonComponent(DiscordButtonStyle.Success, "donateId", "Donate")),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}"),  
+                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
                 ];
 
                 var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
@@ -65,8 +69,6 @@ namespace GamedayTracker.SlashCommands.Stats
                 return;
             }
 
-            Console.WriteLine(
-                $"{Chalk.Yellow($"[{DateTimeOffset.UtcNow}]")} {Chalk.Yellow($"[Gameday Tracker]")} {Chalk.DarkBlue("[INFO]")} {Chalk.DarkGray($"{stats.Error.ErrorMessage}")}");
             await ctx.EditResponseAsync($"Error: {stats.Error.ErrorMessage}");
         }
     }

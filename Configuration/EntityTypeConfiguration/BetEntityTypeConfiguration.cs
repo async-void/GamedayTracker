@@ -13,8 +13,8 @@ namespace GamedayTracker.Configuration.EntityTypeConfiguration
     {
         public void Configure(EntityTypeBuilder<Bet> builder)
         {
-            builder.Property(x => x.AwayTeamName).HasMaxLength(50);
-            builder.Property(x => x.HomeTeamName).HasMaxLength(50);
+            builder.Property(x => x.Matchup.Opponents.AwayTeam.Name).HasMaxLength(50);
+            builder.Property(x => x.Matchup.Opponents.HomeTeam.Name).HasMaxLength(50);
         }
     }
 }
