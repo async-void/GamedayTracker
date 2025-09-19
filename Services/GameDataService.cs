@@ -1,16 +1,12 @@
-﻿using ChalkDotNET;
-using GamedayTracker.Enums;
+﻿using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
-using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Utility;
 using HtmlAgilityPack;
-using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
-using Serilog;
-using GamedayTracker.Utility;
 
 
 namespace GamedayTracker.Services
@@ -24,9 +20,14 @@ namespace GamedayTracker.Services
             const string link = "https://www.footballdb.com/scores/index.html";
             var web = new HtmlWeb();
             var doc = web.Load(link);
-            var weekNode = doc.DocumentNode.SelectSingleNode(".//h2");
-            var week = weekNode?.InnerText;
-            var weekResult = int.TryParse(week, out var wResult);
+
+            var buttonNode = doc.DocumentNode.SelectNodes("//button[@id='dropdownMenuLeague']");
+
+            var weekTextNode = buttonNode.Select(x => x.SelectSingleNode(".//span[contains(text(), 'Week')]")).ToList();
+
+            var week = weekTextNode[1]?.InnerText ?? "1";
+            var parsedWeek = Regex.Replace(week, @"\D", string.Empty);
+            var weekResult = int.TryParse(parsedWeek, out var wResult);
 
             if (weekResult)
             {
@@ -34,7 +35,7 @@ namespace GamedayTracker.Services
             }
             return Result<int, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
             {
-                ErrorMessage = "Unable to get current week",
+                ErrorMessage = "Unable to get current week - html node not found",
                 ErrorType = ErrorType.INFORMATION,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = this
@@ -74,12 +75,14 @@ namespace GamedayTracker.Services
         #region GET CURRENT SCOREBOARD
         public async Task<Result<List<Matchup>, SystemError<GameDataService>>> GetCurrentScoreboard()
         {
-            const string scoreboardLink = "https://www.footballdb.com/scores/index.html";
+            var week = GetCurWeek();
+            //const string scoreboardLink = "https://www.footballdb.com/scores/index.html";
+            var scoreboardLink = $"https://www.footballdb.com/scores/index.html?lg=NFL&yr=2025&type=reg&wk={week.Value}";
             var web = new HtmlWeb();
             var doc = web.Load(scoreboardLink);
             var gameNodes = doc.DocumentNode.SelectNodes(".//div[@class='lngame']//table");
 
-            if (gameNodes is null)
+            if (gameNodes is null || !gameNodes.Any())
                 return Result<List<Matchup>, SystemError<GameDataService>>.Err(new SystemError<GameDataService>
                 {
                     ErrorMessage = "Unable to get current scoreboard",
@@ -165,7 +168,7 @@ namespace GamedayTracker.Services
 
             var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"matchups_{season}.json");
             
-            if (File.Exists(filePath))
+            if (System.IO.File.Exists(filePath))
             {
                 sw.Start();
                 var jsonFound = await jsonDataService.GetMatchupsAsync(season.ToString(), week.ToString());

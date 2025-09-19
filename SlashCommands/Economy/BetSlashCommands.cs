@@ -2,6 +2,7 @@
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity;
 using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Enums;
 using GamedayTracker.Factories;
@@ -150,7 +151,7 @@ namespace GamedayTracker.SlashCommands.Economy
             }
 
             var embedDesc = _slashCmdHelper.BuildLeaderboardDescription(leaderboard.Value).Value;
-
+            
             DiscordComponent[] components =
             [
                 new DiscordTextDisplayComponent($"**{title}** 🏆"),

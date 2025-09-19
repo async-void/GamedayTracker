@@ -34,7 +34,7 @@ namespace GamedayTracker.Helpers
                     {
                         leaderboard = [.. leaderboardResult.Value
                             .Where(m => m.GuildId == guildId)
-                            .OrderByDescending(m => m.BetWins)];
+                            .OrderByDescending(m => m.Bank!.Balance)];
                         return Result<List<GuildMember>, SystemError<SlashCommandHelper>>.Ok(leaderboard);
                     }
                     else
@@ -54,7 +54,7 @@ namespace GamedayTracker.Helpers
                     if (leaderboardResult.IsOk)
                     {
                         leaderboard = [.. leaderboardResult.Value
-                            .OrderByDescending(m => m.BetWins)];
+                            .OrderByDescending(m => m.Bank!.Balance)];
                         return Result<List<GuildMember>, SystemError<SlashCommandHelper>>.Ok(leaderboard);
                     }
                     else
@@ -88,12 +88,12 @@ namespace GamedayTracker.Helpers
             var idx = 1;
             const string prefix = "#";
             const string uName = "Username";
-            const string wins = "Wins";
-            builder.Append($"``{prefix.PadRight(2)} {uName} {wins, 12}``\r\n");
+            const string balance = "Wins";
+            builder.Append($"``{prefix.PadRight(2)} {uName} {balance, 12}``\r\n");
 
             foreach (var member in members)
             {
-                builder.Append($"``{idx.ToString(CultureInfo.CurrentCulture)}``. {member.MemberName} {member.BetWins, 20}\r\n");
+                builder.Append($"``{idx.ToString(CultureInfo.CurrentCulture)}``. {member.MemberName} {member.Bank!.Balance, 20}\r\n");
                 idx++;
             }
 

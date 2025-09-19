@@ -5,6 +5,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Utility;
 using Quartz;
 using Quartz.Impl.Matchers;
 using CommandAttribute = DSharpPlus.Commands.CommandAttribute;
@@ -146,7 +147,7 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
         public async Task ListScheduledJobs(SlashCommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var scheduler = await _schedulerFactory.GetScheduler();
             var jobs = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
 
@@ -164,7 +165,7 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
                     new DiscordTextDisplayComponent($"## Scheduled Jobs"),
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"{sb}"),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ {unixTimestamp}"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
                 var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);

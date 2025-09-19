@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using DSharpPlus.Commands;
+﻿using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
 using GamedayTracker.Helpers;
@@ -8,6 +7,8 @@ using GamedayTracker.Models;
 using GamedayTracker.Utility;
 using Humanizer;
 using Microsoft.Extensions.Logging;
+using System.ComponentModel;
+using System.Globalization;
 
 namespace GamedayTracker.SlashCommands.Economy
 {
@@ -110,13 +111,13 @@ namespace GamedayTracker.SlashCommands.Economy
                         {
                             lastUsed = updatedUser.Value.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;
                             nextAvailable = lastUsed + TIMESPAN;
-                            var unixTimestamp = nextAvailable.ToUnixTimeSeconds();
+                            var unixTimestamp = nextAvailable.ToTimestamp();
 
                             //TODO: change this to the V2 embed
                             var message = new DiscordMessageBuilder()
                             .AddEmbed(new DiscordEmbedBuilder()
                                 .WithTitle($"Daily Command")
-                                .WithDescription($"Done!  **{updatedUser.Value.MemberName}'s** balance is <:money:1337795714855600188> ${balance:C}\r\nyou can use daily again <t:{unixTimestamp}:R> from now")
+                                .WithDescription($"Done!  **{updatedUser.Value.MemberName}'s** balance is <:money:1337795714855600188> {balance.ToString("C", CultureInfo.CreateSpecificCulture("en-US"))}\r\nyou can use daily again {unixTimestamp} from now")
                                 .WithTimestamp(DateTime.UtcNow));
 
                             await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
@@ -138,10 +139,10 @@ namespace GamedayTracker.SlashCommands.Economy
                 }
                 else
                 {
-                    var unixTimestamp = nextAvailable.ToUnixTimeSeconds();
+                    var unixTimestamp = nextAvailable.ToTimestamp();
 
                     await ctx.FollowupAsync(new DiscordFollowupMessageBuilder()
-                        .WithContent($"you can use ``/daily`` again <t:{unixTimestamp}:R>")
+                        .WithContent($"you can use ``/daily`` again {unixTimestamp}")
                         .AsEphemeral(true));
                 }
 
@@ -185,13 +186,13 @@ namespace GamedayTracker.SlashCommands.Economy
                     await ctx.EditResponseAsync(errorMessage);
                     return;
                 }
-                var unixTimestamp = nextAvailable.ToUnixTimeSeconds();
+                var unixTimestamp = nextAvailable.ToTimestamp();
 
                 var message = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithTitle($"Daily Command")
-                        .WithDescription($"Done! **{member.Username}'s** balance is <:money:1337795714855600188> {user.Bank?.Balance}\r\nyou may use daily again " +
-                                         $"<t:{unixTimestamp}:R> from now")
+                        .WithDescription($"Done! **{member.Username}'s** balance is <:money:1337795714855600188> {user.Bank?.Balance.ToString("C", CultureInfo.CreateSpecificCulture("en-US"))}\r\nyou may use daily again " +
+                                         $"{unixTimestamp} from now")
                         .WithTimestamp(DateTime.UtcNow)
                         );
                

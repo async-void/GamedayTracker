@@ -460,9 +460,9 @@ namespace GamedayTracker.Services
         #region GET ALL TEAM STANDININGS
         public async Task<Result<List<TeamStanding>, SystemError<TeamDataService>>> GetAllTeamStandings(int season)
         {
-            var foundStandings = await jsonDataService.GetStandingsFromJsonAsync(season);
-            if (foundStandings is { IsOk: true, Value.Count: > 0 })
-                return Result<List<TeamStanding>, SystemError<TeamDataService>>.Ok(foundStandings.Value);
+            //var foundStandings = await jsonDataService.GetStandingsFromJsonAsync(season);
+            //if (foundStandings is { IsOk: true, Value.Count: > 0 })
+            //    return Result<List<TeamStanding>, SystemError<TeamDataService>>.Ok(foundStandings.Value);
             
             var link = $"https://www.footballdb.com/standings/index.html?lg=NFL&yr={season}";
             var web = new HtmlWeb();

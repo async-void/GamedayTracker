@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
-using System.Globalization;
 using System.Runtime.InteropServices;
-using ChalkDotNET;
 using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
 using Microsoft.Win32.SafeHandles;
