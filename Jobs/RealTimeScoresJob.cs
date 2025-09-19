@@ -1,6 +1,7 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
+using GamedayTracker.Utility;
 using Quartz;
 using Serilog;
 using System.Text;
@@ -19,7 +20,7 @@ namespace GamedayTracker.Jobs
             if (scoreboard.IsOk && scoreboard.Value.Count > 0)
             {
                 var sb = new StringBuilder();
-                var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
                 var grouped = scoreboard.Value
                     .GroupBy(g => g.GameDate)
                     .Select(scoreboard => new
@@ -38,8 +39,25 @@ namespace GamedayTracker.Jobs
                     sb.Append($"### {grouped[i].GameDate}\n");
                     for (var j = 0; j < grouped[i].Opponents.Count(); j++)
                     {
-                        sb.AppendLine($"{grouped[i].Opponents.ElementAt(j).AwayTeam.Emoji} **{grouped[i].Opponents.ElementAt(j).AwayTeam.Score}**" +
-                            $"**{grouped[i].Opponents.ElementAt(j).HomeTeam.Score}** {grouped[i].Opponents.ElementAt(j).HomeTeam.Emoji}");
+                        if (grouped[i].Opponents.ElementAt(j).AwayTeam.Score >
+                            grouped[i].Opponents.ElementAt(j).HomeTeam.Score)
+                        {
+                            sb.AppendLine($"{grouped[i].Opponents.ElementAt(j).AwayTeam.Emoji} **{grouped[i].Opponents.ElementAt(j).AwayTeam.Score}** : " +
+                              $"{grouped[i].Opponents.ElementAt(j).HomeTeam.Score} {grouped[i].Opponents.ElementAt(j).HomeTeam.Emoji}");
+                        }
+                        else if (grouped[i].Opponents.ElementAt(j).AwayTeam.Score <
+                            grouped[i].Opponents.ElementAt(j).HomeTeam.Score)
+                        {
+                            sb.AppendLine($"{grouped[i].Opponents.ElementAt(j).AwayTeam.Emoji} {grouped[i].Opponents.ElementAt(j).AwayTeam.Score} : " +
+                              $"**{grouped[i].Opponents.ElementAt(j).HomeTeam.Score}** {grouped[i].Opponents.ElementAt(j).HomeTeam.Emoji}");
+                        }
+                        else
+                        {
+                            sb.AppendLine($"{grouped[i].Opponents.ElementAt(j).AwayTeam.Emoji} {grouped[i].Opponents.ElementAt(j).AwayTeam.Score} : " +
+                              $"{grouped[i].Opponents.ElementAt(j).HomeTeam.Score} {grouped[i].Opponents.ElementAt(j).HomeTeam.Emoji} - tie");
+                        }
+                       
+
                     }
                 }
 
@@ -49,7 +67,7 @@ namespace GamedayTracker.Jobs
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"{sb}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by GamedayTracker ©️ <t:{unixTimestamp}:R>"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by GamedayTracker ©️ {unixTimestamp}"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
                 var container = new DiscordContainerComponent(components);
@@ -66,7 +84,7 @@ namespace GamedayTracker.Jobs
             }
             else
             {
-                Log.Error("Fetching realtime scores....[failed]");
+                Log.Error($"Fetching realtime scores....[failed] REASON: {scoreboard.Error.ErrorMessage}");
             }
         }
     }

@@ -16,7 +16,7 @@ namespace GamedayTracker.SlashCommands.NFL
     public class ListTeamsSlashCommand
     {
         #region LIST TEAMS
-        [Command("list-teams")]
+        [Command("teams")]
         [Description("Lists all NFL teams.")]
         public async ValueTask ListTeamsAsync(SlashCommandContext ctx)
         {
@@ -89,50 +89,58 @@ namespace GamedayTracker.SlashCommands.NFL
             foreach (var team in afc_east)
             {
                 var teamAbbr = team.ToAbbr();
-                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{teamAbbr} | {team}``");
+                var data = String.Format("{0, 3} | {1, 3}", teamAbbr, team);
+                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{data}``");
             }
             descBuilder.AppendLine("**AFC North** <:afc:1331745347285811300>");
             foreach (var team in afc_north)
             {
                 var teamAbbr = team.ToAbbr();
-                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{teamAbbr} | {team}``");
+                var data = String.Format("{0, 3} | {1, 3}", teamAbbr, team);
+                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{data}``");
             }
             descBuilder.AppendLine("**AFC South** <:afc:1331745347285811300>");
             foreach (var team in afc_south)
             {
                 var teamAbbr = team.ToAbbr();
-                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{teamAbbr} | {team}``");
+                var data = String.Format("{0, 3} | {1, 3}", teamAbbr, team);
+                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{data}``");
             }
             descBuilder.AppendLine("**AFC West** <:afc:1331745347285811300>");
             foreach (var team in afc_west)
             {
                 var teamAbbr = team.ToAbbr();
-                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{teamAbbr} | {team}``");
+                var data = String.Format("{0, 3} | {1, 3}", teamAbbr, team);
+                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{data}``");
             }
 
             descBuilder.AppendLine("**NFC East** <:nfc:1331741091636056196>");
             foreach (var team in nfc_east)
             {
                 var teamAbbr = team.ToAbbr();
-                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{teamAbbr} | {team}``");
+                var data = String.Format("{0, 3} | {1, 3}", teamAbbr, team);
+                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{data}``");
             }
             descBuilder.AppendLine("**NFC North** <:nfc:1331741091636056196>");
             foreach (var team in nfc_north)
             {
                 var teamAbbr = team.ToAbbr();
-                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{teamAbbr} | {team}``");
+                var data = String.Format("{0, 3} | {1, 3}", teamAbbr, team);
+                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{data}``");
             }
             descBuilder.AppendLine("**NFC South** <:nfc:1331741091636056196>");
             foreach (var team in nfc_south)
             {
                 var teamAbbr = team.ToAbbr();
-                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{teamAbbr} | {team}``");
+                var data = String.Format("{0, 3} | {1, 3}", teamAbbr, team);
+                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{data}``");
             }
             descBuilder.AppendLine("**NFC West** <:nfc:1331741091636056196>");
             foreach (var team in nfc_west)
             {
                 var teamAbbr = team.ToAbbr();
-                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{teamAbbr} | {team}``");
+                var data = String.Format("{0, 3} | {1, 3}", teamAbbr, team);
+                descBuilder.AppendLine($"- {NflEmojiService.GetEmoji(teamAbbr)} ``{data}``");
             }
             #endregion
 

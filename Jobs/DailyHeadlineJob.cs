@@ -1,22 +1,24 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
+using GamedayTracker.Utility;
+using Microsoft.Extensions.Logging;
 using Quartz;
 using Serilog;
 using System.Text;
 
 namespace GamedayTracker.Jobs
 {
-    public class DailyHeadlineJob(INewsService newService, IJsonDataService dataService, DiscordClient client) : IJob
+    public class DailyHeadlineJob(INewsService newService, IJsonDataService dataService, DiscordClient client, ILogger<DailyHeadlineJob> logger) : IJob
     {
         private readonly INewsService _newsService = newService;
         private readonly IJsonDataService _dataService = dataService;
         private readonly DiscordClient _client = client;
+        private readonly ILogger<DailyHeadlineJob> _logger = logger;
         public async Task Execute(IJobExecutionContext context)
         {
-            Log.Information("Executing Daily Headline Job...");
-            //var guilds = await _dataService.GetGuildsFromJsonAsync();
-            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            _logger.LogInformation("Executing Daily Headline Job...");
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var rnd = new Random();
             var articles = _newsService.GetNews();
             var imgList = new List<string>();
@@ -40,7 +42,7 @@ namespace GamedayTracker.Jobs
                     new DiscordSeparatorComponent(true),
                     new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem(imgList[rnd.Next(0, imgList.Count)], "news", false)),
                     new DiscordSeparatorComponent(true),
-                    new DiscordSectionComponent( new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ <t:{unixTimestamp}:R>"),
+                    new DiscordSectionComponent( new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ {unixTimestamp}"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
 
                 ];
@@ -55,7 +57,7 @@ namespace GamedayTracker.Jobs
                 await chnl.CrosspostMessageAsync(msg);
             }
             else
-                Log.Error("Failed to fetch news articles.");
+                _logger.LogError("Failed to fetch news articles.");
 
         }
     }

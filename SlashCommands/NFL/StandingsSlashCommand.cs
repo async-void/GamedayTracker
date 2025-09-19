@@ -6,6 +6,7 @@ using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
+using GamedayTracker.Utility;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -22,7 +23,7 @@ namespace GamedayTracker.SlashCommands.NFL
             await ctx.DeferResponseAsync();
 
             var standings = await teamDataService.GetAllTeamStandings(season);
-            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             if (!standings.IsOk)
             {
                 DiscordComponent[] components =
@@ -31,7 +32,7 @@ namespace GamedayTracker.SlashCommands.NFL
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent(standings.Error.ErrorMessage!),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}"),
                                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
                 var container = new DiscordContainerComponent(components, false, DiscordColor.DarkRed);
@@ -48,7 +49,8 @@ namespace GamedayTracker.SlashCommands.NFL
                 foreach (var standing in sorted)
                 {
                     var emoji = NflEmojiService.GetEmoji(standing.Abbr);
-                    sBuilder.Append($"{emoji} `{standing.Abbr, -3} {standing.Wins, 4} {standing.Loses, 4} {standing.Pct, 7}`\r\n");
+                    //sBuilder.Append($"{emoji} `{standing.Abbr, -3} {standing.Wins, 4} {standing.Loses, 4} {standing.Pct, 7}`\r\n");
+                    sBuilder.Append(String.Format($"{0, 4}\t {1, 4}\t{2, 4}\t{3, 7}", emoji, standing.Abbr, standing.Wins, standing.Loses, standing.Pct,7));
                 }
 
                 DiscordComponent[] components =
@@ -58,7 +60,7 @@ namespace GamedayTracker.SlashCommands.NFL
                     new DiscordTextDisplayComponent("__`Team\t W\t L\tPct`__"),
                     new DiscordTextDisplayComponent(sBuilder.ToString()),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}"),
                                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
                 var container = new DiscordContainerComponent(components, false, DiscordColor.Cyan);

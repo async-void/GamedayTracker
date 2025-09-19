@@ -9,6 +9,7 @@ using GamedayTracker.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
+using GamedayTracker.Utility;
 using Serilog;
 using ILogger = GamedayTracker.Interfaces.ILogger;
 
@@ -22,7 +23,7 @@ namespace GamedayTracker.SlashCommands.NFL
         {
             
             await ctx.DeferResponseAsync();
-            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var normalizedName = NflTeamMatcher.MatchTeam(teamName);
             if (!teamData.IsValidTeamName(normalizedName!.ToLower()))
             {

@@ -7,6 +7,7 @@ using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Schedules;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl.Matchers;
 
@@ -14,10 +15,11 @@ namespace GamedayTracker.SlashCommands.News
 {
     [Command("news")]
     [Description("Commands related to NFL News and Updates.")]
-    public class NewsSlashCommand(INewsService newsService, ISchedulerFactory schedulerFactory)
+    public class NewsSlashCommand(INewsService newsService, ISchedulerFactory schedulerFactory, ILogger<NewsSlashCommand> logger)
     {
         private readonly ISchedulerFactory _schedulerFactory = schedulerFactory;
         private readonly INewsService _newsService = newsService;
+        private readonly ILogger<NewsSlashCommand> _logger = logger;
 
         #region GET NEWS HEADLINES
         [Command("get")]

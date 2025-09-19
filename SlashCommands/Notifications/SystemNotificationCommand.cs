@@ -19,7 +19,7 @@ namespace GamedayTracker.SlashCommands.Notifications
         [RequirePermissions(permissions: DiscordPermission.Administrator)]
         public async Task NotifyAsync(SlashCommandContext ctx, [Description("the message to send")] [Parameter("message")] string message)
         {
-            await ctx.DeferResponseAsync();
+            await ctx.DeferResponseAsync(ephemeral: true);
             var userId = ctx.User.Id;
 
             if (userId != 524434302361010186)
@@ -28,17 +28,18 @@ namespace GamedayTracker.SlashCommands.Notifications
                 return;
             }
             var guildResult = await _jsonDataService.GetGuildsFromJsonAsync();
-            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var dGuilds = ctx.Client.Guilds;
 
-            if (guildResult.IsOk)
+            if (dGuilds.Any())
             {
-                var guilds = guildResult.Value;
-                foreach (var guild in guilds)
+                //var guilds = guildResult.Value;
+                foreach (var guild in dGuilds.Values)
                 {
                     try
                     {
-                        var chnl = await ctx.Client.GetChannelAsync(ulong.Parse(guild.NotificationChannelId!));
-                        if (chnl is { } channel && guild.ReceiveSystemMessages == true)
+                        var chnl = guild.GetDefaultChannel;
+                        if (chnl is { } channel)
                         {
                             DiscordComponent[] components =
                             [
@@ -46,7 +47,7 @@ namespace GamedayTracker.SlashCommands.Notifications
                                 new DiscordSeparatorComponent(true),
                                 new DiscordTextDisplayComponent($"{message}"),
                                 new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                                new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                                new DiscordSectionComponent(new DiscordTextDisplayComponent($"Gameday Tracker ©️ {unixTimestamp}"),
                                                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                             ];
 
@@ -54,19 +55,19 @@ namespace GamedayTracker.SlashCommands.Notifications
                             var msg = new DiscordMessageBuilder()
                                 .EnableV2Components()
                                 .AddContainerComponent(container);
-                            await chnl.SendMessageAsync(msg);
+                            await channel.Invoke()!.SendMessageAsync(msg);
                         }
                         else
-                            Log.Information($"Guild [{guild.GuildName}] not found! or system messages are disabled.");
+                            Log.Information($"Guild [{guild.Name}] not found! or system messages are disabled.");
                     }
                     catch (Exception ex)
                     {
-                        Log.Information($"Failed to send message to guild {guild.GuildName}: {ex.Message}");
+                        Log.Information($"Failed to send message to guild {guild.Name}: {ex.Message}");
                         continue;
                     }
                 }
                 var dMsg = new DiscordInteractionResponseBuilder()
-                  .WithContent($"Notification sent to {guilds.Count} guilds.")
+                  .WithContent($"Notification sent to {dGuilds.Count} guilds.")
                   .AsEphemeral(true);
                 await ctx.EditResponseAsync(dMsg);
             }

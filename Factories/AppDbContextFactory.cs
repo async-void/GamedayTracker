@@ -29,7 +29,7 @@ namespace GamedayTracker.Factories
             }
             else
             {
-                return null;
+                return null!;
             }
         }
     }

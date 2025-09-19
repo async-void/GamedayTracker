@@ -17,7 +17,7 @@ namespace GamedayTracker.Utility
             { Guid.Parse("3a5e8f47-9a7d-404a-bf4d-41f16f5b3679"), "Failed to send DM — user might have DMs disabled." },
             { Guid.Parse("bf3a4281-2d3b-4412-a4d8-7f22869dc74c"), "Required role not found in the server." },
             { Guid.Parse("c208f76f-037d-4f39-9144-cb82e56df6f7"), "Message too long to send — exceeds Discord limits." },
-            { Guid.Parse("e1f54bcb-3e9c-4784-af4c-44b97af1d0e2"), "Interaction expired — please try again." },
+            { Guid.Parse("e1f54bcb-3e9c-4784-af4c-44b97af1d0e2"), "UnAuthorized - missing Permissions [Dev, Owner]" },
             { Guid.Parse("46665a87-d1d7-43fd-bd18-d04502b86a1d"), "Voice channel not found." },
             { Guid.Parse("64cd2f70-3614-4bd5-a43e-3bd250ebde1b"), "Bot lacks permission to join voice channel." },
             { Guid.Parse("197e2742-7a3e-4f32-b253-38e5a5df7609"), "Slash command failed to register." },
