@@ -7,14 +7,20 @@ using System.Threading.Tasks;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
+using GamedayTracker.Interfaces;
 
 namespace GamedayTracker.AutoCompleteProvider
 {
-    public class UserPicksAutoCompleteProvider : IAutoCompleteProvider
+    public class UserPicksAutoCompleteProvider(IGameData gameData) : IAutoCompleteProvider
     {
+        private readonly IReadOnlyList<DiscordAutoCompleteChoice> BetChoices =
+        [
+           
+        ];
+
         public ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
         {
-            return new ValueTask<IEnumerable<DiscordAutoCompleteChoice>>();
+            return new ValueTask<IEnumerable<DiscordAutoCompleteChoice>>(BetChoices);
         }
     }
 }

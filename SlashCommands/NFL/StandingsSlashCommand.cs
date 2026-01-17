@@ -3,6 +3,7 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
+using GamedayTracker.Extensions;
 using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
@@ -13,63 +14,105 @@ using System.Text;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
-    public class StandingsSlashCommand(ITeamData teamDataService)
+    public class StandingsSlashCommand(ITeamData teamDataService, IGameData gameData, IDiscordEmbedService embedService)
     {
         [Command("standings")]
         [Description("get season Team Standings")]
         public async Task GetStandings(SlashCommandContext ctx,
-            [SlashChoiceProvider<SeasonChoiceProvider>] int season)
+            [SlashChoiceProvider<ConferenceChoiceProvider>] int conf)
         {
             await ctx.DeferResponseAsync();
 
-            var standings = await teamDataService.GetAllTeamStandings(season);
-            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
-            if (!standings.IsOk)
+            switch (conf)
             {
-                DiscordComponent[] components =
-                [
-                    new DiscordTextDisplayComponent($"❌ ERROR ❌"),
-                    new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent(standings.Error.ErrorMessage!),
-                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}"),
-                                            new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
-                ];
-                var container = new DiscordContainerComponent(components, false, DiscordColor.DarkRed);
-                var message = new DiscordMessageBuilder()
-                    .EnableV2Components()
-                    .AddContainerComponent(container);
-
-                await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
+                case 0:
+                    var embeds = await embedService.CreateStandingsEmbedsByConferenceAsync();
+                    var msg = new DiscordMessageBuilder().AddEmbed(embeds.First());
+                    await ctx.RespondAsync(msg);
+                    break;
+                case 1:
+                    embeds = await embedService.CreateStandingsEmbedsByConferenceAsync();
+                    msg = new DiscordMessageBuilder().AddEmbed(embeds.Last());
+                    await ctx.RespondAsync(msg);
+                    break;
+                case 2:
+                    var embed = await embedService.CreateStandingsEmbedAsync();
+                    msg = new DiscordMessageBuilder().AddEmbed(embed);
+                    await ctx.RespondAsync(msg);
+                    break;
+                default:
+                    await ctx.RespondAsync("no standings found");
+                    break;
             }
-            else
-            {
-                var sBuilder = new StringBuilder(); 
-                var sorted = standings.Value.OrderByDescending(x => int.Parse(x.Wins)).ToList();
-                foreach (var standing in sorted)
-                {
-                    var emoji = NflEmojiService.GetEmoji(standing.Abbr);
-                    //sBuilder.Append($"{emoji} `{standing.Abbr, -3} {standing.Wins, 4} {standing.Loses, 4} {standing.Pct, 7}`\r\n");
-                    sBuilder.Append(String.Format($"{0, 4}\t {1, 4}\t{2, 4}\t{3, 7}", emoji, standing.Abbr, standing.Wins, standing.Loses, standing.Pct,7));
-                }
+            
+            
 
-                DiscordComponent[] components =
-                [
-                    new DiscordTextDisplayComponent($"**Standings for Season {season}**"),
-                    new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent("__`Team\t W\t L\tPct`__"),
-                    new DiscordTextDisplayComponent(sBuilder.ToString()),
-                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}"),
-                                            new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
-                ];
-                var container = new DiscordContainerComponent(components, false, DiscordColor.Cyan);
-                var message = new DiscordInteractionResponseBuilder()
-                    .EnableV2Components()
-                    .AddContainerComponent(container);
-                    
-                await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
-            }
+            //var testStandings = await gameData.GetNFLStandingsAsync();
+            //var standings = await teamDataService.GetAllTeamStandings(season);
+            //var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            //if (standings.IsOk && standings.Value.Count > 0)
+            //{
+            //    var sb = new StringBuilder();
+            //    var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            //    var grouped = standings.Value
+            //        .GroupBy(s => s.Division)
+            //        .Select(standing => new
+            //        {
+            //            Division = standing.Key,
+            //            Teams = standing.Select(t => new
+            //            {
+            //                t.TeamName,
+            //                t.Wins,
+            //                t.Loses,
+            //                t.Pct
+            //            })
+            //        })
+            //        .ToList();
+
+            //    for (var i = 0; i < grouped.Count; i++)
+            //    {
+            //        sb.AppendLine($"-# {grouped[i].Division}");
+            //        sb.AppendLine("__`Team\t W\t L\tPct`__");
+            //        for (var j = 0; j < grouped[i].Teams.Count(); j++)
+            //        {
+            //            var abbr = grouped[i].Teams.ElementAt(j).TeamName.ToAbbr();
+            //            var emoji = NflEmojiService.GetEmoji(abbr);
+            //            sb.AppendLine($"{emoji} `{abbr,-3}:{grouped[i].Teams.ElementAt(j).Wins,4} {grouped[i].Teams.ElementAt(j).Loses,4} {grouped[i].Teams.ElementAt(j).Pct,7}`");
+            //        }
+            //    }
+            //    DiscordComponent[] components =
+            //    [
+            //        new DiscordTextDisplayComponent($"## NFL Standings\r\n-# {season}"),
+            //        new DiscordSeparatorComponent(true),
+            //        new DiscordTextDisplayComponent($"{sb}"),
+            //        new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+            //        new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by GamedayTracker ©️ {timestamp}"),
+            //            new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+            //    ];
+            //    var container = new DiscordContainerComponent(components, false, DiscordColor.DarkButNotBlack);
+            //    var embed = new DiscordMessageBuilder()
+            //        .EnableV2Components()
+            //        .AddContainerComponent(container);
+            //    await ctx.RespondAsync(new DiscordInteractionResponseBuilder(embed));
+            //}
+            //else
+            //{
+            //    DiscordComponent[] components =
+            //    [
+            //        new DiscordTextDisplayComponent($"**ERROR**"),
+            //        new DiscordSeparatorComponent(true),
+            //        new DiscordTextDisplayComponent($"Could not find data for season {season}"),
+            //        new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+            //        new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}"),
+            //                                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+            //    ];
+            //    var container = new DiscordContainerComponent(components, false, DiscordColor.DarkRed);
+            //    var message = new DiscordInteractionResponseBuilder()
+            //        .EnableV2Components()
+            //        .AddContainerComponent(container);
+
+            //    await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
+            //}
 
         }
     }

@@ -4,96 +4,62 @@ using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Enums;
+using GamedayTracker.Extensions;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
 using System.ComponentModel;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
-    public class ScoreboardSlashCommand(IGameData gameService)
+    public class ScoreboardSlashCommand(IGameData gameService, IDiscordEmbedService embedService)
     {
 
         [Command("scoreboard")]
-        [Description("get the scores for a specified week")]
-        public async Task GetScoreboard(SlashCommandContext ctx, [SlashChoiceProvider<SeasonChoiceProvider>] int season,
-            [SlashChoiceProvider<WeekChoiceProvider>] int week)
+        [Description("get the scores for a specified season & week")]
+        public async Task GetScoreboard(SlashCommandContext ctx, NFLSeasonType seasonType, [SlashChoiceProvider<SeasonChoiceProvider>] int? season = null,
+            [SlashChoiceProvider<WeekChoiceProvider>] int? week = null)
         {
             await ctx.DeferResponseAsync();
+
+            var scores = await gameService.GetNFLScoresAsync(season, week, (int)seasonType);
             var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
-            var sBuilder = new StringBuilder();
-            var scoreBoardResult = await gameService.GetScoreboard(season, week);
+            var embed = embedService.CreateScoresEmbed(scores);
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder()
+                .AddEmbed(embed)
+                .WithContent($"-# Gameday Tracker ©️ {unixTimestamp}"));
            
-            var newWeek = week.ToString();
-            if (scoreBoardResult.IsOk && scoreBoardResult.Value.Count > 0)
-            {
-                for (int i = 0; i < scoreBoardResult.Value.Count; i++)
-                {
-                    var awayName = scoreBoardResult.Value[i].Opponents!.AwayTeam.Name;
-                    var awayScore = scoreBoardResult.Value[i].Opponents!.AwayTeam.Score;
-                    var awayRecord = scoreBoardResult.Value[i].Opponents!.AwayTeam.Record;
-                    var awayEmoji = scoreBoardResult.Value[i].Opponents!.AwayTeam.Emoji;
+        }
 
-                    var homeName = scoreBoardResult.Value[i].Opponents!.HomeTeam.Name;
-                    var homeScore = scoreBoardResult.Value[i].Opponents!.HomeTeam.Score;
-                    var homeRecord = scoreBoardResult.Value[i].Opponents!.HomeTeam.Record;
-                    var homeEmoji = scoreBoardResult.Value[i].Opponents!.HomeTeam.Emoji;
-                   
-                    if (awayScore > homeScore)
-                    {
-                        sBuilder.Append(
-                            $"{awayEmoji} **{awayScore}** -" +
-                            $"{homeScore} {homeEmoji.PadRight(8)} - **FINAL**\r\n");
-                        //Console.WriteLine($"{awayEmoji} {awayScore} -" +
-                        //   $"**{homeScore}** {homeEmoji.PadRight(8)} - **FINAL**\r\n");
-                    }
-                    else
-                    {
-                        sBuilder.Append(
-                        $"{awayEmoji} {awayScore} -" +
-                        $"**{homeScore}** {homeEmoji.PadRight(8)} - **FINAL**\r\n");
-                    } 
-                }
- 
-                newWeek = week switch
-                {
-                    19 => "Wildcard Playoffs",
-                    20 => "Divisional Playoffs",
-                    21 => "Conference Playoffs",
-                    22 => "Super Bowl",
-                    _ => $"Week {week}"
-                };
+        [Command("team-scoreboard")]
+        [Description("get the season scores for a specific team")]
+        public async Task GetTeamScoreboard(SlashCommandContext ctx, string teamName, int? season = null)
+        {
+            await ctx.DeferResponseAsync();
 
-                var components = new DiscordComponent[]
-                {
-                    new DiscordTextDisplayComponent($"# {newWeek}"),
-                    new DiscordTextDisplayComponent($"### Season {season}"),
-                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordTextDisplayComponent(sBuilder.ToString()),
-                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}"),
-                                            new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
-                };
+            if (season is null || season == 0)
+                season = DateTimeOffset.UtcNow.Year;
 
-                var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
-                var message = new DiscordMessageBuilder()
-                    .EnableV2Components()
-                    .AddContainerComponent(container);
+            var scoreboard = await gameService.GetNFLScoresAsync(season);
+            var teamAbbr = teamName.ToAbbr();
+            var teamScoreboard = gameService.GetTeamGames(scoreboard, teamAbbr);
 
-                await ctx.RespondAsync(message);
-            }
-            else
-            {
-                var message = new DiscordMessageBuilder()
-                    .EnableV2Components()
-                    .AddTextDisplayComponent($"No data found for Season: {season} Week {week}");
+            DiscordComponent[] components =
+            [
+                new DiscordTextDisplayComponent($"{teamName}'s {season} Scoreboard")
+            ];
 
-                await ctx.RespondAsync(message);
-            }
-            
+            var container = new DiscordContainerComponent(components, false, new DiscordColor(1, 22, 33));
+            var msg = new DiscordMessageBuilder()
+                .EnableV2Components()
+                .AddContainerComponent(container);
+
+            await ctx.RespondAsync(msg);
+                
         }
     }
 }

@@ -10,6 +10,7 @@ using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Services;
+using GamedayTracker.Utility;
 using GamedayTracker.Utility.Multipliers;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel;
@@ -32,76 +33,110 @@ namespace GamedayTracker.SlashCommands.Economy
         {
             //TODO: finish betting command
             await ctx.DeferResponseAsync();
-            var member = await _jsonService.GetMemberFromJsonAsync(ctx.User.Id.ToString(), ctx.Guild!.Id.ToString());
-            if (member.IsOk)
-            {
-                var matchups = await _gameDataService.GetScoreboard(2024, 1);
-                if (matchups.IsOk)
-                {
-                    var matchup = matchups.Value.FirstOrDefault(m => m.Opponents!.AwayTeam.Name.Equals(teamName) || m.Opponents.HomeTeam.Name.Equals(teamName));
-                    if (matchup is { } m)
-                    {
-                        var multiplier = new BetMultiplier();
-                        var bonus =multiplier.GetMultiplier(BetType.Bonus);
 
-                        var bet = new Bet()
-                        {
-                            BetId = Guid.NewGuid(),
-                            MemberId = member.Value.MemberId,
-                            Matchup = matchup,
-                            BetAmount = amount,
-                            Multiplier = bonus,
-                            TeamPickedToWinName = teamName,
-                            GuildId = ctx.Guild.Id.ToString()
-                        };
-                        var isValidBet = await _bettingService.CanPlaceBet(m, bet, member.Value);
-                        if (isValidBet.IsOk)
-                        {
-                            //TODO: save the bet to the members json file.
-                            member.Value.Bets = [bet];
-                            var updatedMember = await _jsonService.UpdateMemberDataAsync(member.Value);
+            var scoreboard = await _gameDataService.GetNFLScoresAsync();
 
-                            if (!updatedMember.IsOk)
-                            {
-                                await ctx.RespondAsync("Unable to update member data, bet not saved!");
-                                return;
-                            }
-                            
-                            //if we get this far ...we win.
-                            DiscordComponent[] cmps =
-                            [
-                                new DiscordTextDisplayComponent($"### Member [{member.Value.MemberName}] Bet Info"),
-                                new DiscordSeparatorComponent(true),
-                                new DiscordTextDisplayComponent($"Amount: {bet.BetAmount}"),
-                                new DiscordTextDisplayComponent($"Multiplier: {bet.Multiplier}"),
-                                new DiscordTextDisplayComponent($"Team Name: {bet.TeamPickedToWinName}"),
-                            ];
-                            await ctx.RespondAsync($"-# You bet {amount} on {teamName}\r\n-# this will eventually be turned into an embed");
-                            return;
-                        }
-                        else
-                        {
-                            await ctx.RespondAsync($"-# this will eventually be an embed.\r\n{isValidBet.Error.ErrorCode} : {isValidBet.Error.ErrorMessage}");
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        await ctx.RespondAsync($"-# this will eventually be an embed.\r\nmatchup is either invalid or un reachable, unable to place bet at this time\r\n");
-                        return;
-                    }
-                }
-                await ctx.RespondAsync($"-# this will eventually be an embed.\r\nmatchups is either invalid or un reachable, unable to place bet at this time\r\n" +
-                    $"{matchups.Error.ErrorCode}: {matchups.Error.ErrorMessage}");
-            }
-            else
+            var scheduled = scoreboard.Events
+                .Where(s => s.Status.Type.Description.Equals("Scheduled"))
+                .ToList();
+            if (!scheduled.Any())
             {
-                //member isn't in the json file, create a new member and credit the balance.
-                var user = ctx.Member?.Username ?? "not found";
-                await ctx.RespondAsync($"Member isn't in the json file, I am creating an account and giving [{user}] 100 credits");
+                await ctx.RespondAsync("No scheduled games found, unable to place bet at this time.");
                 return;
             }
-            await ctx.RespondAsync($"Unable to place bet!");
+
+            //here we build the list of available games to bet on from the scheduled games.
+            IEnumerable<DiscordSelectComponentOption> gameOptions = scheduled.Select(s =>
+            {
+                var awayTeam = s.Competitions[0].Competitors.FirstOrDefault(c => c.HomeAway.Equals("away"))?.Team.DisplayName ?? "Unknown";
+                var homeTeam = s.Competitions[0].Competitors.FirstOrDefault(c => c.HomeAway.Equals("home"))?.Team.DisplayName ?? "Unknown";
+                var optionLabel = $"{awayTeam} at {homeTeam}";
+                var optionValue = $"{s.Competitions[0].Id}";
+                return new DiscordSelectComponentOption(optionLabel, optionValue);
+            });
+
+            DiscordComponent[] comps =
+            [
+                new DiscordTextDisplayComponent("### Place Your Bet"),
+                new DiscordSeparatorComponent(true),
+                new DiscordActionRowComponent([new DiscordSelectComponent("test", "test", gameOptions)]),
+            ];
+
+            var container = new DiscordContainerComponent(comps, false, DiscordColor.Blurple);
+            var embed = new DiscordMessageBuilder()
+                .EnableV2Components()
+                .AddContainerComponent(container);
+            await ctx.EditResponseAsync(embed);
+            //var member = await _jsonService.GetMemberFromJsonAsync(ctx.User.Id.ToString(), ctx.Guild!.Id.ToString());
+            //if (member.IsOk)
+            //{
+            //    var matchups = await _gameDataService.GetScoreboard(2024, 1);
+            //    if (matchups.IsOk)
+            //    {
+            //        var matchup = matchups.Value.FirstOrDefault(m => m.Opponents!.AwayTeam.Name.Equals(teamName) || m.Opponents.HomeTeam.Name.Equals(teamName));
+            //        if (matchup is { } m)
+            //        {
+            //            var multiplier = new BetMultiplier();
+            //            var bonus =multiplier.GetMultiplier(BetType.Bonus);
+
+            //            var bet = new Bet()
+            //            {
+            //                BetId = Guid.NewGuid(),
+            //                MemberId = member.Value.MemberId,
+            //                Matchup = matchup,
+            //                BetAmount = amount,
+            //                Multiplier = bonus,
+            //                TeamPickedToWinName = teamName,
+            //                GuildId = ctx.Guild.Id.ToString()
+            //            };
+            //            var isValidBet = await _bettingService.CanPlaceBet(m, bet, member.Value);
+            //            if (isValidBet.IsOk)
+            //            {
+            //                //TODO: save the bet to the members json file.
+            //                member.Value.Bets = [bet];
+            //                var updatedMember = await _jsonService.UpdateMemberDataAsync(member.Value);
+
+            //                if (!updatedMember.IsOk)
+            //                {
+            //                    await ctx.RespondAsync("Unable to update member data, bet not saved!");
+            //                    return;
+            //                }
+                            
+            //                //if we get this far ...we win.
+            //                DiscordComponent[] cmps =
+            //                [
+            //                    new DiscordTextDisplayComponent($"### Member [{member.Value.MemberName}] Bet Info"),
+            //                    new DiscordSeparatorComponent(true),
+            //                    new DiscordTextDisplayComponent($"Amount: {bet.BetAmount}"),
+            //                    new DiscordTextDisplayComponent($"Multiplier: {bet.Multiplier}"),
+            //                    new DiscordTextDisplayComponent($"Team Name: {bet.TeamPickedToWinName}"),
+            //                ];
+            //                await ctx.RespondAsync($"-# You bet {amount} on {teamName}\r\n-# this will eventually be turned into an embed");
+            //                return;
+            //            }
+            //            else
+            //            {
+            //                await ctx.RespondAsync($"-# this will eventually be an embed.\r\n{isValidBet.Error.ErrorCode} : {isValidBet.Error.ErrorMessage}");
+            //                return;
+            //            }
+            //        }
+            //        else
+            //        {
+            //            await ctx.RespondAsync($"-# this will eventually be an embed.\r\nmatchup is either invalid or un reachable, unable to place bet at this time\r\n");
+            //            return;
+            //        }
+            //    }
+            //    await ctx.RespondAsync($"-# this will eventually be an embed.\r\nmatchups is either invalid or un reachable, unable to place bet at this time\r\n" +
+            //        $"{matchups.Error.ErrorCode}: {matchups.Error.ErrorMessage}");
+            //}
+            //else
+            //{
+            //    //member isn't in the json file, create a new member and credit the balance.
+            //    var user = ctx.Member?.Username ?? "not found";
+            //    await ctx.RespondAsync($"Member isn't in the json file, I am creating an account and giving [{user}] 100 credits");
+            //    return;
+            //}
+            //await ctx.RespondAsync($"Unable to place bet!");
         }
 
         #region LEADERBOARD
@@ -110,6 +145,7 @@ namespace GamedayTracker.SlashCommands.Economy
         public async Task Leaderboard(SlashCommandContext ctx, [SlashChoiceProvider<LeaderboardChoiceProvider>] int choice)
         {
             await ctx.DeferResponseAsync();
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var leaderboard = new Result<List<GuildMember>, SystemError<SlashCommandHelper>>();
 
             switch (choice)
@@ -140,7 +176,7 @@ namespace GamedayTracker.SlashCommands.Economy
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent($"{leaderboard.Error.ErrorMessage}"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyyy hh:mm:ss tt zzz}")
+                    new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {timestamp}")
                 ];
                 var errContainer = new DiscordContainerComponent(errComponents, false, DiscordColor.DarkRed);
                 var errEmbed = new DiscordMessageBuilder()
@@ -158,7 +194,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                 new DiscordTextDisplayComponent($"{embedDesc}"),
                 new DiscordSeparatorComponent(true),
-                new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {DateTime.UtcNow:MM-dd-yyyy hh:mm:ss tt zzz}")
+                new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {timestamp}")
             ];
             var container = new DiscordContainerComponent(components, false, DiscordColor.Teal);
             var ldbEmbed = new DiscordMessageBuilder()

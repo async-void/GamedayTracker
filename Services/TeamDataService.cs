@@ -1,18 +1,23 @@
-﻿using System.Diagnostics;
-using System.Globalization;
-using DSharpPlus.Entities;
+﻿using DSharpPlus.Entities;
 using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
 using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Models.NFL;
 using HtmlAgilityPack;
 using Microsoft.EntityFrameworkCore;
+using System.Buffers.Text;
+using System.Diagnostics;
+using System.Globalization;
+using System.Net.Http;
+using System.Text.Json;
 
 namespace GamedayTracker.Services
 {
-    public class TeamDataService(IJsonDataService jsonDataService) : ITeamData
+    public class TeamDataService(IJsonDataService jsonDataService, HttpClient client) : ITeamData
     {
+        
         #region AFC SELECT OPTIONS
         public Result<List<DiscordSelectComponentOption>, SystemError<TeamDataService>> BuildSelectOptionForAfc()
         {
@@ -526,6 +531,30 @@ namespace GamedayTracker.Services
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = this
             });
+        }
+        #endregion
+
+        #region GET TEAM RECORD
+        public async Task<(string, NFLTeam)> GetTeamRecordAsync(string teamAbbr)
+        {
+            var BaseUrl = $"https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/";
+            try
+            {
+                var url = $"{BaseUrl}{teamAbbr}";
+                var response = await client.GetStringAsync(url);
+
+                var teamData = JsonSerializer.Deserialize<NFLRecordResponse>(response);
+
+                var totalRecord = teamData.Team.Record.Items[0].Summary ?? "Record not found";
+                var homeRecord = teamData.Team.Record.Items[1].Summary ?? "Record not found";
+                var awayRecord = teamData.Team.Record.Items[2].Summary ?? "Record not found";
+
+                return (totalRecord, teamData.Team);
+            }
+            catch(Exception ex)
+            {
+                return ("Record not found", null);
+            }
         }
         #endregion
     }

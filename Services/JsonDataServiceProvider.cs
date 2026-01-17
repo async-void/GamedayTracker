@@ -32,10 +32,11 @@ namespace GamedayTracker.Services
             var matchups = JsonSerializer.Deserialize<List<Matchup>>(json)!
                 .Where(m => m.Season.ToString() == season && m.Week.ToString() == week).ToList();
 
-            if (matchups is not null)
+            if (matchups is { Count: > 0 })
             {
                 return Result<List<Matchup>, SystemError<JsonDataServiceProvider>>.Ok(matchups);
             }
+
             var error = new SystemError<JsonDataServiceProvider>
             {
                 ErrorMessage = "Failed to fetch matchup data.",
@@ -788,5 +789,33 @@ namespace GamedayTracker.Services
             });
         }
         #endregion
+
+        #region WRITE DAILY LOGS
+
+        //public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteDailyLogsAsync(DailyLog log)
+        //{
+        //    var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "daily_logs.json");
+        //    List<DailyLog> logs;
+        //    var options = JsonHelper.DefaultJsonOptions;;
+        //    if (!File.Exists(path))
+        //    {
+        //        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        //        logs = [log];
+        //        var json = JsonSerializer.Serialize(logs, options);
+        //        await File.WriteAllTextAsync(path, json);
+        //        return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
+        //    }
+        //    else
+        //    {
+        //        var file = await File.ReadAllTextAsync(path);
+        //        logs = JsonSerializer.Deserialize<List<DailyLog>>(file) ?? [];
+        //        logs.Add(log);
+        //    }
+        //    var updatedJson = JsonSerializer.Serialize(logs, options);
+        //    await File.WriteAllTextAsync(path, updatedJson);
+        //    return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
+        //}
+
+       #endregion
     }
 }

@@ -89,6 +89,7 @@ namespace GamedayTracker
                     services.AddScoped<ITeamData, TeamDataService>();
                     services.AddScoped<ITimerService, TimerService>();
                     services.AddScoped<IGameData, GameDataService>();
+                    services.AddScoped<IDiscordEmbedService, DiscordEmbedService>();
                     services.AddScoped<IXmlDataService, XmlDataServiceProvider>();
                     services.AddScoped<IJsonDataService, JsonDataServiceProvider>();
                     services.AddScoped<IPlayerData, PlayerDataServiceProvider>();
@@ -173,121 +174,129 @@ namespace GamedayTracker
                         {
                             return Task.CompletedTask;
                         })
-                        
+
+                        #endregion
+
+                        #region INTERACTION EVENT HANDLERS
+                        .HandleInteractionCreated(async (sender, args) =>
+                        {
+                            var userBet = args.Interaction.Data.CustomId;
+                            var test = "";
+                        })
                     #endregion
 
                     #region GUILD EVENT HANDLERS
 
                     #region SESSION RESUMED
-                    .HandleSessionResumed(async (sender, args) =>
-                    {
-                        var guildCount = sender.Guilds.Count;
-                        var userCount = sender.Guilds.Values.Sum(g => g.Members.Count);
-                        var statusMessage = $"Serving {guildCount} Servers";
-                        await sender.UpdateStatusAsync(new DiscordActivity($"Scores in {guildCount} Servers", DiscordActivityType.Watching));
-                        var logChnl = await sender.GetChannelAsync(1384436855524692048);
-                        await logChnl.SendMessageAsync(
-                            $"Updated bot status: {statusMessage} with a total of ``{userCount}`` users.");
-                        Log.Information($"Session Resumed");
-                    })
-                    #endregion
-
-                    #region GUILD CREATED
-                    .HandleGuildCreated(async (sender, args) =>
-                    {
-                        var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                        var jsonService = sender.ServiceProvider.GetRequiredService<IJsonDataService>();
-
-                        var guild = new Guild()
+                        .HandleSessionResumed(async (sender, args) =>
                         {
-                            GuildId = args.Guild.Id.ToString(),
-                            GuildName = args.Guild.Name,
-                            GuildOwnerId = args.Guild.OwnerId.ToString(),
-                            DateAdded = DateTimeOffset.UtcNow,
-                            IsDailyHeadlinesEnabled = true,
-                            IsRealTimeScoresEnabled = true,
-                            ReceiveSystemMessages = true,
-                            NotificationChannelId = args.Guild.GetDefaultChannel()!.Id.ToString()
+                            var guildCount = sender.Guilds.Count;
+                            var userCount = sender.Guilds.Values.Sum(g => g.Members.Count);
+                            var statusMessage = $"Serving {guildCount} Servers";
+                            await sender.UpdateStatusAsync(new DiscordActivity($"Scores in {guildCount} Servers", DiscordActivityType.Watching));
+                            var logChnl = await sender.GetChannelAsync(1384436855524692048);
+                            await logChnl.SendMessageAsync(
+                                $"Updated bot status: {statusMessage} with a total of ``{userCount}`` users.");
+                            Log.Information($"Session Resumed");
+                        })
+                        #endregion
 
-                        };
-                        var supportChnl = await sender.GetChannelAsync(1384436855524692048); 
-                        var guilds = sender.Guilds.Values;
-
-                        var newChnl = args.Guild.GetDefaultChannel();
-                        if (newChnl is { } chnl)
+                        #region GUILD CREATED
+                        .HandleGuildCreated(async (sender, args) =>
                         {
-                            DiscordComponent[] components =
-                            [
-                                new DiscordTextDisplayComponent("## Welcome to Gameday Tracker!"),
-                                new DiscordSeparatorComponent(true),
-                                new DiscordSectionComponent(new DiscordTextDisplayComponent("Use the `help button` to get started!"),
-                                    new DiscordButtonComponent(DiscordButtonStyle.Primary, "helpId", "Help")),
-                                new DiscordSeparatorComponent(true),
-                                new DiscordSectionComponent(new DiscordTextDisplayComponent("Headlines and Realtime Scores are enabled by default!"),
-                                    new DiscordButtonComponent(DiscordButtonStyle.Primary, "settingsId", "Settings")),
-                                new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                                new DiscordSectionComponent(
-                                    new DiscordTextDisplayComponent($"Powered by GamedayTracker ©️ <t:{unixTimestamp}:F>"),
-                                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
-                            ];
+                            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                            var jsonService = sender.ServiceProvider.GetRequiredService<IJsonDataService>();
 
-                            var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
-                            var embed = new DiscordMessageBuilder()
-                                .EnableV2Components()
-                                .AddContainerComponent(container);
-                            await chnl.SendMessageAsync(embed);
-                        }
-                        var guildOwner = await args.Guild.GetMemberAsync(args.Guild.OwnerId);
-                        await supportChnl.SendMessageAsync(
-                            $"Guild Added: <t:{unixTimestamp}:R> ``{args.Guild.Name}:({args.Guild.Id}) - Total Guilds: {guilds.Count()}``\r\n" +
-                            $"``OwnerId: {guildOwner.Id} Owner Membername: {guildOwner.Username}``");
-                        var guildResult = await jsonService.WriteGuildToJsonAsync(guild);
+                            var guild = new Guild()
+                            {
+                                GuildId = args.Guild.Id.ToString(),
+                                GuildName = args.Guild.Name,
+                                GuildOwnerId = args.Guild.OwnerId.ToString(),
+                                DateAdded = DateTimeOffset.UtcNow,
+                                IsDailyHeadlinesEnabled = true,
+                                IsRealTimeScoresEnabled = true,
+                                ReceiveSystemMessages = true,
+                                NotificationChannelId = args.Guild.GetDefaultChannel()!.Id.ToString()
 
-                        if (guildResult.IsOk)
-                            Log.Information($"Guild Added: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}");
-                        else
-                            Log.Error($"GUild Added to Discord: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}\r\n" +
-                                $"but unable to write guild info to json file: Error Message - {guildResult.Error.ErrorMessage}");
+                            };
+                            var supportChnl = await sender.GetChannelAsync(1384436855524692048); 
+                            var guilds = sender.Guilds.Values;
 
+                            var newChnl = args.Guild.GetDefaultChannel();
+                            if (newChnl is { } chnl)
+                            {
+                                DiscordComponent[] components =
+                                [
+                                    new DiscordTextDisplayComponent("## Welcome to Gameday Tracker!"),
+                                    new DiscordSeparatorComponent(true),
+                                    new DiscordSectionComponent(new DiscordTextDisplayComponent("Use the `help button` to get started!"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Primary, "helpId", "Help")),
+                                    new DiscordSeparatorComponent(true),
+                                    new DiscordSectionComponent(new DiscordTextDisplayComponent("Headlines and Realtime Scores are enabled by default!"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Primary, "settingsId", "Settings")),
+                                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                                    new DiscordSectionComponent(
+                                        new DiscordTextDisplayComponent($"Powered by GamedayTracker ©️ <t:{unixTimestamp}:F>"),
+                                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                                ];
 
-
-                    })
-                    #endregion
-
-                    #region GUILD DELETED
-                    .HandleGuildDeleted(async (sender, args) =>
-                    {
-                        var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                        var jsonService = sender.ServiceProvider.GetRequiredService<IJsonDataService>();
-                        var guildResult = await jsonService.GetGuildFromJsonAsync(args.Guild.Id.ToString());
-                        if (guildResult.IsOk)
-                        {
-                            var removedResult = await jsonService.RemoveGuildDataAsync(guildResult.Value.GuildId);
+                                var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
+                                var embed = new DiscordMessageBuilder()
+                                    .EnableV2Components()
+                                    .AddContainerComponent(container);
+                                await chnl.SendMessageAsync(embed);
+                            }
                             var guildOwner = await args.Guild.GetMemberAsync(args.Guild.OwnerId);
-                            if (removedResult.IsOk)
-                            {
-                                await guildOwner.SendMessageAsync(
-                                    $"``Gameday Tracker has been removed at: [<t:{unixTimestamp}:F>]``\r\nyou will no longer be receiving Daily Headlines or Realtime Scores Updates");
-                                Log.Information($"GamedayTracker has been removed from: {args.Guild.Name}");
-                            }
+                            await supportChnl.SendMessageAsync(
+                                $"Guild Added: <t:{unixTimestamp}:R> ``{args.Guild.Name}:({args.Guild.Id}) - Total Guilds: {guilds.Count()}``\r\n" +
+                                $"``OwnerId: {guildOwner.Id} Owner Membername: {guildOwner.Username}``");
+                            var guildResult = await jsonService.WriteGuildToJsonAsync(guild);
+
+                            if (guildResult.IsOk)
+                                Log.Information($"Guild Added: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}");
                             else
+                                Log.Error($"GUild Added to Discord: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}\r\n" +
+                                    $"but unable to write guild info to json file: Error Message - {guildResult.Error.ErrorMessage}");
+
+
+
+                        })
+                        #endregion
+
+                        #region GUILD DELETED
+                        .HandleGuildDeleted(async (sender, args) =>
+                        {
+                            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                            var jsonService = sender.ServiceProvider.GetRequiredService<IJsonDataService>();
+                            var guildResult = await jsonService.GetGuildFromJsonAsync(args.Guild.Id.ToString());
+                            if (guildResult.IsOk)
                             {
-                                await args.Guild.GetDefaultChannel()!.SendMessageAsync(
-                                    $"``Error removing Gameday Tracker from {args.Guild.Name} ({args.Guild.Id}) at: [<t:{unixTimestamp}:F>]``\r\n{removedResult.Error.ErrorMessage}");
-                                Log.Error($"Error removing guild {args.Guild.Name} ({args.Guild.Id}): {removedResult.Error.ErrorMessage}");
+                                var removedResult = await jsonService.RemoveGuildDataAsync(guildResult.Value.GuildId);
+                                var guildOwner = await args.Guild.GetMemberAsync(args.Guild.OwnerId);
+                                if (removedResult.IsOk)
+                                {
+                                    await guildOwner.SendMessageAsync(
+                                        $"``Gameday Tracker has been removed at: [<t:{unixTimestamp}:F>]``\r\nyou will no longer be receiving Daily Headlines or Realtime Scores Updates");
+                                    Log.Information($"GamedayTracker has been removed from: {args.Guild.Name}");
+                                }
+                                else
+                                {
+                                    await args.Guild.GetDefaultChannel()!.SendMessageAsync(
+                                        $"``Error removing Gameday Tracker from {args.Guild.Name} ({args.Guild.Id}) at: [<t:{unixTimestamp}:F>]``\r\n{removedResult.Error.ErrorMessage}");
+                                    Log.Error($"Error removing guild {args.Guild.Name} ({args.Guild.Id}): {removedResult.Error.ErrorMessage}");
+                                }
+
                             }
+                        })
+                        #endregion
 
-                        }
-                    })
-                    #endregion
-
-                    #region GUILD DOWNLOAD COMPLETED
-                    .HandleGuildDownloadCompleted(async (sender, args) =>
-                    {
-                        var count = sender.Guilds.Count;
-                        await sender.UpdateStatusAsync(new DiscordActivity($"Scores in {count} Servers", DiscordActivityType.Watching));
-                    })
-                    #endregion
+                        #region GUILD DOWNLOAD COMPLETED
+                        .HandleGuildDownloadCompleted(async (sender, args) =>
+                        {
+                            var count = sender.Guilds.Count;
+                            await sender.UpdateStatusAsync(new DiscordActivity($"Scores in {count} Servers", DiscordActivityType.Watching));
+                        })
+                        #endregion
 
                     #endregion
                     );

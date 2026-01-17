@@ -85,5 +85,29 @@ namespace GamedayTracker.SlashCommands.NFL
                 await ctx.EditResponseAsync(errorEmbed);
             }
         }
+
+        [Command("team-record")]
+        [Description("get the supplied team's record ex: PIT")]
+        public async Task GetTeamRecord(SlashCommandContext ctx, string teamAbbr)
+        {
+            await ctx.DeferResponseAsync();
+            var record = await teamData.GetTeamRecordAsync(teamAbbr);
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            DiscordComponent[] components =
+            [
+                new DiscordTextDisplayComponent($"**Record for: {record.Item2.DisplayName}** ({record.Item2.Abbreviation})"),
+                new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                new DiscordTextDisplayComponent($"Summary: **{record.Item1}**"),
+                new DiscordTextDisplayComponent($"Home: {record.Item2.Record.Items[1].Summary} Road: {record.Item2.Record.Items[2].Summary}"),
+                new DiscordSeparatorComponent(true),
+                new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}")
+            ];
+               
+            var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
+            var msg = new DiscordMessageBuilder()
+                .EnableV2Components()
+                .AddContainerComponent(container);
+            await ctx.RespondAsync(msg);
+        }
     }
 }
