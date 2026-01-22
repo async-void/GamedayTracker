@@ -3,10 +3,10 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
-using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Models.NFL;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
 using System.ComponentModel;
@@ -28,11 +28,13 @@ namespace GamedayTracker.SlashCommands.NFL
 
             var scores = await gameService.GetNFLScoresAsync(season, week, (int)seasonType);
             var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
-            var embed = embedService.CreateScoresEmbed(scores);
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder()
+            var embed = await embedService.CreateScoresEmbed(scores);
+            var msg = new DiscordMessageBuilder()
                 .AddEmbed(embed)
-                .WithContent($"-# Gameday Tracker ©️ {unixTimestamp}"));
-           
+                .WithContent($"-# Gameday Tracker ©️ {unixTimestamp}");
+
+            await ctx.RespondAsync(msg);
+
         }
 
         [Command("team-scoreboard")]

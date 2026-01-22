@@ -36,14 +36,15 @@ namespace GamedayTracker.Services
         #endregion
 
         #region CREATE SCORES EMBED
-        public DiscordEmbed CreateScoresEmbed(NFLScoreboard data)
+        public async Task<DiscordEmbed> CreateScoresEmbed(NFLScoreboard data)
         {
             var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             //var seasonName = gameData.GetSeasonTypeName(data.Season.Type);
             var displayName = gameData.GetFullSeasonWeekDisplay(data);
+            var titleEmoji = NflEmojiService.GetEmoji("NFL");
             var embed = new DiscordEmbedBuilder()
                 .WithColor(new DiscordColor(1, 51, 105))
-                .WithTitle($"🏈 NFL Scores\r\n{displayName}")
+                .WithTitle($"{titleEmoji} NFL Scores\r\n{displayName}")
                 .WithFooter("Gameday Tracker")
                 .WithTimestamp(DateTimeOffset.UtcNow);
 
@@ -64,9 +65,12 @@ namespace GamedayTracker.Services
                 embed.AddField("🔴 LIVE GAMES", "---");
                 foreach (var game in liveGames)
                 {
-                    var gameInfo = gameData.GetGameInfo(game).Result;
-                    var emoji = NflEmojiService.GetEmoji(game.ShortName);
-                    embed.AddField(emoji, gameInfo, inline: false);
+                    var gameInfo = await gameData.GetGameInfo(game);
+                    var seperators = new[] { "@", "VS" };
+                    var names = game.ShortName.Split(seperators, StringSplitOptions.TrimEntries);
+                    var awayEmoji = NflEmojiService.GetEmoji(names[0].Trim());
+                    var homeEmoji = NflEmojiService.GetEmoji(names[1].Trim());
+                    embed.AddField($"{awayEmoji} at {homeEmoji}", gameInfo, inline: false);
                 }
             }
 
@@ -76,12 +80,14 @@ namespace GamedayTracker.Services
                 embed.AddField("✅ COMPLETED", "---");
                 foreach (var game in completedGames)
                 {
-                    var gameInfo = gameData.GetGameInfo(game).Result;
+                    var gameInfo = await gameData.GetGameInfo(game);
+                    var headline = game.Competitions[0].Headlines?.FirstOrDefault()?.ShortLinkText ?? "not found";
                     var seperators = new[] { "@", "VS" };
                     var names = game.ShortName.Split(seperators, StringSplitOptions.TrimEntries);
                     var awayEmoji = NflEmojiService.GetEmoji(names[0].Trim());
                     var homeEmoji = NflEmojiService.GetEmoji(names[1].Trim());
                     embed.AddField($"{awayEmoji} at {homeEmoji}", gameInfo, inline: false);
+                    embed.AddField("📰 Headline", headline, inline: false);
                 }
             }
 
@@ -91,7 +97,7 @@ namespace GamedayTracker.Services
                 embed.AddField("📅 SCHEDULED", "---");
                 foreach (var game in scheduledGames)
                 {
-                    var gameInfo = gameData.GetGameInfo(game).Result;
+                    var gameInfo = await gameData.GetGameInfo(game);
                     var seperators = new[] { "@", "VS" };
                     var names = game.ShortName.Split(seperators, StringSplitOptions.TrimEntries);
                     var awayEmoji = NflEmojiService.GetEmoji(names[0].Trim());
@@ -109,12 +115,12 @@ namespace GamedayTracker.Services
         {
             var standings = await gameData.GetNFLStandingsAsync();
             var embeds = new List<DiscordEmbed>();
-
+            var titleEmoji = NflEmojiService.GetEmoji("NFL");
             foreach (var conf in standings.Children)
             {
                 var conferenceEmoji = conf.Name.Contains("American") ? NflEmojiService.GetEmoji("AFC") : NflEmojiService.GetEmoji("NFC");
                 var embed = new DiscordEmbedBuilder()
-                    .WithTitle($"{conferenceEmoji} {conf.Name}")
+                    .WithTitle($"{titleEmoji} NFL Standings\r\n{conferenceEmoji} {conf.Name}")
                     .WithColor(conf.Name.Contains("American") ? DiscordColor.Red : DiscordColor.Blue)
                     .WithTimestamp(DateTime.UtcNow)
                     .WithFooter("Data from ESPN");
@@ -132,7 +138,7 @@ namespace GamedayTracker.Services
                     var winPercent = stats.Find(s => s.Name == "winPercent")?.DisplayValue ?? ".000";
 
                     var teamName = entry.Team.DisplayName.Length > 22
-                    ? entry.Team.DisplayName.Substring(0, 22)
+                    ? entry.Team.DisplayName[..22]
                     : entry.Team.DisplayName;
 
                     var record = ties > 0 ? $"{wins}-{losses}-{ties}" : $"{wins}-{losses}";
@@ -152,8 +158,9 @@ namespace GamedayTracker.Services
         public async Task<DiscordEmbed> CreateStandingsEmbedAsync(string? conference = null)
         {
             var standings = await gameData.GetNFLStandingsAsync();
+            var titleEmoji = NflEmojiService.GetEmoji("NFL");
             var embed = new DiscordEmbedBuilder()
-                .WithTitle("🏈 NFL Standings")
+                .WithTitle($"{titleEmoji} NFL Standings")
                 .WithColor(DiscordColor.Green)
                 .WithTimestamp(DateTime.UtcNow)
                 .WithFooter("Data from ESPN");
@@ -181,7 +188,7 @@ namespace GamedayTracker.Services
                     var winPercent = stats.Find(s => s.Name == "winPercent")?.DisplayValue ?? ".000";
 
                     var teamName = entry.Team.DisplayName.Length > 22
-                    ? entry.Team.DisplayName.Substring(0, 22)
+                    ? entry.Team.DisplayName[..22]
                     : entry.Team.DisplayName;
 
                     var record = ties > 0 ? $"{wins}-{losses}-{ties}" : $"{wins}-{losses}";
@@ -192,6 +199,27 @@ namespace GamedayTracker.Services
                 embed.AddField(conf.Name, standingsText, inline: false);
             }
 
+            return embed.Build();
+        }
+        #endregion
+
+        #region CREATE TEAM STATS EMBED
+        public async Task<DiscordEmbed> CreateTeamStatsEmbed(NflTeamStatisticsResponse teamStats, NFLSeasonType seasonType, int seasonYear)
+        {
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var titleEmoji = NflEmojiService.GetEmoji("NFL");
+            var embed = new DiscordEmbedBuilder()
+                .WithColor(new DiscordColor(0, 102, 204))
+                .WithTitle($"{titleEmoji} Statistics\r\n{seasonYear} {seasonType} Stats")
+                .WithFooter($"Gameday Tracker ")
+                .WithTimestamp(DateTimeOffset.UtcNow);
+
+            var general = teamStats.Splits.Categories[0];
+            var passing = teamStats.Splits.Categories[1];
+            var rushing = teamStats.Splits.Categories[2];
+            embed.AddField($"**{general.DisplayName}**", $"{general.Stats[0].DisplayName}:{general.Stats[0].Value} Rank: {general.Stats[0].RankDisplayValue}", true);
+            embed.AddField($"**{passing.DisplayName}**", $"{passing.Stats[0].DisplayName}:{passing.Stats[0].Value} Rank: {passing.Stats[0].RankDisplayValue}", true);
+            embed.AddField($"**{rushing.DisplayName}**", $"{rushing.Stats[0].DisplayName}:{rushing.Stats[0].Value} Rank: {rushing.Stats[0].RankDisplayValue}", true);
             return embed.Build();
         }
         #endregion

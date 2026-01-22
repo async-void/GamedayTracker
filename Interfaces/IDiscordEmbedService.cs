@@ -11,8 +11,9 @@ namespace GamedayTracker.Interfaces
     public interface IDiscordEmbedService
     {
         DiscordEmbed CreateLiveGamesEmbed(List<Event> liveGames);
-        DiscordEmbed CreateScoresEmbed(NFLScoreboard data);
+        Task<DiscordEmbed> CreateScoresEmbed(NFLScoreboard data);
         Task<List<DiscordEmbed>> CreateStandingsEmbedsByConferenceAsync();
         Task<DiscordEmbed> CreateStandingsEmbedAsync(string? conference = null);
+        Task<DiscordEmbed> CreateTeamStatsEmbed(NflTeamStatisticsResponse teamStats, NFLSeasonType seasonType, int seasonYear);
     }
 }

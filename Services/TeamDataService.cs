@@ -7,17 +7,20 @@ using GamedayTracker.Models;
 using GamedayTracker.Models.NFL;
 using HtmlAgilityPack;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using System.Buffers.Text;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace GamedayTracker.Services
 {
-    public class TeamDataService(IJsonDataService jsonDataService, HttpClient client) : ITeamData
+    public class TeamDataService(IJsonDataService jsonDataService, HttpClient client, IMemoryCache cache) : ITeamData
     {
-        
+        private const string BaseUrl = "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl";
+
         #region AFC SELECT OPTIONS
         public Result<List<DiscordSelectComponentOption>, SystemError<TeamDataService>> BuildSelectOptionForAfc()
         {
@@ -239,15 +242,121 @@ namespace GamedayTracker.Services
         }
         #endregion
 
-        #region INT TO TEAMNAME
-        public Result<string, SystemError<TeamDataService>> GetTeamNameFromInt(int input)
+        #region GET ID FROM TEAMNAME
+        public Result<string, SystemError<TeamDataService>> GetIdFromTeamName(string input)
         {
-            var result = input switch
+            if (string.IsNullOrWhiteSpace(input))
+                return Result<string, SystemError<TeamDataService>>.Err(new SystemError<TeamDataService>
+                {
+                    ErrorMessage = "teamname was null or empty.",
+                    ErrorType = ErrorType.WARNING,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = this
+                });
+
+            // Normalize input: trim, lowercase, remove extra spaces
+            var normalized = input.Trim().ToLower().Replace("  ", " ");
+
+            return normalized switch
             {
-                0 => "Buffalo Bills",
-                _ => "Unknown"
+                // Atlanta Falcons - ID: 1
+                "falcons" or "atlanta" or "atl" or "atlanta falcons" => "1",
+
+                // Buffalo Bills - ID: 2
+                "bills" or "buffalo" or "buf" or "buffalo bills" => "2",
+
+                // Chicago Bears - ID: 3
+                "bears" or "chicago" or "chi" or "chicago bears" => "3",
+
+                // Cincinnati Bengals - ID: 4
+                "bengals" or "cincinnati" or "cin" or "cincinnati bengals" => "4",
+
+                // Cleveland Browns - ID: 5
+                "browns" or "cleveland" or "cle" or "cleveland browns" => "5",
+
+                // Dallas Cowboys - ID: 6
+                "cowboys" or "dallas" or "dal" or "dallas cowboys" => "6",
+
+                // Denver Broncos - ID: 7
+                "broncos" or "denver" or "den" or "denver broncos" => "7",
+
+                // Detroit Lions - ID: 8
+                "lions" or "detroit" or "det" or "detroit lions" => "8",
+
+                // Green Bay Packers - ID: 9
+                "packers" or "green bay" or "gb" or "green bay packers" => "9",
+
+                // Tennessee Titans - ID: 10
+                "titans" or "tennessee" or "ten" or "tennessee titans" => "10",
+
+                // Indianapolis Colts - ID: 11
+                "colts" or "indianapolis" or "ind" or "indianapolis colts" => "11",
+
+                // Kansas City Chiefs - ID: 12
+                "chiefs" or "kansas city" or "kc" or "kansas city chiefs" => "12",
+
+                // Las Vegas Raiders - ID: 13
+                "raiders" or "las vegas" or "lv" or "oakland" or "las vegas raiders" or "oakland raiders" => "13",
+
+                // Los Angeles Rams - ID: 14
+                "rams" or "la rams" or "lar" or "los angeles rams" => "14",
+
+                // Miami Dolphins - ID: 15
+                "dolphins" or "miami" or "mia" or "miami dolphins" => "15",
+
+                // Minnesota Vikings - ID: 16
+                "vikings" or "minnesota" or "min" or "minnesota vikings" => "16",
+
+                // New England Patriots - ID: 17
+                "patriots" or "new england" or "ne" or "new england patriots" => "17",
+
+                // New Orleans Saints - ID: 18
+                "saints" or "new orleans" or "no" or "new orleans saints" => "18",
+
+                // New York Giants - ID: 19
+                "giants" or "ny giants" or "nyg" or "new york giants" => "19",
+
+                // New York Jets - ID: 20
+                "jets" or "ny jets" or "nyj" or "new york jets" => "20",
+
+                // Philadelphia Eagles - ID: 21
+                "eagles" or "philadelphia" or "phi" or "philadelphia eagles" => "21",
+
+                // Arizona Cardinals - ID: 22
+                "cardinals" or "arizona" or "ari" or "arizona cardinals" => "22",
+
+                // Pittsburgh Steelers - ID: 23
+                "steelers" or "pittsburgh" or "pit" or "pittsburgh steelers" => "23",
+
+                // Los Angeles Chargers - ID: 24
+                "chargers" or "la chargers" or "lac" or "san diego" or "los angeles chargers" or "san diego chargers" => "24",
+
+                // San Francisco 49ers - ID: 25
+                "49ers" or "niners" or "san francisco" or "sf" or "san francisco 49ers" => "25",
+
+                // Seattle Seahawks - ID: 26
+                "seahawks" or "seattle" or "sea" or "seattle seahawks" => "26",
+
+                // Tampa Bay Buccaneers - ID: 27
+                "buccaneers" or "bucs" or "tampa bay" or "tb" or "tampa" or "tampa bay buccaneers" => "27",
+
+                // Washington Commanders - ID: 28
+                "commanders" or "washington" or "was" or "washington commanders" => "28",
+
+                // Carolina Panthers - ID: 29
+                "panthers" or "carolina" or "car" or "carolina panthers" => "29",
+
+                // Jacksonville Jaguars - ID: 30
+                "jaguars" or "jags" or "jacksonville" or "jax" or "jacksonville jaguars" => "30",
+
+                // Baltimore Ravens - ID: 33
+                "ravens" or "baltimore" or "bal" or "baltimore ravens" => "33",
+
+                // Houston Texans - ID: 34
+                "texans" or "houston" or "hou" or "houston texans" => "34",
+
+                _ => ""
             };
-            return Result<string, SystemError<TeamDataService>>.Ok(result);
         }
         #endregion
 
@@ -295,168 +404,88 @@ namespace GamedayTracker.Services
 
         #region GET ALL TEAM STATS
 
-        public async Task<Result<List<TeamStats>, SystemError<TeamDataService>>> GetStatsAsync(int choice, int season)
-        {
-            await using var db = new AppDbContextFactory().CreateDbContext();
-            var lineType = choice == 0 ? LineType.Offense : LineType.Defense;
-            var statList = db.TeamStats.Where(x => x.Season == season && x.LineType.Equals(lineType)).ToList();
-            if (statList.Count > 0)
-            {
-                return Result<List<TeamStats>, SystemError<TeamDataService>>.Ok(statList);
-            }
-
-            var link = "";
-            var web = new HtmlWeb();
-
-            link = choice switch
-            {
-                0 =>
-                    $"https://www.footballdb.com/statistics/nfl/team-stats/offense-totals/{season}/regular-season?sort=ydsgm",
-                1 =>
-                    $"https://www.footballdb.com/statistics/nfl/team-stats/defense-totals/{season}/regular-season?sort=ydsgm",
-                _ => link
-            };
-
-            var doc = web.Load(link);
-            var stats = new List<TeamStats>();
-            var nodes = doc.DocumentNode.SelectNodes(".//table[contains(@class, 'statistics')]//tbody//tr");
-
-            if (nodes is null) return Result<List<TeamStats>, SystemError<TeamDataService>>.Err(new SystemError<TeamDataService>()
-            {
-                ErrorMessage = "No nodes found",
-                ErrorType = ErrorType.INFORMATION,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = this
-            });
-
-            for (var i = 0; i < nodes.Count; i++)
-            {
-                var curNode = nodes[i];
-                if (!curNode.HasChildNodes) continue;
-
-                var name = curNode.ChildNodes[0].ChildNodes[1].InnerText;
-                var gamesPlayed = curNode.ChildNodes[1].InnerText.ToInt();
-                var totalPoints = curNode.ChildNodes[2].InnerText.ToInt();
-                var pointsPerGame = curNode.ChildNodes[3].InnerText.Replace(",", string.Empty).ToDouble();
-                var rushYards = curNode.ChildNodes[4].InnerText.Replace(",", string.Empty).ToInt();
-                var rushYardsPerGame = curNode.ChildNodes[5].InnerText.Replace(",", string.Empty).ToDouble();
-                var passYards = curNode.ChildNodes[6].InnerText.Replace(",", string.Empty).ToInt();
-                var passYardsPerGame = curNode.ChildNodes[7].InnerText.Replace(",", string.Empty).ToDouble();
-                var totalYards = curNode.ChildNodes[8].InnerText.Replace(",", string.Empty).ToInt();
-                var yardsPerGame = curNode.ChildNodes[9].InnerText.Replace(",", string.Empty).ToDouble();
-
-                stats.Add(new TeamStats()
-                {
-                    LineType = lineType,
-                    TeamName = name,
-                    Season = season,
-                    GamesPlayed = gamesPlayed,
-                    TotalYards = totalYards,
-                    TotalPoints = totalPoints,
-                    PassYardsPerGame = passYardsPerGame,
-                    PassYardsTotal = passYards,
-                    PointsPerGame = pointsPerGame,
-                    RushPerGame = rushYardsPerGame,
-                    RushYardsTotal = rushYards,
-                    YardsPerGame = yardsPerGame
-                });
-
-            }
-
-            await db.AddRangeAsync(stats);
-            await db.SaveChangesAsync();
-            return Result<List<TeamStats>, SystemError<TeamDataService>>.Ok(stats);
-        }
-
         #endregion
 
         #region GET TEAM STATS
 
-        public async Task<Result<TeamStats, SystemError<TeamDataService>>> GetTeamStatsAsync(int choice, int season, string teamName)
+        public async Task<Result<NflTeamStatisticsResponse, SystemError<TeamDataService>>> GetTeamStatsAsync(NFLSeasonType seasonType, int season, string teamName)
         {
-
-            var statList = await jsonDataService.GetTeamStatsFromJsonAsync(choice, season, teamName);
-            if (statList.IsOk)
+            var seasonTypeStr = seasonType switch
             {
-                return Result<TeamStats, SystemError<TeamDataService>>.Ok(statList.Value);
-            }
+                NFLSeasonType.Preseason => "1",
+                NFLSeasonType.RegularSeason => "2",
+                NFLSeasonType.Playoffs => "3",
+                _ => "2"
+            };
 
-            HtmlNodeCollection? nodes = null;
-            var link = "";
-            var lineType = choice == 0 ? LineType.Offense : LineType.Defense;
-            var web = new HtmlWeb();
-            HtmlDocument? doc;
+            var teamId = GetIdFromTeamName(teamName);
+            var url = $"{BaseUrl}/seasons/{season}/types/{seasonTypeStr}/teams/{teamId.Value}/statistics";
 
-            var textInfo = CultureInfo.CurrentCulture.TextInfo;
-
-            switch (choice)
+            try
             {
-                case 0:
-                    teamName = textInfo.ToTitleCase(teamName);
-                    link = $"https://www.footballdb.com/statistics/nfl/team-stats/offense-totals/{season}/regular-season?sort=ydsgm";
-                    doc = web.Load(link);
-                    nodes = doc.DocumentNode.SelectNodes(".//table[contains(@class, 'statistics')]//tbody//tr");
-                    break;
-                case 1:
-                    teamName = textInfo.ToTitleCase(teamName);
-                    link = $"https://www.footballdb.com/statistics/nfl/team-stats/defense-totals/{season}/regular-season?sort=ydsgm";
-                    doc = web.Load(link);
-                    nodes = doc.DocumentNode.SelectNodes(".//table[contains(@class, 'statistics')]//tbody//tr");
-                    break;
-                default:
-                    break;
-            }
-            
-            if (nodes is null) return Result<TeamStats, SystemError<TeamDataService>>.Err(new SystemError<TeamDataService>()
-            {
-                ErrorMessage = $"No stats found for {teamName}",
-                ErrorType = ErrorType.INFORMATION,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = this
-            });
+                var cacheKey = $"nfl_stats_{teamName}_{season}_{(int)seasonType}";
 
-            foreach (var curNode in nodes)
-            {
-                if (!curNode.HasChildNodes) continue;
-                if (curNode.ChildNodes[0].ChildNodes[1].InnerText != teamName) continue;
-
-                var name = curNode.ChildNodes[0].ChildNodes[1].InnerText;
-                var gamesPlayed = curNode.ChildNodes[1].InnerText.ToInt();
-                var totalPoints = curNode.ChildNodes[2].InnerText.ToInt();
-                var pointsPerGame = curNode.ChildNodes[3].InnerText.Replace(",", string.Empty).ToDouble();
-                var rushYards = curNode.ChildNodes[4].InnerText.Replace(",", string.Empty).ToInt();
-                var rushYardsPerGame = curNode.ChildNodes[5].InnerText.Replace(",", string.Empty).ToDouble();
-                var passYards = curNode.ChildNodes[6].InnerText.Replace(",", string.Empty).ToInt();
-                var passYardsPerGame = curNode.ChildNodes[7].InnerText.Replace(",", string.Empty).ToDouble();
-                var totalYards = curNode.ChildNodes[8].InnerText.Replace(",", string.Empty).ToInt();
-                var yardsPerGame = curNode.ChildNodes[9].InnerText.Replace(",", string.Empty).ToDouble();
-
-                var stats = new TeamStats()
+                if (cache.TryGetValue(cacheKey, out NflTeamStatisticsResponse? cachedStats))
                 {
-                    TeamName = name,
-                    LineType = lineType,
-                    Season = season,
-                    GamesPlayed = gamesPlayed,
-                    TotalYards = totalYards,
-                    TotalPoints = totalPoints,
-                    PassYardsPerGame = passYardsPerGame,
-                    PassYardsTotal = passYards,
-                    PointsPerGame = pointsPerGame,
-                    RushPerGame = rushYardsPerGame,
-                    RushYardsTotal = rushYards,
-                    YardsPerGame = yardsPerGame
+                    return Result<NflTeamStatisticsResponse, SystemError<TeamDataService>>.Ok(cachedStats);
+                }
+                var response = await client.GetAsync(url);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException(
+                        $"ESPN API returned {response.StatusCode}. URL: {url}. Response: {errorContent}");
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                 };
 
-                return Result<TeamStats, SystemError<TeamDataService>>.Ok(stats);
-            } 
+                var stats = JsonSerializer.Deserialize<NflTeamStatisticsResponse>(json, options);
 
-            return Result<TeamStats, SystemError<TeamDataService>>.Err(new SystemError<TeamDataService>()
+                if (stats == null)
+                {
+                    throw new InvalidOperationException("Failed to deserialize response from ESPN API");
+                }
+
+                return stats;
+            }
+            catch (HttpRequestException ex)
             {
-                ErrorMessage = $"No stats found for {teamName}",
-                ErrorType = ErrorType.INFORMATION,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = this
-            });
+                return Result<NflTeamStatisticsResponse, SystemError<TeamDataService>>.Err(new SystemError<TeamDataService>
+                {
+                    ErrorMessage = $"Failed to retrieve NFL team statistics for team {teamName}: {ex.Message}",
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = this
+                });
+            }
+            catch (TaskCanceledException ex)
+            {
+                return Result<NflTeamStatisticsResponse, SystemError<TeamDataService>>.Err(new SystemError<TeamDataService>
+                {
+                    ErrorMessage = $"Request timed out while retrieving NFL team statistics: {ex.Message}",
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = this
+                });
+            }
+            catch (Exception ex)
+            {
+                return Result<NflTeamStatisticsResponse, SystemError<TeamDataService>>.Err(new SystemError<TeamDataService>
+                {
+                    ErrorMessage = ex.Message,
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = this
+                });
+            }   
+             
 
         }
 
@@ -557,5 +586,6 @@ namespace GamedayTracker.Services
             }
         }
         #endregion
+
     }
 }

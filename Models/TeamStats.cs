@@ -1,26 +1,37 @@
-﻿using System;
+﻿using GamedayTracker.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using GamedayTracker.Enums;
 
 namespace GamedayTracker.Models
 {
     public class TeamStats
     {
-        public int Id { get; set; }
-        public int Season { get; set; }
-        public LineType LineType { get; set; }
-        public string? TeamName { get; set; }
-        public int GamesPlayed { get; set; }
-        public int TotalPoints { get; set; }
-        public double PointsPerGame { get; set; }
-        public int RushYardsTotal { get; set; }
-        public double RushPerGame { get; set; }
-        public int PassYardsTotal { get; set; }
-        public double PassYardsPerGame { get; set; }
-        public int TotalYards { get; set; }
-        public double YardsPerGame { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
+
+        [JsonPropertyName("displayName")]
+        public string DisplayName { get; set; }
+
+        [JsonPropertyName("shortDisplayName")]
+        public string ShortDisplayName { get; set; }
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; }
+
+        [JsonPropertyName("abbreviation")]
+        public string Abbreviation { get; set; }
+
+        [JsonPropertyName("value")]
+        public double Value { get; set; }
+
+        [JsonPropertyName("displayValue")]
+        public string DisplayValue { get; set; }
+
+        [JsonPropertyName("rankDisplayValue")]
+        public string RankDisplayValue { get; set; }
     }
 }

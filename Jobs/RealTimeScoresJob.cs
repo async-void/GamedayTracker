@@ -20,7 +20,7 @@ namespace GamedayTracker.Jobs
             var scoreboard = await _gameDataService.GetNFLScoresAsync();
             var liveGames = _gameDataService.GetLiveGames(scoreboard);
            // var liveGameEmbed = embedService.CreateLiveGamesEmbed(liveGames);
-            var scoresEmbed = embedService.CreateScoresEmbed(scoreboard);
+            var scoresEmbed = await embedService.CreateScoresEmbed(scoreboard);
 
             if (scoreboard.Events.Count > 0)
             {
@@ -83,9 +83,17 @@ namespace GamedayTracker.Jobs
                 var chnl = await _client.GetChannelAsync(1398021337498390539);
                
                 var msg = await chnl.SendMessageAsync(scoresEmbed);
-                await chnl.CrosspostMessageAsync(msg);
+                
+                try
+                {
+                    await chnl.CrosspostMessageAsync(msg);
+                    Log.Information("Fetching realtime scores....[success] - scores sent to live-scores channel");
+                }
+                catch(Exception ex)
+                {
+                    Log.Error($"Error sending message to live-scores channel: {ex.Message}");
+                }
 
-                Log.Information("Fetching realtime scores....[success] - scores sent to live-scores channel");
             }
             else
             {

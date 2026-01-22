@@ -45,8 +45,8 @@ namespace GamedayTracker.Models.NFL
         [JsonPropertyName("links")]
         public List<Link>? Links { get; set; }
 
-        [JsonPropertyName("logo")]
-        public string? Logo { get; set; }
+        [JsonPropertyName("logos")]
+        public List<Logo>? Logos { get; set; }
 
         [JsonPropertyName("record")]
         public Record? Record { get; set; }

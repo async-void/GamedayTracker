@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -20,7 +21,7 @@ namespace GamedayTracker.Services
 {
     public class GameDataService(IJsonDataService jsonDataService, ILogger<GameDataService> logger) : IGameData
     {
-        private static readonly HttpClient httpClient = new HttpClient();
+        private static readonly HttpClient httpClient = new();
         private const string ESPN_API = "http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
 
         // Add this as a private static readonly field at the top of the class (after the httpClient field)
@@ -508,7 +509,6 @@ namespace GamedayTracker.Services
                 var response = await httpClient.GetStringAsync(url);
                 var scores = JsonSerializer.Deserialize<NFLScoreboard>(response);
 
-                httpClient.Dispose();
                 return scores;
             }
             catch (Exception ex)
@@ -603,11 +603,14 @@ namespace GamedayTracker.Services
             if (IsGameCompleted(competition))
             {
                 // Final score
-                info += $"**Final:** {awayTeam.Team.Abbreviation} {awayTeam.Score} - {homeTeam.Score} {homeTeam.Team.Abbreviation}";
+                var awayTotalScore = awayTeam.LineScores?.Sum(ls => ls.Value) ?? 0;
+                var homeTotalScore = homeTeam.LineScores?.Sum(ls => ls.Value) ?? 0;
+                info += $"**Final:** {awayTeam.Team.Abbreviation} {awayTotalScore} - {homeTotalScore} {homeTeam.Team.Abbreviation}";
 
                 // Show winner
                 var winner = awayTeam.Winner ? awayTeam.Team.Abbreviation : homeTeam.Team.Abbreviation;
-                info += $" (Winner: {winner})";
+                info += $"\n**Winner: {winner}**\r\n";
+                info += "\r\n";
             }
             else if (IsGameInProgress(competition))
             {
@@ -616,11 +619,13 @@ namespace GamedayTracker.Services
                 var clock = competition.Status.DisplayClock;
 
                 info += $"**{quarter} - {clock}**\n";
-                info += $"{awayTeam.Team.Abbreviation} {awayTeam.Score} - {homeTeam.Score} {homeTeam.Team.Abbreviation}";
+                var awayTotalScore = awayTeam.LineScores?.Sum(ls => ls.Value) ?? 0;
+                var homeTotalScore = homeTeam.LineScores?.Sum(ls => ls.Value) ?? 0;
+                info += $"{awayTeam.Team.Abbreviation} {awayTotalScore} - {homeTotalScore} {homeTeam.Team.Abbreviation}";
 
                 // Show line scores (quarter by quarter)
                 info += "\n\n**By Quarter:**\n";
-                info += GetLineScores(awayTeam, homeTeam);
+                info += $"{GetLineScores(awayTeam, homeTeam)}\n";
             }
             else
             {
@@ -633,7 +638,7 @@ namespace GamedayTracker.Services
 
                 if (!string.IsNullOrEmpty(awayRecord.Item1) && !string.IsNullOrEmpty(homeRecord.Item1))
                 {
-                    info += $"\n{awayTeam.Team.Abbreviation}: {awayRecord.Item1} | {homeTeam.Team.Abbreviation}: {homeRecord.Item1}";
+                    info += $"\n{awayTeam.Team.Abbreviation}: {awayRecord.Item1} | {homeTeam.Team.Abbreviation}: {homeRecord.Item1}\n";
                 }
             }
 
@@ -883,5 +888,26 @@ namespace GamedayTracker.Services
         }
         #endregion
 
+        #region GET EPSN TEAM SCHEDULE
+        public async Task<NFLScoreboard> GetEspnTeamScheduleAsync(string teamAbbr, int season)
+        {
+            string ESPN_API_URL = $"https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{teamAbbr}/schedule?season={season}";
+            using var httpClient = new HttpClient();
+            try
+            {
+                var response = await httpClient.GetAsync(ESPN_API_URL);
+                response.EnsureSuccessStatusCode();
+                var json = await response.Content.ReadAsStringAsync();
+                var schedule = JsonSerializer.Deserialize<NFLScoreboard>(json, CachedJsonOptions);
+                return schedule;
+
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Error fetching ESPN team schedule for {teamAbbr}: {ex.Message}");
+                return null;
+            }
+        }
+        #endregion
     }
 }

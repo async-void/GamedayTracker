@@ -6,5 +6,8 @@ namespace GamedayTracker.Models.NFL
     {
         [JsonPropertyName("id")]
         public string Id { get; set; }
+
+        [JsonPropertyName("$ref")]
+        public string Ref { get; set; }
     }
 }

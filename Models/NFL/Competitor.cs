@@ -25,8 +25,7 @@ namespace GamedayTracker.Models.NFL
         [JsonPropertyName("team")]
         public NFLTeam Team { get; set; }
 
-        [JsonPropertyName("score")]
-        public string Score { get; set; }
+        
 
         [JsonPropertyName("linescores")]
         public List<LineScore> LineScores { get; set; }

@@ -15,6 +15,7 @@ using GamedayTracker.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Memory;
 using Quartz;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -84,7 +85,7 @@ namespace GamedayTracker
                             config.AddCommands(Assembly.GetExecutingAssembly());
                             config.AddCheck<RequireRoleCheck>();
                         });
-                    
+                    services.AddMemoryCache();
                     services.AddLogging(logging => logging.ClearProviders().AddSerilog(logger));
                     services.AddScoped<ITeamData, TeamDataService>();
                     services.AddScoped<ITimerService, TimerService>();
@@ -100,7 +101,8 @@ namespace GamedayTracker
                     services.AddScoped<IEvaluator, RealTimeScoresModeEvaluatorService>(); 
                     services.AddScoped<IBetting, BettingDataServiceProvider>();
                     services.AddScoped<DailyHeadlinesScheduler>();
- 
+                    
+
                     #region QUARTZ
                     services.AddQuartz(q =>
                     {

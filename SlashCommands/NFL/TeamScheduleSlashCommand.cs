@@ -19,10 +19,11 @@ namespace GamedayTracker.SlashCommands.NFL
     {
         [Command("schedule")]
         [Description("Get Current Season Team Schedule")]
-        public async Task GetTeamSchedule(SlashCommandContext ctx, [Parameter("team")] string teamName)
+        public async Task GetTeamSchedule(SlashCommandContext ctx, [Parameter("team")] string teamName, int season)
         {
             
             await ctx.DeferResponseAsync();
+            var scheduleEspn = await gameData.GetEspnTeamScheduleAsync(teamName.ToLower(), season);
             var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var normalizedName = NflTeamMatcher.MatchTeam(teamName);
             if (!teamData.IsValidTeamName(normalizedName!.ToLower()))
@@ -33,19 +34,17 @@ namespace GamedayTracker.SlashCommands.NFL
                 return;
             }
             var sb = new StringBuilder();
-            var teamSchedule = await gameData.GetTeamSchedule(normalizedName);
-            var season = DateTime.UtcNow.Year.ToString();
             var titleEmoji = NflEmojiService.GetEmoji(normalizedName.ToAbbr());
-            if (teamSchedule.IsOk)
+            if (scheduleEspn.Events.Count > 0)
             {
-                foreach (var match in teamSchedule.Value)
+                foreach (var match in scheduleEspn.Events)
                 {
-                    var awayName = match.Opponents!.AwayTeam.Name.ToAbbr();
-                    var homeName = match.Opponents.HomeTeam.Name.ToAbbr();
-                    var date = match.GameDate;
+                    var awayName = match.Competitions[0].Competitors[0].Team.Abbreviation;
+                    var homeName = match.Competitions[0].Competitors[1].Team.Abbreviation;
+                    var date = match.Date.ToString();
                     var awayEmoji = NflEmojiService.GetEmoji(awayName);
                     var homeEmoji = NflEmojiService.GetEmoji(homeName);
-                    sb.AppendLine($"{awayEmoji} at {homeEmoji} `{date!}`");
+                    sb.AppendLine($"{awayEmoji} at {homeEmoji} `{date!, 7}`");
                 }
 
                 DiscordComponent[] components =
@@ -55,7 +54,7 @@ namespace GamedayTracker.SlashCommands.NFL
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent($"{sb}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}"),
                                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
 
@@ -73,9 +72,9 @@ namespace GamedayTracker.SlashCommands.NFL
                 [
                     new DiscordTextDisplayComponent($"**ERROR**"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordTextDisplayComponent($"{teamSchedule.Error.ErrorMessage} for season **{season}**"),
+                    new DiscordTextDisplayComponent($"no events found for season **{season}**"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:F>")
+                    new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}")
                 ];
 
                 var container = new DiscordContainerComponent(components, false, DiscordColor.IndianRed);

@@ -46,8 +46,8 @@ namespace GamedayTracker.Models.NFL
         [JsonPropertyName("status")]
         public Status Status { get; set; }
 
-        [JsonPropertyName("broadcasts")]
-        public List<Broadcast> Broadcasts { get; set; }
+        //[JsonPropertyName("broadcasts")]
+        //public List<Broadcast> Broadcasts { get; set; }
 
         [JsonPropertyName("leaders")]
         public List<Leader> Leaders { get; set; }

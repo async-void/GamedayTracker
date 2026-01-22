@@ -13,7 +13,7 @@ namespace GamedayTracker.Configuration.EntityTypeConfiguration
     {
         public void Configure(EntityTypeBuilder<TeamStats> builder)
         {
-            builder.Property(x => x.TeamName).HasMaxLength(200);
+            builder.Property(x => x.Name).HasMaxLength(200);
         }
     }
 }

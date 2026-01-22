@@ -384,7 +384,7 @@ namespace GamedayTracker.Services
             var lineType = choice == 0 ? LineType.Offense : LineType.Defense;
            
             var stats = JsonSerializer.Deserialize<List<TeamStats>>(json)!
-                .Where(x => x.Season == season && x.LineType.Equals(lineType) && x.TeamName!.Equals(teamName, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                .Where(x => x.Value == season && x.DisplayName.Equals(lineType) && x.Name!.Equals(teamName, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
 
             if (stats is not null) return Result<TeamStats, SystemError<JsonDataServiceProvider>>.Ok(stats);
             var error = new SystemError<JsonDataServiceProvider>
@@ -432,7 +432,7 @@ namespace GamedayTracker.Services
         #region WRITE ALL TEAM STATS TO JSON
         public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteAllTeamStatsToJsonAsync(List<TeamStats> source)
         {
-            var season = source.FirstOrDefault()?.Season ?? 0;
+            var season = source.FirstOrDefault()?.Value ?? 0;
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"team_stats_{season}.json");
             if (!File.Exists(path))
             {
@@ -466,7 +466,7 @@ namespace GamedayTracker.Services
         #region WRITE TEAM STATS TO JSON
         public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteTeamStatsToJsonAsync(TeamStats stats)
         {
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"team_stats_{stats.Season}.json");
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", $"team_stats_2025.json");
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);

@@ -9,18 +9,15 @@ using System.Text;
 
 namespace GamedayTracker.Jobs
 {
-    public class DailyHeadlineJob(INewsService newService, IJsonDataService dataService, DiscordClient client, ILogger<DailyHeadlineJob> logger) : IJob
+    public class DailyHeadlineJob(INewsService newsService, DiscordClient client, ILogger<DailyHeadlineJob> logger) : IJob
     {
-        private readonly INewsService _newsService = newService;
-        private readonly IJsonDataService _dataService = dataService;
-        private readonly DiscordClient _client = client;
-        private readonly ILogger<DailyHeadlineJob> _logger = logger;
+       
         public async Task Execute(IJobExecutionContext context)
         {
-            _logger.LogInformation("Executing Daily Headline Job...");
+            logger.LogInformation("Executing Daily Headline Job...");
             var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var rnd = new Random();
-            var articles = _newsService.GetNews();
+            var articles = await newsService.GetNews();
             var imgList = new List<string>();
             if (articles.IsOk)
             {
@@ -30,8 +27,12 @@ namespace GamedayTracker.Jobs
 
                 for (var i = 0; i < count; i++)
                 {
-                    sBuilder.AppendLine($"{i + 1}. **{articles.Value[i].Title}**\r\n{articles.Value[i].Content}");
-                    imgList.Add(articles.Value[i].ImgUrl!);
+                    sBuilder.AppendLine($"{i + 1}. **{articles.Value[i].Headline}**\r\n{articles.Value[i].Description}");
+
+                    for (var j = 0; j < articles.Value[i].Images.Count; j++)
+                    {
+                        imgList.Add(articles.Value[i].Images[j].Url);
+                    }
                 }
 
                 DiscordComponent[] components =
@@ -52,13 +53,18 @@ namespace GamedayTracker.Jobs
                     .EnableV2Components()
                     .AddContainerComponent(container);
 
-                var chnl = await _client.GetChannelAsync(1398021268032196698);
+                var chnl = await client.GetChannelAsync(1398021268032196698);
                 var msg = await chnl.SendMessageAsync(message);
                 await chnl.CrosspostMessageAsync(msg);
             }
             else
-                _logger.LogError("Failed to fetch news articles.");
+                logger.LogError("Failed to fetch news articles.");
 
+        }
+
+        private async Task GetNFLHeadlines()
+        {
+            var headlineUrl = "https://";
         }
     }
 }

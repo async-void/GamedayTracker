@@ -17,10 +17,7 @@ namespace GamedayTracker.SlashCommands.News
     [Description("Commands related to NFL News and Updates.")]
     public class NewsSlashCommand(INewsService newsService, ISchedulerFactory schedulerFactory, ILogger<NewsSlashCommand> logger)
     {
-        private readonly ISchedulerFactory _schedulerFactory = schedulerFactory;
-        private readonly INewsService _newsService = newsService;
-        private readonly ILogger<NewsSlashCommand> _logger = logger;
-
+        
         #region GET NEWS HEADLINES
         [Command("get")]
         [Description("Gets the most recent NFL News and Updates.")]
@@ -29,7 +26,7 @@ namespace GamedayTracker.SlashCommands.News
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var rnd = new Random();
-            var articles = _newsService.GetNews();
+            var articles = await newsService.GetNews();
             var imgList = new List<string>();
             if (articles.IsOk)
             {
@@ -38,8 +35,11 @@ namespace GamedayTracker.SlashCommands.News
                 var embedTitle = $"**Latest NFL News {DateTime.UtcNow.ToLongDateString()}**";
                 for (var i = 0; i < count; i++)
                 {
-                    sBuilder.AppendLine($"{i + 1}. **{articles.Value[i].Title}**\r\n{articles.Value[i].Content}");
-                    imgList.Add(articles.Value[i].ImgUrl!);
+                    sBuilder.AppendLine($"{i + 1}. **{articles.Value[i].Headline}**\r\n{articles.Value[i].Description}");
+                    for (var j = 0; j < articles.Value[i].Images.Count; j++)
+                    {
+                        imgList.Add(articles.Value[i].Images[j].Url);
+                    }
                 }
                 DiscordComponent[] components =
                 [
@@ -58,7 +58,7 @@ namespace GamedayTracker.SlashCommands.News
                 var message = new DiscordInteractionResponseBuilder()
                     .EnableV2Components()
                     .AddContainerComponent(container);
-               
+                logger.LogInformation("NFL News fetched and sent successfully.");
                 await ctx.RespondAsync(new DiscordInteractionResponseBuilder(message));
             }
             else
@@ -83,7 +83,7 @@ namespace GamedayTracker.SlashCommands.News
         {
             await ctx.DeferResponseAsync();
 
-            var scheduler = await _schedulerFactory.GetScheduler();
+            var scheduler = await schedulerFactory.GetScheduler();
             var jobs = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
 
             var jobExists = jobs.Any(j => j.Name.Equals("DailyHeadlineJob") && j.Group.Equals("NFL News"));

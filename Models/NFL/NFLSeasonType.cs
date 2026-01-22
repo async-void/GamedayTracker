@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GamedayTracker.Enums
+namespace GamedayTracker.Models.NFL
 {
     public enum NFLSeasonType
     {
-        Pre = 1,
-        Regular = 2,
-        Post = 3,
+        Preseason = 1,
+        RegularSeason = 2,
+        Playoffs = 3
     }
 }
