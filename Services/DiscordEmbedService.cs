@@ -204,23 +204,86 @@ namespace GamedayTracker.Services
         #endregion
 
         #region CREATE TEAM STATS EMBED
-        public async Task<DiscordEmbed> CreateTeamStatsEmbed(NflTeamStatisticsResponse teamStats, NFLSeasonType seasonType, int seasonYear)
+        public async Task<DiscordMessageBuilder> CreateTeamStatsEmbed(NflTeamStatisticsResponse teamStats, NFLSeasonType seasonType, int seasonYear, string teamAbbr)
         {
-            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var titleEmoji = NflEmojiService.GetEmoji("NFL");
+            var teamEmoji = NflEmojiService.GetEmoji(teamAbbr);
+            var embeds = new DiscordEmbed[teamStats.Splits.Categories.Count];
             var embed = new DiscordEmbedBuilder()
                 .WithColor(new DiscordColor(0, 102, 204))
-                .WithTitle($"{titleEmoji} Statistics\r\n{seasonYear} {seasonType} Stats")
+                .WithTitle($"")
                 .WithFooter($"Gameday Tracker ")
                 .WithTimestamp(DateTimeOffset.UtcNow);
 
-            var general = teamStats.Splits.Categories[0];
-            var passing = teamStats.Splits.Categories[1];
-            var rushing = teamStats.Splits.Categories[2];
-            embed.AddField($"**{general.DisplayName}**", $"{general.Stats[0].DisplayName}:{general.Stats[0].Value} Rank: {general.Stats[0].RankDisplayValue}", true);
-            embed.AddField($"**{passing.DisplayName}**", $"{passing.Stats[0].DisplayName}:{passing.Stats[0].Value} Rank: {passing.Stats[0].RankDisplayValue}", true);
-            embed.AddField($"**{rushing.DisplayName}**", $"{rushing.Stats[0].DisplayName}:{rushing.Stats[0].Value} Rank: {rushing.Stats[0].RankDisplayValue}", true);
-            return embed.Build();
+            var sb = new StringBuilder();
+
+            foreach (var split in teamStats.Splits.Categories)
+            { 
+                var statName  = split.Stats[0].DisplayName;
+                var statValue = split.Stats[0].DisplayValue;
+                var rank      = split.Stats[0].RankDisplayValue;
+                sb.AppendLine($"**{statName}**: {statValue} - {rank}");
+            }
+           
+
+            DiscordComponent[] comps =
+            [
+                new DiscordTextDisplayComponent($"{titleEmoji} {seasonYear} {seasonType} {teamEmoji} Statistics"),
+                new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                new DiscordTextDisplayComponent(sb.ToString()),
+                new DiscordSeparatorComponent(),
+                new DiscordTextDisplayComponent($"Gameday Tracker {timestamp}")
+               
+            ];
+
+            var container = new DiscordContainerComponent(comps, false, DiscordColor.Orange);
+            var msg = new DiscordMessageBuilder()
+                .EnableV2Components()
+                .AddContainerComponent(container);
+            return msg;
+        }
+        #endregion
+
+        #region CREATE TEAM STATS PAGE
+        public async Task<DiscordMessageBuilder> CreateTeamStatsPage(
+            NflTeamStatisticsResponse teamStats,
+            string emoji,
+            NFLSeasonType seasonType,
+            int seasonYear,
+            int pageIndex)
+        {
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var titleEmoji = NflEmojiService.GetEmoji("NFL");
+
+            var category = teamStats.Splits.Categories[pageIndex];
+
+            var components = new List<DiscordComponent>
+            {
+                new DiscordTextDisplayComponent($"{titleEmoji} {seasonYear} {seasonType} {emoji} Statistics"),
+                new DiscordSeparatorComponent(),
+                new DiscordTextDisplayComponent($"**{category.DisplayName}**"),
+                new DiscordSeparatorComponent()
+            };
+
+            var statsToShow = category.Stats.Take(10);
+            // Add all stats from this category
+            foreach (var stat in statsToShow)
+            {
+                components.Add(new DiscordTextDisplayComponent(
+                    $"**{stat.DisplayName}**: {stat.Value} | Rank: {stat.RankDisplayValue}"));
+            }
+
+            components.Add(new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large));
+            components.Add(new DiscordTextDisplayComponent($"Gameday Tracker {timestamp}"));
+            components.Add(new DiscordSeparatorComponent());
+
+            var container = new DiscordContainerComponent([.. components], false, DiscordColor.Orange);
+            var msg = new DiscordMessageBuilder()
+                .EnableV2Components()
+                .AddContainerComponent(container);
+
+            return msg;
         }
         #endregion
     }

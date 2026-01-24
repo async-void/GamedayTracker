@@ -4,6 +4,7 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.Extensions;
+using GamedayTracker.Cache;
 using GamedayTracker.Checks;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
@@ -12,10 +13,10 @@ using GamedayTracker.Models;
 using GamedayTracker.Schedules;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Caching.Memory;
 using Quartz;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -299,8 +300,8 @@ namespace GamedayTracker
                             await sender.UpdateStatusAsync(new DiscordActivity($"Scores in {count} Servers", DiscordActivityType.Watching));
                         })
                         #endregion
-
-                    #endregion
+                        
+                        #endregion
                     );
                     #endregion
 

@@ -14,6 +14,7 @@ namespace GamedayTracker.Interfaces
         Task<DiscordEmbed> CreateScoresEmbed(NFLScoreboard data);
         Task<List<DiscordEmbed>> CreateStandingsEmbedsByConferenceAsync();
         Task<DiscordEmbed> CreateStandingsEmbedAsync(string? conference = null);
-        Task<DiscordEmbed> CreateTeamStatsEmbed(NflTeamStatisticsResponse teamStats, NFLSeasonType seasonType, int seasonYear);
+        Task<DiscordMessageBuilder> CreateTeamStatsEmbed(NflTeamStatisticsResponse teamStats, NFLSeasonType seasonType, int seasonYear, string teamAbbr);
+        Task<DiscordMessageBuilder> CreateTeamStatsPage(NflTeamStatisticsResponse teamStats, string emoji, NFLSeasonType seasonType, int seasonYear, int pageIndex);
     }
 }

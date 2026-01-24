@@ -1,17 +1,18 @@
-﻿using System.Text;
-using DSharpPlus;
+﻿using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using GamedayTracker.Cache;
 using GamedayTracker.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Services;
 using Humanizer;
+using System.Text;
 
 namespace GamedayTracker.Utility
 {
-    public class InteractionHandler(ITeamData teamData, IPlayerData playerDataService, IJsonDataService jsonService): IEventHandler<InteractionCreatedEventArgs>
+    public class InteractionHandler(ITeamData teamData, IPlayerData playerDataService, IDiscordEmbedService embedService): IEventHandler<InteractionCreatedEventArgs>
     {
         public async Task HandleEventAsync(DiscordClient sender, InteractionCreatedEventArgs eventArgs)
         {
@@ -376,6 +377,60 @@ namespace GamedayTracker.Utility
                                 break;
                             #endregion
 
+                            #region PREVIOUS
+                            case "prev":
+                                var paginationData = TeamStatsPaginationCache.Get(eventArgs.Interaction.Message.Id);
+                                if (paginationData == null)
+                                {
+                                    await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                        new DiscordInteractionResponseBuilder()
+                                            .WithContent("Pagination expired. Please run the command again."));
+                                    return;
+                                }
+                                
+                                paginationData.CurrentPage--;
+
+                                var msg = await embedService.CreateTeamStatsPage(
+                                                   paginationData.TeamStats,
+                                                   paginationData.Emoji,
+                                                   paginationData.SeasonType,
+                                                   paginationData.Season,
+                                                   paginationData.CurrentPage);
+
+                                var buttons = CreateNavigationButtons(paginationData.CurrentPage, paginationData.TotalPages);
+                                msg.AddActionRowComponent(new DiscordActionRowComponent(buttons));
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                        new DiscordInteractionResponseBuilder(msg));
+                                break;
+                            #endregion
+
+                            #region NEXT
+                            case "next":
+                                paginationData = TeamStatsPaginationCache.Get(eventArgs.Interaction.Message.Id);
+                                if (paginationData == null)
+                                {
+                                    await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                        new DiscordInteractionResponseBuilder()
+                                            .WithContent("Pagination expired. Please run the command again."));
+                                    return;
+                                }
+
+                                paginationData.CurrentPage++;
+
+                                msg = await embedService.CreateTeamStatsPage(
+                                                   paginationData.TeamStats,
+                                                   paginationData.Emoji,
+                                                   paginationData.SeasonType,
+                                                   paginationData.Season,
+                                                   paginationData.CurrentPage);
+                                
+                                buttons = CreateNavigationButtons(paginationData.CurrentPage, paginationData.TotalPages);
+                                msg.AddActionRowComponent(new DiscordActionRowComponent(buttons));
+
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                        new DiscordInteractionResponseBuilder(msg));
+                                break;
+                            #endregion
                             #endregion
 
                             default:
@@ -433,6 +488,28 @@ namespace GamedayTracker.Utility
                     await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Unknown command!"));
                     return;
             }
+        }
+
+        private DiscordComponent[] CreateNavigationButtons(int currentPage, int totalPages)
+        {
+            return
+            [
+                new DiscordButtonComponent(
+                    DiscordButtonStyle.Primary,
+                    $"prev",
+                    "◀ Previous",
+                    currentPage == 0),
+                new DiscordButtonComponent(
+                    DiscordButtonStyle.Secondary,
+                    $"page",
+                    $"Page {currentPage + 1}/{totalPages}",
+                    true),
+                new DiscordButtonComponent(
+                    DiscordButtonStyle.Primary,
+                    $"next",
+                    "Next ▶",
+                    currentPage >= totalPages - 1)
+            ];
         }
     }
 }
