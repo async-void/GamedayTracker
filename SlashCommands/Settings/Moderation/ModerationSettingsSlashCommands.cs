@@ -28,7 +28,7 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
         {
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var guildResult = await _jsonService.GetGuildFromJsonAsync(ctx.Guild!.Id.ToString());
+            var guildResult = await _jsonService.GetGuildFromJsonAsync(ctx.Guild!.Id);
 
             if (guildResult.IsOk)
             {
@@ -97,7 +97,7 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
         {
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var guildResult = await _jsonService.GetGuildFromJsonAsync(ctx.Guild!.Id.ToString());
+            var guildResult = await _jsonService.GetGuildFromJsonAsync(ctx.Guild!.Id);
             if (guildResult.IsOk)
             {
                 guildResult.Value.IsRealTimeScoresEnabled = enable;

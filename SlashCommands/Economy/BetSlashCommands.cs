@@ -3,6 +3,7 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
+using GamedayTracker.AutoCompleteProvider;
 using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Enums;
 using GamedayTracker.Factories;
@@ -22,28 +23,64 @@ namespace GamedayTracker.SlashCommands.Economy
     [Description("betting slash commands")]
     public class BetSlashCommands(ICommandHelper slashCmdHelper, IJsonDataService jsonService, IGameData gameDataService, IBetting bettingService)
     {
-        private readonly IJsonDataService _jsonService = jsonService;
-        private readonly IGameData _gameDataService = gameDataService;
-        private readonly IBetting _bettingService = bettingService;
-        private readonly ICommandHelper _slashCmdHelper = slashCmdHelper;
+       
 
         [Command("bet")]
         [Description("place bet on a matchup")]
-        public async Task Bet(SlashCommandContext ctx, [Parameter("amount")] int amount, [Parameter("team")] string teamName)
+        public async Task Bet(SlashCommandContext ctx, [Parameter("amount")] int amount, [SlashChoiceProvider<GameDayChoiceProvider>] int day)
         {
             //TODO: finish betting command
             await ctx.DeferResponseAsync();
 
-            var scoreboard = await _gameDataService.GetNFLScoresAsync();
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var user = ctx.User;
+            var userFromJson = await jsonService.GetMemberFromJsonAsync(user.Id, ctx.Guild?.Id ?? 0);
+            if (userFromJson.IsOk)
+            {
+                if (userFromJson.Value.Bank is { } bank)
+                {
+                    var canAffordBet = await bettingService.CanAffordBetAsync(bank, amount);
+                }
+                else
+                {
+                    //bank is null, let the caller know they dont have the funds for the bet
+                }
+            }
+            else
+            {
+                DiscordComponent[] errComps =
+                [
+                    new DiscordTextDisplayComponent($"❌ ERROR ❌"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"{userFromJson.Error.ErrorMessage}"),
+                    new DiscordTextDisplayComponent($"Gameday Tracker {timestamp}")
+                ];
+                var errContainer = new DiscordContainerComponent(errComps, false, DiscordColor.DarkRed );
+                var errMsg = new DiscordMessageBuilder()
+                    .EnableV2Components()
+                    .AddContainerComponent(errContainer);
+                await ctx.RespondAsync( errMsg );
+            }
+
+            var scoreboard = await gameDataService.GetNFLScoresAsync();
 
             var scheduled = scoreboard.Events
-                .Where(s => s.Status.Type.Description.Equals("Scheduled"))
+                .Where(s => s.Status.Type.Description.Equals("Final"))
                 .ToList();
-            if (!scheduled.Any())
+            if (scheduled.Count == 0)
             {
                 await ctx.RespondAsync("No scheduled games found, unable to place bet at this time.");
                 return;
             }
+
+            IEnumerable<DiscordAutoCompleteChoice> choices = scheduled.Select(s =>
+            {
+                var awayTeam = s.Competitions[0].Competitors.FirstOrDefault(c => c.HomeAway.Equals("away"))?.Team.DisplayName ?? "Unknown";
+                var homeTeam = s.Competitions[0].Competitors.FirstOrDefault(c => c.HomeAway.Equals("home"))?.Team.DisplayName ?? "Unknown";
+                var optionLabel = $"{awayTeam} at {homeTeam}";
+                var optionValue = $"{s.Competitions[0].Id}";
+                return new DiscordAutoCompleteChoice(optionLabel, optionValue);
+            });
 
             //here we build the list of available games to bet on from the scheduled games.
             IEnumerable<DiscordSelectComponentOption> gameOptions = scheduled.Select(s =>
@@ -55,12 +92,16 @@ namespace GamedayTracker.SlashCommands.Economy
                 return new DiscordSelectComponentOption(optionLabel, optionValue);
             });
 
+            var scheduleData = scheduled[0].ShortName;
+
             DiscordComponent[] comps =
-            [
+             {
                 new DiscordTextDisplayComponent("### Place Your Bet"),
                 new DiscordSeparatorComponent(true),
-                new DiscordActionRowComponent([new DiscordSelectComponent("test", "test", gameOptions)]),
-            ];
+                new DiscordSectionComponent("test", 
+                    new DiscordSelectComponent("gameId", "testing", gameOptions))
+            };
+
 
             var container = new DiscordContainerComponent(comps, false, DiscordColor.Blurple);
             var embed = new DiscordMessageBuilder()
@@ -151,10 +192,10 @@ namespace GamedayTracker.SlashCommands.Economy
             switch (choice)
             {
                 case 0:
-                    leaderboard = await _slashCmdHelper.BuildLeaderboard(ctx.Guild!.Id.ToString(), choice);
+                    leaderboard = await slashCmdHelper.BuildLeaderboard(ctx.Guild!.Id, choice);
                     break;
                 case 1:
-                    leaderboard = await _slashCmdHelper.BuildLeaderboard("", choice);
+                    leaderboard = await slashCmdHelper.BuildLeaderboard(0, choice);
                     break;
                 default:
                    
@@ -186,7 +227,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 return;
             }
 
-            var embedDesc = _slashCmdHelper.BuildLeaderboardDescription(leaderboard.Value).Value;
+            var embedDesc = slashCmdHelper.BuildLeaderboardDescription(leaderboard.Value).Value;
             
             DiscordComponent[] components =
             [

@@ -28,8 +28,8 @@ namespace GamedayTracker.SlashCommands.Economy
         {
             await ctx.DeferResponseAsync();
             var member = await ctx.Channel.Guild.GetMemberAsync(user.Id) as DiscordMember;
-            var player = await _dataService.GetMemberFromJsonAsync(member.Id.ToString(), ctx.Channel.Guild.Id.ToString());
-            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var player = await _dataService.GetMemberFromJsonAsync(member.Id, ctx.Channel.Guild.Id);
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             DiscordComponent[] buttons =
             [
                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")
@@ -37,7 +37,7 @@ namespace GamedayTracker.SlashCommands.Economy
 
             if (player.IsOk)
             {
-                var balance = player.Value.Bank?.Balance ?? 5.00;
+                var balance = player.Value.Bank?.Balance ?? 5;
                 var depositTimestamp = player.Value.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;  
                 var depositedTimestamp = depositTimestamp.ToUnixTimeSeconds();
 
@@ -46,7 +46,7 @@ namespace GamedayTracker.SlashCommands.Economy
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"**{user.GlobalName!}**\r\n<:money:1337795714855600188> Balance - {balance}\r\n<:bank:1366390018423390360> Last Deposit: {depositTimestamp.Humanize()}"),
                         new DiscordThumbnailComponent(member!.AvatarUrl.ToString())),
                     new DiscordSeparatorComponent(true),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}"),
                         new DiscordActionRowComponent(buttons))  
                 ];
 
@@ -63,7 +63,7 @@ namespace GamedayTracker.SlashCommands.Economy
             [
                 new DiscordTextDisplayComponent($"Error fetching player data: {player.Error.ErrorMessage!} with ErrorCode: {player.Error.ErrorCode}"),
                 new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
+                new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}"),
                         new DiscordActionRowComponent(buttons))
             ];
             var msgContainer = new DiscordContainerComponent(msgComp, false, DiscordColor.DarkGray);
@@ -84,7 +84,7 @@ namespace GamedayTracker.SlashCommands.Economy
             TimeSpan TIMESPAN = TimeSpan.FromHours(2);
 
             var member = ctx.Member;
-            var _user = await _dataService.GetMemberFromJsonAsync(member!.Id.ToString(), member.Guild.Id.ToString());
+            var _user = await _dataService.GetMemberFromJsonAsync(member!.Id, member.Guild.Id);
 
             if (_user.IsOk)
             {
@@ -96,7 +96,7 @@ namespace GamedayTracker.SlashCommands.Economy
 
                 if (timeElapsed.TotalHours >= 2)
                 {
-                    var balance = _user.Value.Bank?.Balance + 5.00 ?? 5.00;
+                    var balance = _user.Value.Bank?.Balance + 5 ?? 5;
                     _user.Value.Bank!.Balance = balance;
                     _user.Value.Bank.DepositTimestamp = DateTimeOffset.UtcNow;
                     var userToUpdate = _user.Value;
@@ -105,7 +105,7 @@ namespace GamedayTracker.SlashCommands.Economy
 
                     if (updateUserResult.IsOk)
                     {
-                        var updatedUser = await _dataService.GetMemberFromJsonAsync(member!.Id.ToString(), member.Guild.Id.ToString());
+                        var updatedUser = await _dataService.GetMemberFromJsonAsync(member!.Id, member.Guild.Id);
 
                         if (updatedUser.IsOk)
                         {
@@ -152,21 +152,20 @@ namespace GamedayTracker.SlashCommands.Economy
             {
                 var bank = new Bank()
                 {
-                    Id = Guid.NewGuid(),
-                    Balance = 5.00,
+                    BankId = 0,
+                    Balance = 5,
                     DepositTimestamp = DateTimeOffset.UtcNow,
-                    LastDepositAmount = 5.00
+                    LastDepositAmount = 5
                 };
 
                 var bets = new List<Bet>();
 
                 var user = new GuildMember()
                 {
-                    Id = Guid.NewGuid(),
+                    MemberId = ctx.Member.Id,
                     GuildName = ctx.Guild?.Name ?? "Not Found",
-                    GuildId = ctx.Guild?.Id.ToString() ?? "Not Found",
+                    GuildId = ctx.Guild.Id,
                     MemberName = member.Username,
-                    MemberId = member.Id.ToString(),
                     Bank = bank,
                     Bets = bets,
                 };

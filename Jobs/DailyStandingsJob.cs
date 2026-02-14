@@ -12,10 +12,7 @@ namespace GamedayTracker.Jobs
 {
     public class DailyStandingsJob(ITeamData teamDataService, IGameData gameDataService, DiscordClient client, ILogger<DailyStandingsJob> logger) : IJob
     {
-        private readonly ITeamData _teamDataService = teamDataService;
-        private readonly IGameData _gameDataService = gameDataService;
-        private readonly DiscordClient _client = client;
-        private readonly ILogger<DailyStandingsJob> _logger = logger;
+        
 
         public async Task Execute(IJobExecutionContext context)
         {
@@ -24,9 +21,9 @@ namespace GamedayTracker.Jobs
 
         public async Task SendDailyStandingsAsync()
         {
-            var curSeason = _gameDataService.GetCurSeason();
-            _logger.LogInformation("Fetching daily standings for NFL season {season}.", curSeason.Value);
-            var standings = await _teamDataService.GetAllTeamStandings(curSeason.Value);
+            var curSeason = gameDataService.GetCurSeason();
+            logger.LogInformation("Fetching daily standings for NFL season {season}.", curSeason.Value);
+            var standings = await teamDataService.GetAllTeamStandings(curSeason.Value);
             if (standings.IsOk && standings.Value.Count > 0)
             {
                 var sb = new StringBuilder();
@@ -70,10 +67,18 @@ namespace GamedayTracker.Jobs
                 var embed = new DiscordMessageBuilder()
                     .EnableV2Components()
                     .AddContainerComponent(container);
-                var chnl = await _client.GetChannelAsync(1398735401048608960);
-                _logger.LogInformation("Sending daily standings for NFL season {season}.", curSeason.Value);
+                var chnl = await client.GetChannelAsync(1398735401048608960);
+                logger.LogInformation("Sending daily standings for NFL season {season}.", curSeason.Value);
                 var msg = await chnl.SendMessageAsync(embed);
-                await chnl.CrosspostMessageAsync(msg);
+
+                try
+                {
+                    await chnl.CrosspostMessageAsync(msg);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogInformation("Unable to crosspost daily standings - {message}", ex.Message);
+                }
             }
         }
     } 

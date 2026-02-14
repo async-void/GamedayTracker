@@ -1,4 +1,5 @@
 ﻿using DSharpPlus.Entities;
+using DSharpPlus.Interactivity;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models.NFL;
 using GamedayTracker.Utility;
@@ -38,14 +39,14 @@ namespace GamedayTracker.Services
         #region CREATE SCORES EMBED
         public async Task<DiscordEmbed> CreateScoresEmbed(NFLScoreboard data)
         {
-            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            //var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
             //var seasonName = gameData.GetSeasonTypeName(data.Season.Type);
             var displayName = gameData.GetFullSeasonWeekDisplay(data);
             var titleEmoji = NflEmojiService.GetEmoji("NFL");
             var embed = new DiscordEmbedBuilder()
                 .WithColor(new DiscordColor(1, 51, 105))
                 .WithTitle($"{titleEmoji} NFL Scores\r\n{displayName}")
-                .WithFooter("Gameday Tracker")
+                .WithFooter($"Gameday Tracker ")
                 .WithTimestamp(DateTimeOffset.UtcNow);
 
             if (data.Events == null || data.Events.Count == 0)
@@ -260,7 +261,7 @@ namespace GamedayTracker.Services
 
             var components = new List<DiscordComponent>
             {
-                new DiscordTextDisplayComponent($"{titleEmoji} {seasonYear} {seasonType} {emoji} Statistics"),
+                new DiscordTextDisplayComponent($"{titleEmoji} {seasonYear} {seasonType} {emoji} Statistics {emoji}"),
                 new DiscordSeparatorComponent(),
                 new DiscordTextDisplayComponent($"**{category.DisplayName}**"),
                 new DiscordSeparatorComponent()
@@ -286,5 +287,7 @@ namespace GamedayTracker.Services
             return msg;
         }
         #endregion
+
+       
     }
 }

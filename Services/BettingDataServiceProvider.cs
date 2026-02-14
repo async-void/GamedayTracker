@@ -1,83 +1,102 @@
 ﻿using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Models.Betting;
+using GamedayTracker.Models.NFL;
 using GamedayTracker.Utility;
+using System.Security.Principal;
 
 namespace GamedayTracker.Services
 {
-    public class BettingDataServiceProvider(IGameData gameDataService, IJsonDataService jsonDataService): IBetting
+    public class BettingDataServiceProvider(IGameData gameData, IJsonDataService jsonDataService, IGuildMemberService memberService): IBetting
     {
-        private readonly IGameData _gameDataService = gameDataService;
-        private readonly IJsonDataService _jsonDataService = jsonDataService;
-
-        public async Task<Result<bool, SystemError<BettingDataServiceProvider>>> CanPlaceBet(Matchup matchup, Bet bet, GuildMember member)
+        #region CAN AFFORD BET
+        public Task<Result<BalanceCheckResult, SystemError<BettingDataServiceProvider>>> CanAffordBetAsync(Bank bank, decimal amount)
         {
-            //1. get current scoreboard data
-            var week = _gameDataService.GetCurWeek();
-            var season = _gameDataService.GetCurSeason();
-
-            var games = await _gameDataService.GetCurrentScoreboard();
-
-            if (!games.IsOk)
+            if (amount <= 0)
             {
-                return Result<bool, SystemError<BettingDataServiceProvider>>.Err(new SystemError<BettingDataServiceProvider>()
-                {
-                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("3996dbaf-2da8-45ae-9fad-e7e48fb0916b")),
-                    ErrorCode = Guid.Parse("3996dbaf-2da8-45ae-9fad-e7e48fb0916b"),
-                    ErrorType = ErrorType.INFORMATION,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    CreatedBy = this,
-                });
+                return Task.FromResult(
+                    Result<BalanceCheckResult, SystemError<BettingDataServiceProvider>>
+                        .Err(new SystemError<BettingDataServiceProvider>
+                        {
+                           ErrorMessage = "Bet amount must be greater than zero."
+                        }
+                ));
             }
-           
-            //1. matchup must exist in the current scoreboard data
-            var validMatchup = games.Value.FirstOrDefault(x => x.Opponents.AwayTeam.Name.Equals(matchup.Opponents.AwayTeam.Name, StringComparison.InvariantCultureIgnoreCase) 
-            || x.Opponents.HomeTeam.Name.Equals(matchup.Opponents.HomeTeam.Name, StringComparison.InvariantCultureIgnoreCase));
-           
-            //1. a the matchup must not have started
-            if (validMatchup is null)
-                return Result<bool, SystemError<BettingDataServiceProvider>>.Err(new SystemError<BettingDataServiceProvider>()
-                {
-                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("3996dbaf-2da8-45ae-9fad-e7e48fb0916b")),
-                    ErrorCode = Guid.Parse("3996dbaf-2da8-45ae-9fad-e7e48fb0916b"),
-                    ErrorType = ErrorType.INFORMATION,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    CreatedBy = this,
-                });
 
-            var now = DateTimeOffset.UtcNow;
-           // var gameTime = DateTimeOffset.Parse(validMatchup.GameTime!);
-            //var hasGameStarted = gameTime <= now;
-
-            //2. check to see if member has enough bank balance to place the bet
-            var _member = await _jsonDataService.GetMemberFromJsonAsync(member.MemberId, member.GuildId);
-            if (!_member.IsOk)// if member is null - return false.
+            if (bank.Balance < amount)
             {
-                return Result<bool, SystemError<BettingDataServiceProvider>>.Err(new SystemError<BettingDataServiceProvider>()
-                {
-                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("6b24c3ac-0a78-49fd-9c6e-40d749e6559e")),
-                    ErrorCode = Guid.Parse("6b24c3ac-0a78-49fd-9c6e-40d749e6559e"),
-                    ErrorType = ErrorType.INFORMATION,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    CreatedBy = this,
-                });
+                return Task.FromResult(
+                    Result<BalanceCheckResult, SystemError<BettingDataServiceProvider>>
+                        .Err(new SystemError<BettingDataServiceProvider>
+                        {
+                            ErrorMessage = $"Insufficient funds. Your balance is {bank.Balance}."
+                        }
+                       
+                ));
             }
-            //3. member must not have the same bet twice, so check for multiple bets.
-            var memberBets = member.Bets.FirstOrDefault(x => x.Matchup.Opponents.AwayTeam.Name.Equals(matchup.Opponents.AwayTeam.Name, StringComparison.OrdinalIgnoreCase) ||
-                x.Matchup.Opponents.HomeTeam.Name.Equals(matchup.Opponents.HomeTeam.Name));
-            if (memberBets is not null)
-                return Result<bool, SystemError<BettingDataServiceProvider>>.Err(new SystemError<BettingDataServiceProvider>()
-                {
-                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("8857a4c9-1775-4e26-a4be-0a3cb20ff4dd")),
-                    ErrorCode = Guid.Parse("8857a4c9-1775-4e26-a4be-0a3cb20ff4dd"),
-                    ErrorType = ErrorType.INFORMATION,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    CreatedBy = this,
-                });
-            //4. if we get this far bet is valid
-            var balance = _member.Value.Bank?.Balance ?? 0;
-            return Result<bool, SystemError<BettingDataServiceProvider>>.Ok(true);
+
+            var result = new BalanceCheckResult
+            {
+                Allowed = true,
+                Reason = "Sufficient balance."
+            };
+
+            return Task.FromResult(
+                Result<BalanceCheckResult, SystemError<BettingDataServiceProvider>>
+                    .Ok(result)
+            );
         }
+        #endregion
 
+        #region PLACE BET
+        public async Task<Result<Bet, SystemError<BettingDataServiceProvider>>> PlaceBet(Bet bet)
+        {
+           
+            throw new NotImplementedException();
+        }
+        #endregion
+
+        #region CALCULATE PAYOUT
+        public Result<BetPayoutResult, SystemError<BettingDataServiceProvider>> CalculatePayout( Bet bet, int americanOdds)
+        {
+            if (bet.WagerAmount <= 0)
+                return new SystemError<BettingDataServiceProvider>
+                {
+                    ErrorMessage = "Bet amount must be greater than zero.",
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedBy = this
+                };
+
+            // 1. Convert odds → multiplier
+            var multiplier = GetMultiplierFromAmericanOdds(americanOdds);
+
+            // 2. Calculate winnings
+            var winnings = bet.WagerAmount * (multiplier - 1m);
+
+            // 3. Total payout includes original stake
+            var total = bet.WagerAmount + winnings;
+
+            var result = new BetPayoutResult
+            {
+                Multiplier = multiplier,
+                Winnings = winnings,
+                TotalPayout = total
+            };
+
+            return result;
+        }
+        #endregion
+
+        #region GET MULTIPLIER FROM AMERICAN ODDS
+        public decimal GetMultiplierFromAmericanOdds(int odds)
+        {
+            if (odds > 0)
+                return 1m + (odds / 100m);
+
+            return 1m + (100m / Math.Abs(odds));
+        }
+        #endregion
     }
 }

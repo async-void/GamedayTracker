@@ -5,6 +5,8 @@ using GamedayTracker.Models;
 using GamedayTracker.Models.NFL;
 using GamedayTracker.Utility;
 using HtmlAgilityPack;
+using Microsoft.EntityFrameworkCore.Query.Internal;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic;
 using System.Diagnostics;
@@ -19,16 +21,13 @@ using System.Threading.Tasks;
 
 namespace GamedayTracker.Services
 {
-    public class GameDataService(IJsonDataService jsonDataService, ILogger<GameDataService> logger) : IGameData
+    public class GameDataService(IJsonDataService jsonDataService, ILogger<GameDataService> logger, IMemoryCache cache, IEvaluator modeEvaluator) : IGameData
     {
         private static readonly HttpClient httpClient = new();
         private const string ESPN_API = "http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
 
         // Add this as a private static readonly field at the top of the class (after the httpClient field)
-        private static readonly JsonSerializerOptions CachedJsonOptions = new()
-        {
-            PropertyNameCaseInsensitive = true
-        };
+        private static readonly JsonSerializerOptions CachedJsonOptions = new() { PropertyNameCaseInsensitive = true };
 
 
         #region GET CURRENT WEEK
@@ -493,29 +492,46 @@ namespace GamedayTracker.Services
         {
             try
             {
-                string url = ESPN_API;
-                var newWeek = ConvertWeekBySeasonType(week ?? 0, seasonType ?? 2);
-                if (season.HasValue && week.HasValue)
+                int resolvedSeason = season ?? DateTimeOffset.UtcNow.Year;
+                int resolvedSeasonType = seasonType ?? 2;
+                int resolvedWeek = ConvertWeekBySeasonType(week ?? 1, resolvedSeasonType);
+
+                string url = $"http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard" +
+                               $"?dates={resolvedSeason}&seasontype={resolvedSeasonType}&week={resolvedWeek}";
+
+                var realTimeScoresMode = modeEvaluator.Evaluate(DateTimeOffset.Now);
+                var interval = modeEvaluator.GetInterval(realTimeScoresMode);
+                var cacheKey = $"scores:{season.GetValueOrDefault()}:{seasonType.GetValueOrDefault()}:{week.GetValueOrDefault()}";
+
+                if (cache.TryGetValue(cacheKey, out NFLScoreboard? cachedScores))
                 {
-                    // ESPN API format for specific weeks - UPDATE YEAR AS NEEDED
-                    url = $"http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={season}&seasontype={seasonType}&week={newWeek}";
-                }
-                if (season.HasValue && !week.HasValue)
-                {
-                    // If only season is provided, get the full season scoreboard
-                    url = $"http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={season}&{seasonType}";
+                    logger.LogInformation("fetching realtimescores from cache : CacheKey:{cacheKey} Mode:{mode} Interval:{interval}", cacheKey, realTimeScoresMode, interval);
+                    return cachedScores!;
                 }
 
                 var response = await httpClient.GetStringAsync(url);
-                var scores = JsonSerializer.Deserialize<NFLScoreboard>(response);
+                var scores = JsonSerializer.Deserialize<NFLScoreboard?>(response);
 
-                return scores;
+                if (scores != null)
+                {
+                    cache.Set(cacheKey, scores, new MemoryCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = interval,
+                    });
+                    logger.LogInformation("scoreboard cache is null, setting cache with key:{cacheKey} : Mode:{mode} Interval:{interval}", cacheKey, realTimeScoresMode, interval);
+                }
+                logger.LogInformation("fetching realtimescores from Espn data : Mode:{mode} Interval:{interval}", realTimeScoresMode, interval);
+                return scores ?? new NFLScoreboard { Events = [] };
+
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching scores: {ex.Message}");
-                httpClient.Dispose();
-                return null;
+                logger.LogInformation($"Error fetching scores: {ex.Message}");
+                return new NFLScoreboard
+                {
+                    Events = []
+                };
+
             }
         }
         #endregion
@@ -633,8 +649,8 @@ namespace GamedayTracker.Services
                 info += $"**Scheduled:** {competition.Status.Type.ShortDetail}";
 
                 // Show records
-                var awayRecord = await GetTeamRecordAsync(awayTeam.Team.Abbreviation);
-                var homeRecord = await GetTeamRecordAsync(homeTeam.Team.Abbreviation);
+                var awayRecord = await GetTeamRecordAsync(awayTeam.Team.Abbreviation ?? "not found");
+                var homeRecord = await GetTeamRecordAsync(homeTeam.Team.Abbreviation ?? "not found");
 
                 if (!string.IsNullOrEmpty(awayRecord.Item1) && !string.IsNullOrEmpty(homeRecord.Item1))
                 {
@@ -736,15 +752,20 @@ namespace GamedayTracker.Services
                 var teamData = JsonSerializer.Deserialize<NFLRecordResponse>(response);
 
                 // Get the total record (first item with type "total")
-                var totalRecord = teamData.Team.Record.Items[0].Summary ?? "Record not found";
-                var homeRecord = teamData.Team.Record.Items[1].Summary ?? "Record not found";
-                var awayRecord = teamData.Team.Record.Items[2].Summary ?? "Record not found";
+                if (teamData.Team.Record.Items is not null && teamData.Team.Name is not null)
+                {
+                    var totalRecord = teamData.Team.Record.Items[0].Summary ?? "Record not found";
+                    var homeRecord = teamData.Team.Record.Items[1].Summary ?? "Record not found";
+                    var awayRecord = teamData.Team.Record.Items[2].Summary ?? "Record not found";
+                    return (totalRecord, teamData.Team);
+                }
 
-                return (totalRecord, teamData.Team);
+                return ("record not found", teamData.Team);
+
             }
             catch (Exception ex)
             {
-                return ("error not found", null);
+                return ($"{ex.Message}", new NFLTeam());
             }
         }
         #endregion
@@ -889,9 +910,9 @@ namespace GamedayTracker.Services
         #endregion
 
         #region GET EPSN TEAM SCHEDULE
-        public async Task<NFLScoreboard> GetEspnTeamScheduleAsync(string teamAbbr, int season)
+        public async Task<NFLScoreboard> GetEspnTeamScheduleAsync(string teamAbbr, int seasonType, int season)
         {
-            string ESPN_API_URL = $"https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{teamAbbr}/schedule?season={season}";
+            string ESPN_API_URL = $"https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{teamAbbr}/schedule?season={season}&seasontype={seasonType}";
             using var httpClient = new HttpClient();
             try
             {

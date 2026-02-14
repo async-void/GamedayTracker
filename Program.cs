@@ -101,9 +101,9 @@ namespace GamedayTracker
                     services.AddScoped<IBotTimer, BotTimerDataServiceProvider>();
                     services.AddScoped<IEvaluator, RealTimeScoresModeEvaluatorService>(); 
                     services.AddScoped<IBetting, BettingDataServiceProvider>();
+                    services.AddSingleton<IGuildMemberService, GuildMemberService>();
                     services.AddScoped<DailyHeadlinesScheduler>();
-                    
-
+                   
                     #region QUARTZ
                     services.AddQuartz(q =>
                     {
@@ -212,14 +212,15 @@ namespace GamedayTracker
 
                             var guild = new Guild()
                             {
-                                GuildId = args.Guild.Id.ToString(),
+                                GuildId = args.Guild.Id,
                                 GuildName = args.Guild.Name,
-                                GuildOwnerId = args.Guild.OwnerId.ToString(),
+                                GuildOwnerId = args.Guild.OwnerId,
                                 DateAdded = DateTimeOffset.UtcNow,
                                 IsDailyHeadlinesEnabled = true,
                                 IsRealTimeScoresEnabled = true,
                                 ReceiveSystemMessages = true,
-                                NotificationChannelId = args.Guild.GetDefaultChannel()!.Id.ToString()
+                                NotificationChannelId = args.Guild.GetDefaultChannel()!.Id.ToString(),
+                                DiscordMembers = args.Guild.Members.ToDictionary()
 
                             };
                             var supportChnl = await sender.GetChannelAsync(1384436855524692048); 
@@ -269,9 +270,9 @@ namespace GamedayTracker
                         #region GUILD DELETED
                         .HandleGuildDeleted(async (sender, args) =>
                         {
-                            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
                             var jsonService = sender.ServiceProvider.GetRequiredService<IJsonDataService>();
-                            var guildResult = await jsonService.GetGuildFromJsonAsync(args.Guild.Id.ToString());
+                            var guildResult = await jsonService.GetGuildFromJsonAsync(args.Guild.Id);
                             if (guildResult.IsOk)
                             {
                                 var removedResult = await jsonService.RemoveGuildDataAsync(guildResult.Value.GuildId);
@@ -279,13 +280,13 @@ namespace GamedayTracker
                                 if (removedResult.IsOk)
                                 {
                                     await guildOwner.SendMessageAsync(
-                                        $"``Gameday Tracker has been removed at: [<t:{unixTimestamp}:F>]``\r\nyou will no longer be receiving Daily Headlines or Realtime Scores Updates");
+                                        $"``Gameday Tracker has been removed at: [{unixTimestamp}]``\r\nyou will no longer be receiving Daily Headlines or Realtime Scores Updates");
                                     Log.Information($"GamedayTracker has been removed from: {args.Guild.Name}");
                                 }
                                 else
                                 {
                                     await args.Guild.GetDefaultChannel()!.SendMessageAsync(
-                                        $"``Error removing Gameday Tracker from {args.Guild.Name} ({args.Guild.Id}) at: [<t:{unixTimestamp}:F>]``\r\n{removedResult.Error.ErrorMessage}");
+                                        $"``Error removing Gameday Tracker from {args.Guild.Name} ({args.Guild.Id}) at: [{unixTimestamp}]``\r\n{removedResult.Error.ErrorMessage}");
                                     Log.Error($"Error removing guild {args.Guild.Name} ({args.Guild.Id}): {removedResult.Error.ErrorMessage}");
                                 }
 

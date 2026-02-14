@@ -15,9 +15,9 @@ namespace GamedayTracker.Utility.Multipliers
         {
             return betType switch
             {
-                BetType.Normal => RollTieredMultiplier(1.0m, 5.0m, 2.5m),
-                BetType.Bonus => RollTieredMultiplier(5.0m, 20.0m, 10.0m),
-                BetType.HighRoller => RollTieredMultiplier(10.0m, 100.0m, 20.0m),
+                BetType.Moneyline => RollTieredMultiplier(1.0m, 5.0m, 2.5m),
+                BetType.Spread => RollTieredMultiplier(5.0m, 20.0m, 10.0m),
+                BetType.OverUnder => RollTieredMultiplier(10.0m, 100.0m, 20.0m),
                 _ => 1.0m
             };
         }

@@ -21,7 +21,7 @@ namespace GamedayTracker.Helpers
         /// <param name="guildId"></param>
         /// <param name="scope"></param>
         /// <returns>a list of guild members</returns>
-        public async Task<Result<List<GuildMember>, SystemError<SlashCommandHelper>>> BuildLeaderboard(string guildId, int scope)
+        public async Task<Result<List<GuildMember>, SystemError<SlashCommandHelper>>> BuildLeaderboard(ulong guildId, int scope)
         {
             List<GuildMember> leaderboard;
 
@@ -49,7 +49,7 @@ namespace GamedayTracker.Helpers
                     }
 
                 case 1://Global
-                    leaderboardResult = await _dataService.GetAllMembersForScope(1);
+                    leaderboardResult = await _dataService.GetAllMembersForScope(1, guildId);
 
                     if (leaderboardResult.IsOk)
                     {

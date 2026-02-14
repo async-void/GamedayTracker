@@ -18,7 +18,7 @@ namespace GamedayTracker.SlashCommands.Stats
     public class TeamStatsSlashCommand(ITeamData teamDataService, IDiscordEmbedService embedService)
     {
         [Command("teamstats")]
-        [Description("Get [Offense, Defense] Stats")]
+        [Description("Get Team Stats")]
         public async Task GetTeamStats(SlashCommandContext ctx, NFLSeasonType seasonChoice, 
             [Parameter("team"), Description("example: Buffalo or Pittsburgh")] string teamName, [SlashChoiceProvider<SeasonChoiceProvider>] int season)
         {

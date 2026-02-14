@@ -10,7 +10,7 @@ namespace GamedayTracker.Utility
     public class SystemErrorCodes
     {
 
-        private static readonly Dictionary<Guid, string> ErrorCodes = new Dictionary<Guid, string>
+        private static readonly Dictionary<Guid, string> ErrorCodes = new()
         {
 
             { Guid.Parse("d9b3f7e1-6f02-4aad-b591-992ad2cbdd91"), "Bot failed to retrieve guild configuration." },

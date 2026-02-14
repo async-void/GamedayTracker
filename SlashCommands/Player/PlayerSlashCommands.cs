@@ -6,6 +6,7 @@ using DSharpPlus.Entities;
 using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Utility;
 using Humanizer;
 using Serilog;
 using System.ComponentModel;
@@ -94,8 +95,8 @@ namespace GamedayTracker.SlashCommands.Player
         {
             await ctx.DeferResponseAsync();
 
-            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var result = await jsonDataService.GetMemberFromJsonAsync(dMember.Id.ToString(), dMember.Guild.Id.ToString());
+            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var result = await jsonDataService.GetMemberFromJsonAsync(dMember.Id, dMember.Guild.Id);
             DiscordComponent[] components;
             DiscordContainerComponent container;
 
@@ -129,7 +130,7 @@ namespace GamedayTracker.SlashCommands.Player
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"Favorite Team: {favTeam}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ <t:{unixTimestamp}:R>"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}"),
                                                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
                 ];
                 Log.Information($"Player Exists, profile found for - {member.MemberName}");
@@ -143,23 +144,22 @@ namespace GamedayTracker.SlashCommands.Player
             {
                 var bank = new Bank()
                 {
-                    Id = Guid.NewGuid(),
-                    Balance = 5.00,
-                    LastDepositAmount = 5.00,
+                    BankId = 0,
+                    Balance = 5,
+                    LastDepositAmount = 5,
                     DepositTimestamp = DateTimeOffset.UtcNow
                 };
                 await jsonDataService.WriteMemberToJsonAsync(new GuildMember
                 {
-                    Id = Guid.NewGuid(),
-                    GuildId = dMember.Guild.Id.ToString(),
+                    GuildId = dMember.Guild.Id,
                     GuildName = dMember.Guild.Name,
-                    MemberId = dMember.Id.ToString(),
+                    MemberId = dMember.Id,
                     MemberName = dMember.Username,
                     BetWins = 0,
                     Bank = bank,
                 });
 
-                var m = await jsonDataService.GetMemberFromJsonAsync(dMember.Id.ToString(), dMember.Guild.Id.ToString());
+                var m = await jsonDataService.GetMemberFromJsonAsync(dMember.Id, dMember.Guild.Id);
 
                 if (m.IsOk)
                 {

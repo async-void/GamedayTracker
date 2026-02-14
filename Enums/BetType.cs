@@ -2,8 +2,9 @@
 {
     public enum BetType
     {
-        Normal,
-        Bonus,
-        HighRoller
+        Moneyline,
+        Spread,
+        OverUnder
     }
+
 }

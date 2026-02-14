@@ -26,7 +26,7 @@ namespace GamedayTracker.SlashCommands.Settings.User
             var logoPath = LogoPathService.GetLogoPath(abbr);
             var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
 
-            var memResult = await jsonDataService.GetMemberFromJsonAsync(ctx.Member!.Id.ToString(), ctx.Guild!.Id.ToString());
+            var memResult = await jsonDataService.GetMemberFromJsonAsync(ctx.Member!.Id, ctx.Guild!.Id);
             if (memResult.IsOk)
             {
                 var member = memResult.Value;

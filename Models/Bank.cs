@@ -2,15 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace GamedayTracker.Models
 {
     public class Bank
     {
-        public Guid Id { get; set; }
-        public double Balance { get; set; }
-        public double LastDepositAmount { get; set; }
+        public ulong BankId { get; set; }
+        public decimal Balance { get; set; }
+        public decimal LastDepositAmount { get; set; }
         public DateTimeOffset DepositTimestamp { get; set; }
+        public ulong GuildMemberId { get; set; }
+
+        [JsonIgnore]
+        public GuildMember? GuildMember { get; set; }
     }
 }

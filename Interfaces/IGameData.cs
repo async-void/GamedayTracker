@@ -32,6 +32,6 @@ namespace GamedayTracker.Interfaces
         string GetPlayoffWeekName(NFLScoreboard scoreboard);
         string GetFullSeasonWeekDisplay(NFLScoreboard scoreboard);
         Task<NflStandings> GetNFLStandingsAsync();
-        Task<NFLScoreboard> GetEspnTeamScheduleAsync(string teamAbbr, int season);
+        Task<NFLScoreboard> GetEspnTeamScheduleAsync(string teamAbbr, int seasonType, int season);
     }
 }

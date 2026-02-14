@@ -21,7 +21,7 @@ namespace GamedayTracker.SlashCommands.Settings
         public async Task ToggleServerNotifications(SlashCommandContext ctx, [SlashChoiceProvider<ToggleChoiceProvider>] int choice)
         {
             await ctx.DeferResponseAsync();
-            var guildId = ctx.Guild!.Id.ToString();
+            var guildId = ctx.Guild!.Id;
             var guildResult = await _jsonDataService.GetGuildFromJsonAsync(guildId);
 
             if (guildResult.IsOk)

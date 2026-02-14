@@ -2,12 +2,14 @@
 using System.Text;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
+using GamedayTracker.Models.NFL;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
 using Serilog;
@@ -19,32 +21,62 @@ namespace GamedayTracker.SlashCommands.NFL
     {
         [Command("schedule")]
         [Description("Get Current Season Team Schedule")]
-        public async Task GetTeamSchedule(SlashCommandContext ctx, [Parameter("team")] string teamName, int season)
+        public async Task GetTeamSchedule(SlashCommandContext ctx, [Parameter("team")] string teamName, [SlashChoiceProvider<SeasonTypeChoiceProvider>] int seasonType, [SlashChoiceProvider<SeasonChoiceProvider>]int season)
         {
             
             await ctx.DeferResponseAsync();
-            var scheduleEspn = await gameData.GetEspnTeamScheduleAsync(teamName.ToLower(), season);
+           
             var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var normalizedName = NflTeamMatcher.MatchTeam(teamName);
-            if (!teamData.IsValidTeamName(normalizedName!.ToLower()))
+            var teamId = teamData.GetIdFromTeamName(teamName);
+           
+            if (!teamId.IsOk)
             {
                 await ctx.EditResponseAsync(new DiscordMessageBuilder()
                         .WithContent($"Invalid team name: {teamName}. Please use a valid team name."))
                     .ConfigureAwait(false);
                 return;
             }
+            var scheduleEspn = await gameData.GetEspnTeamScheduleAsync(teamId.Value, seasonType, season);
             var sb = new StringBuilder();
             var titleEmoji = NflEmojiService.GetEmoji(normalizedName.ToAbbr());
             if (scheduleEspn.Events.Count > 0)
             {
                 foreach (var match in scheduleEspn.Events)
                 {
+                    var awayCompetitor = match.Competitions[0].Competitors[0];
+                    var homeCompetitor = match.Competitions[0].Competitors[1];
+
                     var awayName = match.Competitions[0].Competitors[0].Team.Abbreviation;
                     var homeName = match.Competitions[0].Competitors[1].Team.Abbreviation;
-                    var date = match.Date.ToString();
+                    var date = match.Date.ToString("MMMM, dd yyyy hh:mm:ss tt");
+
                     var awayEmoji = NflEmojiService.GetEmoji(awayName);
                     var homeEmoji = NflEmojiService.GetEmoji(homeName);
-                    sb.AppendLine($"{awayEmoji} at {homeEmoji} `{date!, 7}`");
+                    var winEmoji = NflEmojiService.GetEmoji("Win");
+                    var lossEmoji = NflEmojiService.GetEmoji("Loss");
+
+                    string? result;
+                    if (match.Competitions[0].Status.Type.Completed)
+                    {
+                        if (awayCompetitor.Winner)
+                        {
+                            result = $"{awayEmoji} ✔️ at {homeEmoji} ❗";
+                        }
+                        else if (homeCompetitor.Winner)
+                        {
+                            result = $"{awayEmoji} ❗ at {homeEmoji} ✔️";
+                        }
+                        else
+                        {
+                            result = $"{awayEmoji} at {homeEmoji} (TIE)";
+                        }
+
+                        sb.AppendLine($"{result} `{date,-30}`");
+                    }
+                    else
+                        sb.AppendLine($"{awayEmoji} at {homeEmoji} `{date,-30}`");
+
                 }
 
                 DiscordComponent[] components =

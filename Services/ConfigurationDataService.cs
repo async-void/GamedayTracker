@@ -19,7 +19,7 @@ namespace GamedayTracker.Services
         public Result<bool, SystemError<ConfigurationDataService>> GuildExists(DiscordGuild guild)
         {
             using var db = new BotDbContextFactory().CreateDbContext();
-            var guildExists = db.Guilds.Any(g => g.GuildId == guild.Id.ToString());
+            var guildExists = db.Guilds.Any(g => g.GuildId == guild.Id);
             if (guildExists)
             {
                 return Result<bool, SystemError<ConfigurationDataService>>.Ok(true);

@@ -186,7 +186,7 @@ namespace GamedayTracker.Services
         #endregion
 
         #region GET ALL MEMBERS FOR SCOPE
-        public async Task<Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>> GetAllMembersForScope(int scope, string? guildId)
+        public async Task<Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>> GetAllMembersForScope(int scope, ulong guildId)
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "members.json");
             if (!File.Exists(path))
@@ -203,12 +203,12 @@ namespace GamedayTracker.Services
             switch (scope)
             {
                 case 0: //Guild Scope
-                    if (guildId is not null)
+                    if (guildId is not 0)
                     {
                         var file = await File.ReadAllTextAsync(path);
                         var members = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
                         var guildMembers = members
-                            .Where(m => m.GuildId.ToString().Equals(guildId, StringComparison.OrdinalIgnoreCase))
+                            .Where(m => m.GuildId == guildId)
                             .ToList();
                         if (guildMembers.Count > 0)
                         {
@@ -263,7 +263,7 @@ namespace GamedayTracker.Services
         #endregion
 
         #region GET MEMBER FROM JSON
-        public async Task<Result<GuildMember, SystemError<JsonDataServiceProvider>>> GetMemberFromJsonAsync(string memberId, string guildId)
+        public async Task<Result<GuildMember, SystemError<JsonDataServiceProvider>>> GetMemberFromJsonAsync(ulong memberId, ulong guildId)
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "members.json");
             if (!File.Exists(path))
@@ -311,7 +311,7 @@ namespace GamedayTracker.Services
             var json = await File.ReadAllTextAsync(path);
             List<GuildMember> members = JsonSerializer.Deserialize<List<GuildMember>>(json) ?? [];
 
-            var memberToUpdate = members.FirstOrDefault(g => g.GuildId.Equals(member.GuildId.ToString()) && g.MemberId.Equals(member.MemberId.ToString()));
+            var memberToUpdate = members.FirstOrDefault(g => g.GuildId.Equals(member.GuildId) && g.MemberId.Equals(member.MemberId));
             var jsonOptions = JsonHelper.DefaultJsonOptions;;
             if (memberToUpdate is { })
             {
@@ -592,7 +592,7 @@ namespace GamedayTracker.Services
 
         #region GET MEMBER GUILD FROM JSON
 
-        public async Task<Result<Guild, SystemError<JsonDataServiceProvider>>> GetMemberGuildFromJsonAsync(string memberId, string guildId)
+        public async Task<Result<Guild, SystemError<JsonDataServiceProvider>>> GetMemberGuildFromJsonAsync(ulong memberId, ulong guildId)
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "members.json");
             if (!File.Exists(path))
@@ -650,7 +650,7 @@ namespace GamedayTracker.Services
         #endregion
 
         #region GET GUILD FROM JSON
-        public async Task<Result<Guild, SystemError<JsonDataServiceProvider>>> GetGuildFromJsonAsync(string guildId)
+        public async Task<Result<Guild, SystemError<JsonDataServiceProvider>>> GetGuildFromJsonAsync(ulong guildId)
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "guilds.json");
             if (!File.Exists(path))
@@ -665,7 +665,7 @@ namespace GamedayTracker.Services
             }
             var json = await File.ReadAllTextAsync(path);
             var guilds = JsonSerializer.Deserialize<List<Guild>>(json)!;
-            var guild = guilds.FirstOrDefault(g => g.GuildId.Equals(guildId, StringComparison.OrdinalIgnoreCase));
+            var guild = guilds.FirstOrDefault(g => g.GuildId.Equals(guildId));
             if (guild is { }) return Result<Guild, SystemError<JsonDataServiceProvider>>.Ok(guild);
 
             return Result<Guild, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
@@ -754,7 +754,7 @@ namespace GamedayTracker.Services
         #endregion
 
         #region REMOVE GUILD DATA
-        public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> RemoveGuildDataAsync(string guildId)
+        public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> RemoveGuildDataAsync(ulong guildId)
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "guilds.json");
             if (!File.Exists(path))

@@ -55,7 +55,16 @@ namespace GamedayTracker.Jobs
 
                 var chnl = await client.GetChannelAsync(1398021268032196698);
                 var msg = await chnl.SendMessageAsync(message);
-                await chnl.CrosspostMessageAsync(msg);
+
+                try
+                {
+                    await chnl.CrosspostMessageAsync(msg);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogInformation("unable to crosspost daily headlines - {}", ex.Message);
+                }
+                
             }
             else
                 logger.LogError("Failed to fetch news articles.");

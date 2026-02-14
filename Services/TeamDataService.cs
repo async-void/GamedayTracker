@@ -266,7 +266,7 @@ namespace GamedayTracker.Services
                 "bills" or "buffalo" or "buf" or "buffalo bills" => "2",
 
                 // Chicago Bears - ID: 3
-                "bears" or "chicago" or "chi" or "chicago bears" => "3",
+                "bears" or "chicago" or "chi" or "chicago bears" or "da bears" => "3",
 
                 // Cincinnati Bengals - ID: 4
                 "bengals" or "cincinnati" or "cin" or "cincinnati bengals" => "4",
@@ -302,7 +302,7 @@ namespace GamedayTracker.Services
                 "rams" or "la rams" or "lar" or "los angeles rams" => "14",
 
                 // Miami Dolphins - ID: 15
-                "dolphins" or "miami" or "mia" or "miami dolphins" => "15",
+                "dolphins" or "miami" or "mia" or "miami dolphins" or "fins" => "15",
 
                 // Minnesota Vikings - ID: 16
                 "vikings" or "minnesota" or "min" or "minnesota vikings" => "16",
@@ -332,7 +332,7 @@ namespace GamedayTracker.Services
                 "chargers" or "la chargers" or "lac" or "san diego" or "los angeles chargers" or "san diego chargers" => "24",
 
                 // San Francisco 49ers - ID: 25
-                "49ers" or "niners" or "san francisco" or "sf" or "san francisco 49ers" => "25",
+                "49ers" or "niners" or "san francisco" or "sf" or "san fran" or "san francisco 49ers" => "25",
 
                 // Seattle Seahawks - ID: 26
                 "seahawks" or "seattle" or "sea" or "seattle seahawks" => "26",
