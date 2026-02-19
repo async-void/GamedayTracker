@@ -2,20 +2,14 @@
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
-using DSharpPlus.Interactivity;
 using GamedayTracker.AutoCompleteProvider;
 using GamedayTracker.ChoiceProviders;
-using GamedayTracker.Enums;
-using GamedayTracker.Factories;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
-using GamedayTracker.Services;
 using GamedayTracker.Utility;
-using GamedayTracker.Utility.Multipliers;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel;
-using static GamedayTracker.Utility.Multipliers.BetMultiplier;
 
 namespace GamedayTracker.SlashCommands.Economy
 {
@@ -24,10 +18,9 @@ namespace GamedayTracker.SlashCommands.Economy
     public class BetSlashCommands(ICommandHelper slashCmdHelper, IJsonDataService jsonService, IGameData gameDataService, IBetting bettingService)
     {
        
-
         [Command("bet")]
         [Description("place bet on a matchup")]
-        public async Task Bet(SlashCommandContext ctx, [Parameter("amount")] int amount, [SlashChoiceProvider<GameDayChoiceProvider>] int day)
+        public async Task Bet(SlashCommandContext ctx, [Parameter("amount")] int amount, [SlashAutoCompleteProvider<GameDayAutoCompleteProvider>] string day)
         {
             //TODO: finish betting command
             await ctx.DeferResponseAsync();
@@ -40,10 +33,54 @@ namespace GamedayTracker.SlashCommands.Economy
                 if (userFromJson.Value.Bank is { } bank)
                 {
                     var canAffordBet = await bettingService.CanAffordBetAsync(bank, amount);
+                    if (canAffordBet.IsOk)
+                    {
+                        var scoreboard = await gameDataService.GetNFLScoresAsync(2025, 1);
+                        var scheduled = scoreboard.Events
+                            .Where(s => s.Date.DayOfWeek.ToString().Equals(day))
+                            .ToList();
+                        if (scheduled.Count == 0)
+                        {
+                            await ctx.RespondAsync("No scheduled games found, unable to place bet at this time.");
+                            return;
+                        }
+
+                        IEnumerable<DiscordSelectComponentOption> gameOptions = scheduled.Select(s =>
+                        {
+                            var awayTeam = s.Competitions[0].Competitors.FirstOrDefault(c => c.HomeAway.Equals("away"))?.Team.DisplayName ?? "Unknown";
+                            var homeTeam = s.Competitions[0].Competitors.FirstOrDefault(c => c.HomeAway.Equals("home"))?.Team.DisplayName ?? "Unknown";
+                            var optionLabel = $"{awayTeam} beats {homeTeam}";
+                            var optionValue = $"{s.Name}";
+                            return new DiscordSelectComponentOption(optionLabel, optionValue);
+                        });
+
+                        var scheduleData = scheduled[0].ShortName;
+
+                        DiscordComponent[] comps =
+                         [
+                            new DiscordTextDisplayComponent("### Place Your Bet"),
+                            new DiscordSeparatorComponent(true),
+                            new DiscordActionRowComponent(
+                                [
+                                    new DiscordSelectComponent("betting", "Scheduled Games", gameOptions)
+                                ]
+                            )
+                        ];
+
+                        var container = new DiscordContainerComponent(comps, false, DiscordColor.Blurple);
+                        var embed = new DiscordMessageBuilder()
+                            .EnableV2Components()
+                            .AddContainerComponent(container);
+                        await ctx.EditResponseAsync(embed);
+                    }
+                    else
+                    {
+                        await ctx.RespondAsync("You do not have enough funds to place this bet.");
+                    }
                 }
                 else
                 {
-                    //bank is null, let the caller know they dont have the funds for the bet
+                    await ctx.RespondAsync("You do not have enough funds to place this bet.");
                 }
             }
             else
@@ -62,122 +99,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 await ctx.RespondAsync( errMsg );
             }
 
-            var scoreboard = await gameDataService.GetNFLScoresAsync();
-
-            var scheduled = scoreboard.Events
-                .Where(s => s.Status.Type.Description.Equals("Final"))
-                .ToList();
-            if (scheduled.Count == 0)
-            {
-                await ctx.RespondAsync("No scheduled games found, unable to place bet at this time.");
-                return;
-            }
-
-            IEnumerable<DiscordAutoCompleteChoice> choices = scheduled.Select(s =>
-            {
-                var awayTeam = s.Competitions[0].Competitors.FirstOrDefault(c => c.HomeAway.Equals("away"))?.Team.DisplayName ?? "Unknown";
-                var homeTeam = s.Competitions[0].Competitors.FirstOrDefault(c => c.HomeAway.Equals("home"))?.Team.DisplayName ?? "Unknown";
-                var optionLabel = $"{awayTeam} at {homeTeam}";
-                var optionValue = $"{s.Competitions[0].Id}";
-                return new DiscordAutoCompleteChoice(optionLabel, optionValue);
-            });
-
-            //here we build the list of available games to bet on from the scheduled games.
-            IEnumerable<DiscordSelectComponentOption> gameOptions = scheduled.Select(s =>
-            {
-                var awayTeam = s.Competitions[0].Competitors.FirstOrDefault(c => c.HomeAway.Equals("away"))?.Team.DisplayName ?? "Unknown";
-                var homeTeam = s.Competitions[0].Competitors.FirstOrDefault(c => c.HomeAway.Equals("home"))?.Team.DisplayName ?? "Unknown";
-                var optionLabel = $"{awayTeam} at {homeTeam}";
-                var optionValue = $"{s.Competitions[0].Id}";
-                return new DiscordSelectComponentOption(optionLabel, optionValue);
-            });
-
-            var scheduleData = scheduled[0].ShortName;
-
-            DiscordComponent[] comps =
-             {
-                new DiscordTextDisplayComponent("### Place Your Bet"),
-                new DiscordSeparatorComponent(true),
-                new DiscordSectionComponent("test", 
-                    new DiscordSelectComponent("gameId", "testing", gameOptions))
-            };
-
-
-            var container = new DiscordContainerComponent(comps, false, DiscordColor.Blurple);
-            var embed = new DiscordMessageBuilder()
-                .EnableV2Components()
-                .AddContainerComponent(container);
-            await ctx.EditResponseAsync(embed);
-            //var member = await _jsonService.GetMemberFromJsonAsync(ctx.User.Id.ToString(), ctx.Guild!.Id.ToString());
-            //if (member.IsOk)
-            //{
-            //    var matchups = await _gameDataService.GetScoreboard(2024, 1);
-            //    if (matchups.IsOk)
-            //    {
-            //        var matchup = matchups.Value.FirstOrDefault(m => m.Opponents!.AwayTeam.Name.Equals(teamName) || m.Opponents.HomeTeam.Name.Equals(teamName));
-            //        if (matchup is { } m)
-            //        {
-            //            var multiplier = new BetMultiplier();
-            //            var bonus =multiplier.GetMultiplier(BetType.Bonus);
-
-            //            var bet = new Bet()
-            //            {
-            //                BetId = Guid.NewGuid(),
-            //                MemberId = member.Value.MemberId,
-            //                Matchup = matchup,
-            //                BetAmount = amount,
-            //                Multiplier = bonus,
-            //                TeamPickedToWinName = teamName,
-            //                GuildId = ctx.Guild.Id.ToString()
-            //            };
-            //            var isValidBet = await _bettingService.CanPlaceBet(m, bet, member.Value);
-            //            if (isValidBet.IsOk)
-            //            {
-            //                //TODO: save the bet to the members json file.
-            //                member.Value.Bets = [bet];
-            //                var updatedMember = await _jsonService.UpdateMemberDataAsync(member.Value);
-
-            //                if (!updatedMember.IsOk)
-            //                {
-            //                    await ctx.RespondAsync("Unable to update member data, bet not saved!");
-            //                    return;
-            //                }
-                            
-            //                //if we get this far ...we win.
-            //                DiscordComponent[] cmps =
-            //                [
-            //                    new DiscordTextDisplayComponent($"### Member [{member.Value.MemberName}] Bet Info"),
-            //                    new DiscordSeparatorComponent(true),
-            //                    new DiscordTextDisplayComponent($"Amount: {bet.BetAmount}"),
-            //                    new DiscordTextDisplayComponent($"Multiplier: {bet.Multiplier}"),
-            //                    new DiscordTextDisplayComponent($"Team Name: {bet.TeamPickedToWinName}"),
-            //                ];
-            //                await ctx.RespondAsync($"-# You bet {amount} on {teamName}\r\n-# this will eventually be turned into an embed");
-            //                return;
-            //            }
-            //            else
-            //            {
-            //                await ctx.RespondAsync($"-# this will eventually be an embed.\r\n{isValidBet.Error.ErrorCode} : {isValidBet.Error.ErrorMessage}");
-            //                return;
-            //            }
-            //        }
-            //        else
-            //        {
-            //            await ctx.RespondAsync($"-# this will eventually be an embed.\r\nmatchup is either invalid or un reachable, unable to place bet at this time\r\n");
-            //            return;
-            //        }
-            //    }
-            //    await ctx.RespondAsync($"-# this will eventually be an embed.\r\nmatchups is either invalid or un reachable, unable to place bet at this time\r\n" +
-            //        $"{matchups.Error.ErrorCode}: {matchups.Error.ErrorMessage}");
-            //}
-            //else
-            //{
-            //    //member isn't in the json file, create a new member and credit the balance.
-            //    var user = ctx.Member?.Username ?? "not found";
-            //    await ctx.RespondAsync($"Member isn't in the json file, I am creating an account and giving [{user}] 100 credits");
-            //    return;
-            //}
-            //await ctx.RespondAsync($"Unable to place bet!");
+            
         }
 
         #region LEADERBOARD

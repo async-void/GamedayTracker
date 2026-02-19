@@ -48,7 +48,7 @@ namespace GamedayTracker.Services
             { "NFC", "<:nfc:1331741091636056196>" },
             { "Win", "<:win:1464980029585752218>"},
             { "Loss", "<:loss:1464981155601317951>"},
-            { "default", ""}
+            { "default", "<:nfl:1331742015809130629>"}
         };
 
         public static string GetEmoji(string abbr)

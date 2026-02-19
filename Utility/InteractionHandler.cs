@@ -431,8 +431,63 @@ namespace GamedayTracker.Utility
                                         new DiscordInteractionResponseBuilder(msg));
                                 break;
                             #endregion
+
+                            #region SCOREBOARD NEXT
+                            case "scoreboard_next":
+                                var scoreBoardPaginationData = ScoreboardPaginationCache.Get(eventArgs.Interaction.Message.Id);
+                                if (scoreBoardPaginationData == null)
+                                {
+                                    await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                        new DiscordInteractionResponseBuilder()
+                                            .WithContent("Pagination expired. Please run the command again."));
+                                    return;
+                                }
+                                scoreBoardPaginationData.CurrentPage++;
+
+                                if (scoreBoardPaginationData.CurrentPage > scoreBoardPaginationData.TotalPages)
+                                    scoreBoardPaginationData.CurrentPage = scoreBoardPaginationData.TotalPages;
+
+                                var scoreboardMsg = await embedService.CreateScoreboardPage(scoreBoardPaginationData.Scoreboard,
+                                    scoreBoardPaginationData.Emoji, scoreBoardPaginationData.SeasonType, scoreBoardPaginationData.Season,
+                                    scoreBoardPaginationData.CurrentPage);
+                                var scoreboardButtons = CreateScoreboardNavigationButtons(scoreBoardPaginationData.CurrentPage, scoreBoardPaginationData.TotalPages);
+                                scoreboardMsg.AddActionRowComponent(new DiscordActionRowComponent(scoreboardButtons));
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                        new DiscordInteractionResponseBuilder(scoreboardMsg));
+                                break;
                             #endregion
 
+                            #region SCOREBOARD PREVIOUS
+                            case "scoreboard_prev":
+                                scoreBoardPaginationData = ScoreboardPaginationCache.Get(eventArgs.Interaction.Message.Id);
+                                if (scoreBoardPaginationData == null)
+                                {
+                                    await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                        new DiscordInteractionResponseBuilder()
+                                            .WithContent("Pagination expired. Please run the command again."));
+                                    return;
+                                }
+                                scoreBoardPaginationData.CurrentPage--;
+                                scoreboardMsg = await embedService.CreateScoreboardPage(scoreBoardPaginationData.Scoreboard,
+                                    scoreBoardPaginationData.Emoji, scoreBoardPaginationData.SeasonType, scoreBoardPaginationData.Season,
+                                    scoreBoardPaginationData.CurrentPage);
+                                scoreboardButtons = CreateScoreboardNavigationButtons(scoreBoardPaginationData.CurrentPage, scoreBoardPaginationData.TotalPages);
+                                scoreboardMsg.AddActionRowComponent(new DiscordActionRowComponent(scoreboardButtons));
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                        new DiscordInteractionResponseBuilder(scoreboardMsg));
+                                break;
+                            #endregion
+                            #endregion
+
+                            #region BETTING
+                            case "betting":
+                                var pickedGame = eventArgs.Interaction.Data.Values[0];
+                                var bettingMsg = await embedService.BuildBettingEmbed(pickedGame); 
+                                bettingMsg.AddActionRowComponent(new DiscordActionRowComponent(CreateBettingButtons(pickedGame)));
+                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
+                                       new DiscordInteractionResponseBuilder(bettingMsg));
+                                break;
+                            #endregion
                             default:
                                 {
                                     break;
@@ -449,7 +504,7 @@ namespace GamedayTracker.Utility
                 case DiscordInteractionType.AutoComplete:
                     //await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Auto Complete is in development, the devs are hard at work implementing this feature!"));
                     break;
-
+                
                 #region MODAL SUBMIT
                 case DiscordInteractionType.ModalSubmit:
                     //modal submit
@@ -490,6 +545,7 @@ namespace GamedayTracker.Utility
             }
         }
 
+        #region BUTTON COMPONENT CREATORS
         private DiscordComponent[] CreateNavigationButtons(int currentPage, int totalPages)
         {
             return
@@ -511,5 +567,55 @@ namespace GamedayTracker.Utility
                     currentPage >= totalPages - 1)
             ];
         }
+
+        private DiscordComponent[] CreateScoreboardNavigationButtons(int currentPage, int totalPages)
+        {
+            return
+            [
+                new DiscordButtonComponent(
+                    DiscordButtonStyle.Primary,
+                    $"scoreboard_prev",
+                    "◀ Previous",
+                    currentPage == 0),
+                new DiscordButtonComponent(
+                    DiscordButtonStyle.Secondary,
+                    $"page",
+                    $"Page {currentPage + 1}/{totalPages}",
+                    true),
+                new DiscordButtonComponent(
+                    DiscordButtonStyle.Primary,
+                    $"scoreboard_next",
+                    "Next ▶",
+                    currentPage >= totalPages - 1)
+            ];
+        }
+
+        private DiscordComponent[] CreateBettingButtons(string gameData)
+        {
+            var gameInfo = gameData.Split("at");
+            return
+            [
+                new DiscordButtonComponent(
+                    DiscordButtonStyle.Primary,
+                    $"betting_away",
+                    $"{gameInfo[0]}"),
+
+                new DiscordButtonComponent(
+                    DiscordButtonStyle.Primary,
+                    $"betting_home",
+                    $"{gameInfo[1]}"),
+
+                new DiscordButtonComponent(
+                    DiscordButtonStyle.Primary,
+                    $"betting_over",
+                    $"Over"),
+
+                new DiscordButtonComponent(
+                    DiscordButtonStyle.Primary,
+                    $"betting_under",
+                    $"Under"),
+            ];
+        }
+        #endregion
     }
 }

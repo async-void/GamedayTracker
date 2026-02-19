@@ -5,18 +5,12 @@ using GamedayTracker.Models;
 using GamedayTracker.Models.NFL;
 using GamedayTracker.Utility;
 using HtmlAgilityPack;
-using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic;
 using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
-using System.Net.Http;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 
 namespace GamedayTracker.Services
@@ -500,6 +494,10 @@ namespace GamedayTracker.Services
                                $"?dates={resolvedSeason}&seasontype={resolvedSeasonType}&week={resolvedWeek}";
 
                 var realTimeScoresMode = modeEvaluator.Evaluate(DateTimeOffset.Now);
+
+                //if (realTimeScoresMode.Equals(RealTimeScoresMode.Offseason))
+                //    return new NFLScoreboard();
+
                 var interval = modeEvaluator.GetInterval(realTimeScoresMode);
                 var cacheKey = $"scores:{season.GetValueOrDefault()}:{seasonType.GetValueOrDefault()}:{week.GetValueOrDefault()}";
 
@@ -610,17 +608,20 @@ namespace GamedayTracker.Services
             var competition = game.Competitions[0];
             var homeTeam = competition.Competitors.FirstOrDefault(c => c.HomeAway == "home");
             var awayTeam = competition.Competitors.FirstOrDefault(c => c.HomeAway == "away");
+            var awayEmoji = NflEmojiService.GetEmoji(awayTeam.Team.Abbreviation ?? "UNKOWN");
+            var homeEmoji = NflEmojiService.GetEmoji(homeTeam.Team.Abbreviation ?? "UNKOWN");
 
             if (homeTeam == null || awayTeam == null)
                 return "Unable to load game info";
 
-            var info = $"**{awayTeam.Team.DisplayName}** @ **{homeTeam.Team.DisplayName}**\n";
+            var info = $"{awayEmoji} @ {homeEmoji}\n";
 
             if (IsGameCompleted(competition))
             {
                 // Final score
                 var awayTotalScore = awayTeam.LineScores?.Sum(ls => ls.Value) ?? 0;
                 var homeTotalScore = homeTeam.LineScores?.Sum(ls => ls.Value) ?? 0;
+               
                 info += $"**Final:** {awayTeam.Team.Abbreviation} {awayTotalScore} - {homeTotalScore} {homeTeam.Team.Abbreviation}";
 
                 // Show winner
@@ -735,7 +736,7 @@ namespace GamedayTracker.Services
                 {
                     var competition = e.Competitions[0];
                     return competition.Competitors.Any(c =>
-                        c.Team.Abbreviation.Equals(teamAbbreviation, StringComparison.OrdinalIgnoreCase));
+                        c.Team?.Abbreviation?.Equals(teamAbbreviation, StringComparison.OrdinalIgnoreCase) == true);
                 })];
         }
         #endregion
@@ -894,8 +895,7 @@ namespace GamedayTracker.Services
                 response.EnsureSuccessStatusCode();
 
                 var json = await response.Content.ReadAsStringAsync();
-                var standings = JsonSerializer.Deserialize<NflStandings>(json, CachedJsonOptions);
-
+                var standings = JsonSerializer.Deserialize<NflStandings>(json, CachedJsonOptions) ?? new NflStandings();
 
                 logger.LogInformation("Successfully fetched NFL standings.");
                 return standings;
@@ -903,7 +903,7 @@ namespace GamedayTracker.Services
             catch (Exception ex)
             {
                 logger.LogError($"Error fetching NFL standings: {ex.Message}");
-                return null;
+                return new NflStandings();
             }
 
         }

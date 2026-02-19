@@ -5,9 +5,11 @@ using GamedayTracker.Models.NFL;
 using GamedayTracker.Utility;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GamedayTracker.Services
 {
@@ -39,21 +41,23 @@ namespace GamedayTracker.Services
         #region CREATE SCORES EMBED
         public async Task<DiscordEmbed> CreateScoresEmbed(NFLScoreboard data)
         {
-            //var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
             //var seasonName = gameData.GetSeasonTypeName(data.Season.Type);
             var displayName = gameData.GetFullSeasonWeekDisplay(data);
             var titleEmoji = NflEmojiService.GetEmoji("NFL");
-            var embed = new DiscordEmbedBuilder()
-                .WithColor(new DiscordColor(1, 51, 105))
-                .WithTitle($"{titleEmoji} NFL Scores\r\n{displayName}")
-                .WithFooter($"Gameday Tracker ")
-                .WithTimestamp(DateTimeOffset.UtcNow);
 
             if (data.Events == null || data.Events.Count == 0)
             {
-                embed.WithDescription("No games scheduled for this week.");
-                return embed.Build();
+                var errorEmbed = new DiscordEmbedBuilder()
+                    .WithColor(new DiscordColor(1, 51, 105))
+                    .WithTitle($"{titleEmoji} NFL Scores\r\n{displayName}")
+                    .WithFooter($"Gameday Tracker ")
+                    .WithTimestamp(DateTimeOffset.UtcNow)
+                    .WithDescription("No games scheduled for this week.");
+                return errorEmbed.Build();
             }
+
+            var sb = new StringBuilder();
 
             // Separate games by status
             var liveGames = gameData.GetLiveGames(data);
@@ -63,7 +67,9 @@ namespace GamedayTracker.Services
             // Add live games first
             if (liveGames.Count > 0)
             {
-                embed.AddField("🔴 LIVE GAMES", "---");
+                sb.AppendLine("🔴 LIVE GAMES");
+                sb.AppendLine("=================\r\n");
+               // embed.AddField("🔴 LIVE GAMES", "---");
                 foreach (var game in liveGames)
                 {
                     var gameInfo = await gameData.GetGameInfo(game);
@@ -71,14 +77,18 @@ namespace GamedayTracker.Services
                     var names = game.ShortName.Split(seperators, StringSplitOptions.TrimEntries);
                     var awayEmoji = NflEmojiService.GetEmoji(names[0].Trim());
                     var homeEmoji = NflEmojiService.GetEmoji(names[1].Trim());
-                    embed.AddField($"{awayEmoji} at {homeEmoji}", gameInfo, inline: false);
+                    sb.AppendLine($"{awayEmoji} at {homeEmoji} : {gameInfo}");
+                    //embed.AddField($"{awayEmoji} at {homeEmoji}", gameInfo, inline: false);
                 }
+                
             }
 
             // Add completed games
             if (completedGames.Count > 0)
             {
-                embed.AddField("✅ COMPLETED", "---");
+                sb.AppendLine("\r\n🔴 COMPLETED");
+                sb.AppendLine("=================\r\n");
+                //embed.AddField("✅ COMPLETED", "---");
                 foreach (var game in completedGames)
                 {
                     var gameInfo = await gameData.GetGameInfo(game);
@@ -87,15 +97,19 @@ namespace GamedayTracker.Services
                     var names = game.ShortName.Split(seperators, StringSplitOptions.TrimEntries);
                     var awayEmoji = NflEmojiService.GetEmoji(names[0].Trim());
                     var homeEmoji = NflEmojiService.GetEmoji(names[1].Trim());
-                    embed.AddField($"{awayEmoji} at {homeEmoji}", gameInfo, inline: false);
-                    embed.AddField("📰 Headline", headline, inline: false);
+                    sb.AppendLine($"{awayEmoji} at {homeEmoji} : {gameInfo}");
+                    sb.AppendLine($"📰 Headline {headline}");
+                    //embed.AddField($"{awayEmoji} at {homeEmoji}", gameInfo, inline: false);
+                    //embed.AddField("📰 Headline", headline, inline: false);
                 }
             }
 
             // Add scheduled games
             if (scheduledGames.Count > 0)
             {
-                embed.AddField("📅 SCHEDULED", "---");
+                sb.AppendLine("\r\n📅 SCHEDULED");
+                sb.AppendLine("=================\r\n");
+                //embed.AddField("📅 SCHEDULED", "---");
                 foreach (var game in scheduledGames)
                 {
                     var gameInfo = await gameData.GetGameInfo(game);
@@ -103,11 +117,27 @@ namespace GamedayTracker.Services
                     var names = game.ShortName.Split(seperators, StringSplitOptions.TrimEntries);
                     var awayEmoji = NflEmojiService.GetEmoji(names[0].Trim());
                     var homeEmoji = NflEmojiService.GetEmoji(names[1].Trim());
-                    embed.AddField($"{awayEmoji} at {homeEmoji}", gameInfo, inline: false);
+                    sb.AppendLine($"{awayEmoji} at {homeEmoji} : {gameInfo}");
+                    //embed.AddField($"{awayEmoji} at {homeEmoji}", gameInfo, inline: false);
                 }
             }
-
-            return embed.Build();
+            DiscordComponent[] comps =
+            [
+                new DiscordTextDisplayComponent($"{titleEmoji} NFL Scores\r\n{displayName}"),
+                new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                new DiscordTextDisplayComponent(sb.ToString()),
+                new DiscordSeparatorComponent(),
+                new DiscordTextDisplayComponent($"Gameday Tracker {timestamp}")
+            ];
+            var container = new DiscordContainerComponent(comps, false, DiscordColor.Blurple);
+            var msg = new DiscordMessageBuilder()
+                .EnableV2Components()
+                .AddContainerComponent(container);
+            var embed = new DiscordEmbedBuilder()
+                .WithColor(new DiscordColor(1, 51, 105))
+                .WithTitle($"{titleEmoji} NFL Scores\r\n{displayName}")
+                .WithDescription("");
+            return embed;
         }
         #endregion
 
@@ -143,7 +173,8 @@ namespace GamedayTracker.Services
                     : entry.Team.DisplayName;
 
                     var record = ties > 0 ? $"{wins}-{losses}-{ties}" : $"{wins}-{losses}";
-                    return $"{teamName, -22} {record, 7} ({winPercent, 6})";
+                    var winPercentPadded = $"({winPercent})"; 
+                    return $"{teamName, -22} {record, 7} {winPercentPadded, 6}";
                 }));
 
                 var standingsText = "```\n" + string.Join("\n", standingsLines) + "\n```";
@@ -288,6 +319,79 @@ namespace GamedayTracker.Services
         }
         #endregion
 
-       
+        #region CREATE SCOREBOARD PAGE
+        public async Task<DiscordMessageBuilder> CreateScoreboardPage(NFLScoreboard scores, string emoji, NFLSeasonType seasonType, int seasonYear, int pageIndex)
+        {
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var titleEmoji = NflEmojiService.GetEmoji("NFL");
+            var displayName = gameData.GetFullSeasonWeekDisplay(scores);
+            var eventList = new List<List<Event>>();
+
+            var liveGames = gameData.GetLiveGames(scores);
+            var completedGames = gameData.GetCompletedGames(scores);
+            var scheduledGames = gameData.GetScheduledGames(scores);
+            eventList.Add(liveGames);
+            eventList.Add(completedGames);
+            eventList.Add(scheduledGames);
+
+            var gamesToShow = completedGames
+                     .Skip(pageIndex * 4)
+                     .Take(4)
+                     .ToList();
+
+
+            var components = new List<DiscordComponent>
+            {
+               new DiscordTextDisplayComponent($"{titleEmoji} **{displayName} Scores** {emoji}"),
+               new DiscordSeparatorComponent(true),
+            };
+
+            foreach (var game in gamesToShow)
+            {
+                var gameInfo = await gameData.GetGameInfo(game);
+                var headline = game.Competitions[0].Headlines?.FirstOrDefault()?.ShortLinkText ?? "not found";
+                var seperators = new[] { "@", "VS" };
+                var names = game.ShortName.Split(seperators, StringSplitOptions.TrimEntries);
+                var awayEmoji = NflEmojiService.GetEmoji(names[0].Trim());
+                var homeEmoji = NflEmojiService.GetEmoji(names[1].Trim());
+                components.Add(new DiscordTextDisplayComponent($"{gameInfo}"));
+                components.Add(new DiscordTextDisplayComponent($"📰 Headline {headline}\r\n"));
+            }
+
+            components.Add(new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large));
+            components.Add(new DiscordTextDisplayComponent($"Gameday Tracker {timestamp}"));
+            components.Add(new DiscordSeparatorComponent());
+
+            var msg = new DiscordMessageBuilder()
+                .EnableV2Components()
+                .AddContainerComponent(new DiscordContainerComponent(components, false, DiscordColor.Blurple));
+                return msg;
+
+        }
+        #endregion
+
+        #region CREATE BETTING EMBED
+        public async Task<DiscordMessageBuilder> BuildBettingEmbed(string data)
+        {
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var away = data.Split(" at ")[0].Trim();
+            var home = data.Split(" at ")[1].Trim();
+
+            var components = new List<DiscordComponent>
+            {
+               new DiscordTextDisplayComponent($"Betting"),
+               new DiscordSeparatorComponent(true),
+               new DiscordTextDisplayComponent($"Place your bet on {away} or {home}"),
+               new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+               new DiscordTextDisplayComponent($"Gameday Tracker {timestamp}"),
+            };
+
+            var msg = new DiscordMessageBuilder()
+               .EnableV2Components()
+               .AddContainerComponent(new DiscordContainerComponent(components, false, DiscordColor.Green));
+            return msg;
+        }
+        #endregion
+
     }
 }

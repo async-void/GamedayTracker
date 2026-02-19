@@ -1,14 +1,18 @@
-﻿
-using GamedayTracker.Models.NFL;
+﻿using GamedayTracker.Models.NFL;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace GamedayTracker.Cache
 {
-    public static class TeamStatsPaginationCache
+    public class ScoreboardPaginationCache
     {
-        private static readonly Dictionary<ulong, TeamStatsPaginationData> _cache = [];
+        private static readonly Dictionary<ulong, NFLScoreboardPaginationData> _cache = [];
         private static readonly object _lock = new();
 
-        public static void Store(ulong messageId, TeamStatsPaginationData data)
+        public static void Store(ulong messageId, NFLScoreboardPaginationData data)
         {
             lock (_lock)
             {
@@ -16,7 +20,7 @@ namespace GamedayTracker.Cache
             }
         }
 
-        public static TeamStatsPaginationData? Get(ulong messageId)
+        public static NFLScoreboardPaginationData? Get(ulong messageId)
         {
             lock (_lock)
             {

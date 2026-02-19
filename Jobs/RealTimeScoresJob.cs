@@ -9,24 +9,28 @@ using System.Text;
 
 namespace GamedayTracker.Jobs
 {
-    public class RealTimeScoresJob(IGameData gameDataService, IDiscordEmbedService embedService, DiscordClient client) : IJob
+    public class RealTimeScoresJob(IGameData gameDataService, IDiscordEmbedService embedService, DiscordClient client, IEvaluator evaluator) : IJob
     {
         private readonly IGameData _gameDataService = gameDataService;
         private readonly DiscordClient _client = client;
         public async Task Execute(IJobExecutionContext context)
         {
             Log.Information("Fetching realtime scores....[started]");
-            //var scoreboard = await _gameDataService.GetCurrentScoreboard();
+            var seasonType = evaluator.Evaluate(DateTimeOffset.Now);
+
+            if (seasonType.Equals(Enums.RealTimeScoresMode.Offseason))
+            {
+                Log.Information("Fetching realtime scores....[skipped] - season is currently in offseason mode");
+                return;
+            }
+
             var scoreboard = await _gameDataService.GetNFLScoresAsync();
-            //var liveGames = _gameDataService.GetLiveGames(scoreboard);
-            //var liveGameEmbed = embedService.CreateLiveGamesEmbed(liveGames);
-            var scoresEmbed = await embedService.CreateScoresEmbed(scoreboard);
+            var chnl = await _client.GetChannelAsync(1398021337498390539);
 
             if (scoreboard.Events.Count > 0)
             {
-                var chnl = await _client.GetChannelAsync(1398021337498390539);
+                var scoresEmbed = await embedService.CreateScoresEmbed(scoreboard);
                 var msg = await chnl.SendMessageAsync(scoresEmbed);
-                
                 try
                 {
                     await chnl.CrosspostMessageAsync(msg);
@@ -41,6 +45,7 @@ namespace GamedayTracker.Jobs
             else
             {
                 Log.Error($"Fetching realtime scores....[failed] REASON: could not find scores for season {scoreboard.Season.Year}");
+                await chnl.SendMessageAsync($"fetching real time score failed: Season Mode is {seasonType}");
             }
         }
     }

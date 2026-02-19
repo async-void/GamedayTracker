@@ -12,17 +12,20 @@ namespace GamedayTracker.Services
     {
         public RealTimeScoresMode Evaluate(DateTimeOffset now)
         {
-            // NFL season months: September (9) through February (2)
+            // NFL season months: September (9) through Febuary (2)
             bool inSeason = now.Month >= 9 || now.Month <= 2;
 
             if (!inSeason)
             {
-                return RealTimeScoresMode.Offseason; // March–August
+                return RealTimeScoresMode.Offseason; // Febuary–August
             }
 
             // Explicit postseason handling (January–February)
             if (now.Month == 1 || now.Month == 2)
             {
+                if (now.Day > 5) //Superbowl is over but still in Febuary
+                    return RealTimeScoresMode.Offseason; 
+
                 // Treat playoff/Super Bowl windows as LiveGame for freshness
                 if ((now.DayOfWeek == DayOfWeek.Sunday && now.Hour >= 18 && now.Hour <= 23) ||
                     (now.DayOfWeek == DayOfWeek.Saturday && now.Hour >= 16 && now.Hour <= 23))

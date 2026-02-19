@@ -59,47 +59,128 @@ namespace GamedayTracker.Extensions
         #region TO ABBREVIATION
         public static string ToAbbr(this string name)
         {
-            var result = name switch
+            if (string.IsNullOrWhiteSpace(name)) return "UNKNOWN";
+
+            var key = name.Trim().ToLowerInvariant();
+
+            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                "Arizona" => "ARI",
-                "Louis" => "LAR",
-                "Buffalo" => "BUF",
-                "Miami" => "MIA",
-                "New England" => "NE",
-                "NY Jets" => "NYJ",
-                "Baltimore" => "BAL",
-                "Cincinnati" => "CIN",
-                "Cleveland" => "CLE",
-                "Pittsburgh" => "PIT",
-                "Houston" => "HOU",
-                "Indianapolis" => "IND",
-                "Jacksonville" => "JAC",
-                "Tennessee" => "TEN",
-                "Denver" => "DEN",
-                "Kansas City" => "KC",
-                "Las Vegas" => "LV",
-                "Oakland" => "LV",
-                "LA Chargers" => "LAC",
-                "San Diego" => "LAC",
-                "Dallas" => "DAL",
-                "NY Giants" => "NYG",
-                "Philadelphia" => "PHI",
-                "Washington" => "WAS",
-                "Chicago" => "CHI",
-                "Detroit" => "DET",
-                "Green Bay" => "GB",
-                "Minnesota" => "MIN",
-                "Atlanta" => "ATL",
-                "Carolina" => "CAR",
-                "New Orleans" => "NO",
-                "Tampa Bay" => "TB",
-                "LA Rams" => "LAR",
-                "San Francisco" => "SF",
-                "Seattle" => "SEA",
-                _ => "UNKNOWN"
+                // NFC West
+                ["arizona"] = "ARI",
+                ["cardinals"] = "ARI",
+
+                ["la rams"] = "LAR",
+                ["los angeles rams"] = "LAR",
+                ["rams"] = "LAR",
+                ["st louis"] = "LAR",
+                ["louis"] = "LAR",
+
+                ["san francisco"] = "SF",
+                ["49ers"] = "SF",
+                ["niners"] = "SF",
+
+                ["seattle"] = "SEA",
+                ["seahawks"] = "SEA",
+
+                // AFC East
+                ["buffalo"] = "BUF",
+                ["bills"] = "BUF",
+
+                ["miami"] = "MIA",
+                ["dolphins"] = "MIA",
+
+                ["new england"] = "NE",
+                ["patriots"] = "NE",
+
+                ["ny jets"] = "NYJ",
+                ["jets"] = "NYJ",
+
+                // AFC North
+                ["baltimore"] = "BAL",
+                ["ravens"] = "BAL",
+
+                ["cincinnati"] = "CIN",
+                ["bengals"] = "CIN",
+
+                ["cleveland"] = "CLE",
+                ["browns"] = "CLE",
+
+                ["pittsburgh"] = "PIT",
+                ["steelers"] = "PIT",
+
+                // AFC South
+                ["houston"] = "HOU",
+                ["texans"] = "HOU",
+
+                ["indianapolis"] = "IND",
+                ["colts"] = "IND",
+
+                ["jacksonville"] = "JAX",
+                ["jaguars"] = "JAX",
+
+                ["tennessee"] = "TEN",
+                ["titans"] = "TEN",
+
+                // AFC West
+                ["denver"] = "DEN",
+                ["broncos"] = "DEN",
+
+                ["kansas city"] = "KC",
+                ["chiefs"] = "KC",
+
+                ["las vegas"] = "LV",
+                ["oakland"] = "LV",
+                ["raiders"] = "LV",
+
+                ["la chargers"] = "LAC",
+                ["los angeles chargers"] = "LAC",
+                ["san diego"] = "LAC",
+                ["chargers"] = "LAC",
+
+                // NFC East
+                ["dallas"] = "DAL",
+                ["cowboys"] = "DAL",
+
+                ["ny giants"] = "NYG",
+                ["giants"] = "NYG",
+
+                ["philadelphia"] = "PHI",
+                ["eagles"] = "PHI",
+
+                ["washington"] = "WSH",
+                ["commanders"] = "WSH",
+
+                // NFC North
+                ["chicago"] = "CHI",
+                ["bears"] = "CHI",
+
+                ["detroit"] = "DET",
+                ["lions"] = "DET",
+
+                ["green bay"] = "GB",
+                ["packers"] = "GB",
+
+                ["minnesota"] = "MIN",
+                ["vikings"] = "MIN",
+
+                // NFC South
+                ["atlanta"] = "ATL",
+                ["falcons"] = "ATL",
+
+                ["carolina"] = "CAR",
+                ["panthers"] = "CAR",
+
+                ["new orleans"] = "NO",
+                ["saints"] = "NO",
+
+                ["tampa bay"] = "TB",
+                ["buccaneers"] = "TB",
+                ["bucs"] = "TB",
             };
 
-            return result;
+            return map.TryGetValue(key, out var abbr)
+                ? abbr
+                : "UNKNOWN";
         }
         #endregion
 
