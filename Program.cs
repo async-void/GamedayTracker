@@ -31,7 +31,7 @@ namespace GamedayTracker
         static async Task Main(string[] args)
         { 
             Console.WriteLine("\r\n");
-            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
             Console.WriteLine(@"
 
 

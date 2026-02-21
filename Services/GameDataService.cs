@@ -534,6 +534,27 @@ namespace GamedayTracker.Services
         }
         #endregion
 
+        #region GET SCOREBOARD BY EVENT ID
+        public async Task<NFLScoreboard> GetScoreboardByEventId(string eventId)
+        {
+            try
+            {
+                string url = $"http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?event={eventId}";
+                var response = await httpClient.GetStringAsync(url);
+                var scores = JsonSerializer.Deserialize<NFLScoreboard?>(response);
+                return scores ?? new NFLScoreboard { Events = [] };
+            }
+            catch (Exception ex)
+            {
+                logger.LogInformation($"Error fetching scoreboard for event {eventId}: {ex.Message}");
+                return new NFLScoreboard
+                {
+                    Events = []
+                };
+            }
+        }
+        #endregion
+
         #region IS GAME IN PROGRESS
         // Check if a game is in progress
         public bool IsGameInProgress(Competition competition)

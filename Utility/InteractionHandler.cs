@@ -2,6 +2,7 @@
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using GamedayTracker.Cache;
+using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
@@ -12,7 +13,7 @@ using System.Text;
 
 namespace GamedayTracker.Utility
 {
-    public class InteractionHandler(ITeamData teamData, IPlayerData playerDataService, IDiscordEmbedService embedService): IEventHandler<InteractionCreatedEventArgs>
+    public class InteractionHandler(ITeamData teamData, IPlayerData playerDataService, IDiscordEmbedService embedService, IGameData gameService): IEventHandler<InteractionCreatedEventArgs>
     {
         public async Task HandleEventAsync(DiscordClient sender, InteractionCreatedEventArgs eventArgs)
         {
@@ -32,6 +33,58 @@ namespace GamedayTracker.Utility
                         [
                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "backId", "⬅️ Back"),
                         ];
+
+                        var id = eventArgs.Interaction.Data.CustomId;
+
+                        if (id.StartsWith("betting_away"))
+                        {
+                            await eventArgs.Interaction.DeferAsync();
+                            var details = eventArgs.Interaction.Data.CustomId.Split(":");
+                            var teamName = details[1];
+                            var eventId = details[2];
+                            var wagerAmount = details[3];
+                            var bet = new Bet
+                            {
+                                Selection = teamName,
+                                EventId = $"{eventId}",
+                                WagerAmount = decimal.Parse(wagerAmount),
+                                PlacedAt = DateTime.UtcNow,
+                                UserId = eventArgs.Interaction.User.Id,
+                                Type = BetType.Moneyline,
+                                Odds = 10,
+                                Status = BetStatus.Pending,
+                                Id = Guid.NewGuid()
+                            };
+
+                            //here we save the bet to the json file, we can also add a confirmation message to the user that their bet was placed successfully
+                            await eventArgs.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder()
+                                .WithContent($"Your bet on the **{teamName}** has been placed successfully with a wager of **${wagerAmount}**! Good luck! 🍀"));
+
+                        }
+                        else if (id.StartsWith("betting_home"))
+                        {
+                            await eventArgs.Interaction.DeferAsync();
+                            var details = eventArgs.Interaction.Data.CustomId.Split(":");
+                            var teamName = details[1];
+                            var eventId = details[2];
+                            var wagerAmount = details[3];
+                            var bet = new Bet
+                            {
+                                Selection = teamName,
+                                EventId = $"{eventId}",
+                                WagerAmount = decimal.Parse(wagerAmount),
+                                PlacedAt = DateTime.UtcNow,
+                                UserId = eventArgs.Interaction.User.Id,
+                                Type = BetType.Moneyline,
+                                Odds = 10,
+                                Status = BetStatus.Pending,
+                                Id = Guid.NewGuid()
+                            };
+
+                            //here we save the bet to the json file, we can also add a confirmation message to the user that their bet was placed successfully
+                            await eventArgs.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder()
+                                .WithContent($"Your bet on the **{teamName}** has been placed successfully with a wager of **${wagerAmount}**! Good luck! 🍀"));
+                        }
 
                         switch (eventArgs.Interaction.Data.CustomId)
                         {
@@ -481,12 +534,16 @@ namespace GamedayTracker.Utility
 
                             #region BETTING
                             case "betting":
-                                var pickedGame = eventArgs.Interaction.Data.Values[0];
-                                var bettingMsg = await embedService.BuildBettingEmbed(pickedGame); 
-                                bettingMsg.AddActionRowComponent(new DiscordActionRowComponent(CreateBettingButtons(pickedGame)));
+                                var betDetails = eventArgs.Interaction.Data.Values[0].Split(":");
+                                var pickedGame = await gameService.GetScoreboardByEventId(betDetails[1]);
+                                var betAmount = betDetails[2];
+                                var bettingMsg = await embedService.BuildBettingEmbed(betDetails[0], betAmount); 
+                               
+                                bettingMsg.AddActionRowComponent(new DiscordActionRowComponent(CreateBettingButtons($"{betDetails[0]}:{betDetails[1]}:{betDetails[2]}")));
                                 await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
                                        new DiscordInteractionResponseBuilder(bettingMsg));
                                 break;
+                           
                             #endregion
                             default:
                                 {
@@ -502,7 +559,7 @@ namespace GamedayTracker.Utility
                     await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Ping is in development, the devs are hard at work implementing this feature!"));
                     break;
                 case DiscordInteractionType.AutoComplete:
-                    //await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Auto Complete is in development, the devs are hard at work implementing this feature!"));
+                   // await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Auto Complete is in development, the devs are hard at work implementing this feature!"));
                     break;
                 
                 #region MODAL SUBMIT
@@ -592,18 +649,19 @@ namespace GamedayTracker.Utility
 
         private DiscordComponent[] CreateBettingButtons(string gameData)
         {
-            var gameInfo = gameData.Split("at");
+            var gameInfo = gameData.Split(":");
+            var teamNames = gameInfo[0].Split("at");
             return
             [
                 new DiscordButtonComponent(
                     DiscordButtonStyle.Primary,
-                    $"betting_away",
-                    $"{gameInfo[0]}"),
+                    $"betting_away:{teamNames[0]}:{gameInfo[1]}:{gameInfo[2]}",
+                    $"{teamNames[0].Trim()}"),
 
                 new DiscordButtonComponent(
                     DiscordButtonStyle.Primary,
-                    $"betting_home",
-                    $"{gameInfo[1]}"),
+                    $"betting_home:{teamNames[1]}:{gameInfo[1]}:{gameInfo[2]}",
+                    $"{teamNames[1].Trim()}"),
 
                 new DiscordButtonComponent(
                     DiscordButtonStyle.Primary,

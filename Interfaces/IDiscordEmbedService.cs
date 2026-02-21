@@ -17,6 +17,7 @@ namespace GamedayTracker.Interfaces
         Task<DiscordMessageBuilder> CreateTeamStatsEmbed(NflTeamStatisticsResponse teamStats, NFLSeasonType seasonType, int seasonYear, string teamAbbr);
         Task<DiscordMessageBuilder> CreateTeamStatsPage(NflTeamStatisticsResponse teamStats, string emoji, NFLSeasonType seasonType, int seasonYear, int pageIndex);
         Task<DiscordMessageBuilder> CreateScoreboardPage(NFLScoreboard scores, string emoji, NFLSeasonType seasonType, int seasonYear, int pageIndex);
-        Task<DiscordMessageBuilder> BuildBettingEmbed(string data);
+        Task<DiscordMessageBuilder> BuildBettingEmbed(string data, string amount);
+        Task<DiscordMessageBuilder> BuildBettingResultEmbed(string data, string amount, string userName);
     }
 }

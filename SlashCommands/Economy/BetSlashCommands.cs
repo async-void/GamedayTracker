@@ -27,10 +27,11 @@ namespace GamedayTracker.SlashCommands.Economy
 
             var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var user = ctx.User;
-            var userFromJson = await jsonService.GetMemberFromJsonAsync(user.Id, ctx.Guild?.Id ?? 0);
-            if (userFromJson.IsOk)
+            
+            if (user is not null)
             {
-                if (userFromJson.Value.Bank is { } bank)
+                var userFromJson = await jsonService.GetMemberFromJsonAsync(user.Id, ctx.Guild?.Id ?? 0);
+                if (userFromJson.IsOk && userFromJson.Value.Bank is { } bank)
                 {
                     var canAffordBet = await bettingService.CanAffordBetAsync(bank, amount);
                     if (canAffordBet.IsOk)
@@ -47,10 +48,8 @@ namespace GamedayTracker.SlashCommands.Economy
 
                         IEnumerable<DiscordSelectComponentOption> gameOptions = scheduled.Select(s =>
                         {
-                            var awayTeam = s.Competitions[0].Competitors.FirstOrDefault(c => c.HomeAway.Equals("away"))?.Team.DisplayName ?? "Unknown";
-                            var homeTeam = s.Competitions[0].Competitors.FirstOrDefault(c => c.HomeAway.Equals("home"))?.Team.DisplayName ?? "Unknown";
-                            var optionLabel = $"{awayTeam} beats {homeTeam}";
-                            var optionValue = $"{s.Name}";
+                            var optionLabel = $"{s.Name}";
+                            var optionValue = $"{s.Name}:{s.Id}:{amount}";
                             return new DiscordSelectComponentOption(optionLabel, optionValue);
                         });
 
@@ -80,6 +79,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 }
                 else
                 {
+                    //user isnt saved in the json file
                     await ctx.RespondAsync("You do not have enough funds to place this bet.");
                 }
             }
@@ -89,7 +89,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 [
                     new DiscordTextDisplayComponent($"❌ ERROR ❌"),
                     new DiscordSeparatorComponent(true),
-                    new DiscordTextDisplayComponent($"{userFromJson.Error.ErrorMessage}"),
+                    new DiscordTextDisplayComponent($"user not found"),
                     new DiscordTextDisplayComponent($"Gameday Tracker {timestamp}")
                 ];
                 var errContainer = new DiscordContainerComponent(errComps, false, DiscordColor.DarkRed );

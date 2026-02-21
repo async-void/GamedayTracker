@@ -371,17 +371,38 @@ namespace GamedayTracker.Services
         #endregion
 
         #region CREATE BETTING EMBED
-        public async Task<DiscordMessageBuilder> BuildBettingEmbed(string data)
+        public async Task<DiscordMessageBuilder> BuildBettingEmbed(string data, string amount)
         {
             var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var away = data.Split(" at ")[0].Trim();
             var home = data.Split(" at ")[1].Trim();
-
             var components = new List<DiscordComponent>
             {
                new DiscordTextDisplayComponent($"Betting"),
                new DiscordSeparatorComponent(true),
-               new DiscordTextDisplayComponent($"Place your bet on {away} or {home}"),
+               new DiscordTextDisplayComponent($"Place your bet on {away} or {home} with amount of {amount}"),
+               new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+               new DiscordTextDisplayComponent($"Gameday Tracker {timestamp}"),
+            };
+
+            var msg = new DiscordMessageBuilder()
+               .EnableV2Components()
+               .AddContainerComponent(new DiscordContainerComponent(components, false, DiscordColor.Green));
+            return msg;
+        }
+        #endregion
+
+        #region CREATE BETTING RESULT EMBED
+        public async Task<DiscordMessageBuilder> BuildBettingResultEmbed(string data, string amount, string userName)
+        {
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var away = data.Split(" at ")[0].Trim();
+            var home = data.Split(" at ")[1].Trim();
+            var components = new List<DiscordComponent>
+            {
+               new DiscordTextDisplayComponent($"Betting"),
+               new DiscordSeparatorComponent(true),
+               new DiscordTextDisplayComponent($"Place your bet on {away} or {home} with amount of {amount}"),
                new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                new DiscordTextDisplayComponent($"Gameday Tracker {timestamp}"),
             };
