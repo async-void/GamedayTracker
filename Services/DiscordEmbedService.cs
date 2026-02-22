@@ -1,15 +1,12 @@
-﻿using DSharpPlus.Entities;
-using DSharpPlus.Interactivity;
+﻿using DSharpPlus;
+using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
+using GamedayTracker.Models;
 using GamedayTracker.Models.NFL;
 using GamedayTracker.Utility;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Linq;
+using Humanizer;
+using System.Globalization;
 using System.Text;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GamedayTracker.Services
 {
@@ -393,24 +390,46 @@ namespace GamedayTracker.Services
         #endregion
 
         #region CREATE BETTING RESULT EMBED
-        public async Task<DiscordMessageBuilder> BuildBettingResultEmbed(string data, string amount, string userName)
+        public async Task<DiscordContainerComponent> BuildBettingResultEmbed(Bet bet)
         {
             var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
-            var away = data.Split(" at ")[0].Trim();
-            var home = data.Split(" at ")[1].Trim();
+           
             var components = new List<DiscordComponent>
             {
-               new DiscordTextDisplayComponent($"Betting"),
+               new DiscordTextDisplayComponent($"Bet Placed"),
                new DiscordSeparatorComponent(true),
-               new DiscordTextDisplayComponent($"Place your bet on {away} or {home} with amount of {amount}"),
+               new DiscordTextDisplayComponent($"**Bet**: {bet.Selection} to win in the amount of {bet.WagerAmount.ToString("C", CultureInfo.GetCultureInfo("en-US"))}"),
+               new DiscordTextDisplayComponent($"**Placed At**: {bet.PlacedAt}"),
+               new DiscordTextDisplayComponent($"**Payout**: {bet.WagerAmount + bet.Payout}"),
+               new DiscordTextDisplayComponent($"**Status**: {bet.Status}"),
                new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                new DiscordTextDisplayComponent($"Gameday Tracker {timestamp}"),
             };
 
-            var msg = new DiscordMessageBuilder()
-               .EnableV2Components()
-               .AddContainerComponent(new DiscordContainerComponent(components, false, DiscordColor.Green));
-            return msg;
+           var container = new DiscordContainerComponent(components, false, DiscordColor.Green);
+            return container;
+        }
+        #endregion
+
+        #region BUILD ERROR CONTAINER
+        public async Task<DiscordContainerComponent> BuildErrorContainer(DiscordClient client, string errorMessage, ulong guildId, DiscordColor color)
+        {
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var guild = await client.GetGuildAsync(guildId);
+
+            var components = new List<DiscordComponent>
+            {
+               new DiscordTextDisplayComponent($"❌ Error ❌"),
+               new DiscordSeparatorComponent(true),
+               new DiscordTextDisplayComponent($"Guild: {guild.Name}"),
+               new DiscordTextDisplayComponent(errorMessage),
+               new DiscordSectionComponent(new DiscordTextDisplayComponent(""),
+                   new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem("https://imgur.com/BlC9X8b.png"))),
+               new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+               new DiscordTextDisplayComponent($"Gameday Tracker ©️ {timestamp}"),
+            };
+            var container = new DiscordContainerComponent(components, false, color);
+            return container;
         }
         #endregion
 

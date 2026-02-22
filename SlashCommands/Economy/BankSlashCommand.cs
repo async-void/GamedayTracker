@@ -4,21 +4,24 @@ using DSharpPlus.Entities;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Services;
 using GamedayTracker.Utility;
 using Humanizer;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel;
 using System.Globalization;
+using System.Threading.Channels;
 
 namespace GamedayTracker.SlashCommands.Economy
 {
       
     [Command("bank")]
     [Description("bank group commands")]
-    public class BankSlashCommand(IJsonDataService dataService, ILogger<BankSlashCommand> logger)
+    public class BankSlashCommand(IJsonDataService dataService, ILogger<BankSlashCommand> logger, IDiscordEmbedService embedService)
     {
         private readonly IJsonDataService _dataService = dataService;
         private readonly ILogger<BankSlashCommand> _logger = logger;
+        private readonly IDiscordEmbedService _embedService = embedService;
 
         #region BALANCE
         [Command("balance")]
@@ -27,9 +30,9 @@ namespace GamedayTracker.SlashCommands.Economy
             [Parameter("member")] DiscordUser user)
         {
             await ctx.DeferResponseAsync();
-            var member = await ctx.Channel.Guild.GetMemberAsync(user.Id) as DiscordMember;
+            var member = await ctx.Channel.Guild.GetMemberAsync(user.Id);
             var player = await _dataService.GetMemberFromJsonAsync(member.Id, ctx.Channel.Guild.Id);
-            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
             DiscordComponent[] buttons =
             [
                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")
@@ -41,37 +44,35 @@ namespace GamedayTracker.SlashCommands.Economy
                 var depositTimestamp = player.Value.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;  
                 var depositedTimestamp = depositTimestamp.ToUnixTimeSeconds();
 
-                DiscordComponent[] components =
-                [
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"**{user.GlobalName!}**\r\n<:money:1337795714855600188> Balance - {balance}\r\n<:bank:1366390018423390360> Last Deposit: {depositTimestamp.Humanize()}"),
-                        new DiscordThumbnailComponent(member!.AvatarUrl.ToString())),
-                    new DiscordSeparatorComponent(true),
-                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}"),
-                        new DiscordActionRowComponent(buttons))  
-                ];
+                var embed = new DiscordEmbedBuilder()
+                            .WithTitle($"{player.Value.MemberName}'s Bank")
+                            .WithColor(DiscordColor.DarkGreen)
+                            .WithThumbnail(member.AvatarUrl)
+                            .AddField("Balance", balance.ToString(), true)
+                            .AddField("Last Deposit", depositTimestamp.Humanize(), true)
+                            .WithFooter($"Gameday Tracker ©️ ")
+                            .WithTimestamp(DateTimeOffset.UtcNow)
+                            .Build();
 
-                var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGreen);
                 var message = new DiscordMessageBuilder()
-                    .EnableV2Components()
-                    .AddContainerComponent(container);
+                    .AddEmbed(embed);
 
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
+                await ctx.EditResponseAsync(message);
                 return;
             }
 
-            DiscordComponent[] msgComp =
-            [
-                new DiscordTextDisplayComponent($"Error fetching player data: {player.Error.ErrorMessage!} with ErrorCode: {player.Error.ErrorCode}"),
-                new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}"),
-                        new DiscordActionRowComponent(buttons))
-            ];
-            var msgContainer = new DiscordContainerComponent(msgComp, false, DiscordColor.DarkGray);
-            var message1 = new DiscordMessageBuilder()
-                .EnableV2Components()
-                .AddContainerComponent(msgContainer);
+            var errContainer = await _embedService.BuildErrorContainer(ctx.Client, $"Error fetching user balance: {player.Error.ErrorMessage!} with ErrorCode: {player.Error.ErrorCode}", ctx.Guild?.Id ?? 0, DiscordColor.Red);
 
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder(message1));
+            var errMessage = new DiscordMessageBuilder()
+                .EnableV2Components()
+                .AddContainerComponent(errContainer);
+            var logChannel = await ctx.Client.GetChannelAsync(1384436855524692048);
+            await logChannel.SendMessageAsync(errMessage);
+                
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            _logger.LogInformation("unable to fetch {MemberName}'s balance - error: {ErrorMessage}", member.Username, player.Error.ErrorMessage);
+            Console.ResetColor();
+            await ctx.EditResponseAsync(errMessage);
         }
         #endregion
 
@@ -82,7 +83,7 @@ namespace GamedayTracker.SlashCommands.Economy
         {
             await ctx.DeferResponseAsync(ephemeral: true);
             TimeSpan TIMESPAN = TimeSpan.FromHours(2);
-
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var member = ctx.Member;
             var _user = await _dataService.GetMemberFromJsonAsync(member!.Id, member.Guild.Id);
 
@@ -118,7 +119,7 @@ namespace GamedayTracker.SlashCommands.Economy
                             .AddEmbed(new DiscordEmbedBuilder()
                                 .WithTitle($"Daily Command")
                                 .WithDescription($"Done!  **{updatedUser.Value.MemberName}'s** balance is <:money:1337795714855600188> {balance.ToString("C", CultureInfo.CreateSpecificCulture("en-US"))}\r\nyou can use daily again {unixTimestamp} from now")
-                                .WithTimestamp(DateTime.UtcNow));
+                                .WithFooter($"Gameday Tracker ©️ {timestamp}"));
 
                             await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
                         }
@@ -172,7 +173,7 @@ namespace GamedayTracker.SlashCommands.Economy
 
                 DateTimeOffset lastUsed = user.Bank.DepositTimestamp;
                 var nextAvailable = lastUsed + TIMESPAN;
-
+               
                 var writeResult = await _dataService.WriteMemberToJsonAsync(user);
 
                 if (!writeResult.IsOk)
@@ -192,8 +193,7 @@ namespace GamedayTracker.SlashCommands.Economy
                         .WithTitle($"Daily Command")
                         .WithDescription($"Done! **{member.Username}'s** balance is <:money:1337795714855600188> {user.Bank?.Balance.ToString("C", CultureInfo.CreateSpecificCulture("en-US"))}\r\nyou may use daily again " +
                                          $"{unixTimestamp} from now")
-                        .WithTimestamp(DateTime.UtcNow)
-                        );
+                        .WithFooter($"Gameday Tracker ©️ {timestamp}"));
                
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
             }

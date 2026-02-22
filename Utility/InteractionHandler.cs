@@ -7,8 +7,13 @@ using GamedayTracker.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Models.Betting;
+using GamedayTracker.Models.NFL;
 using GamedayTracker.Services;
+using GamedayTracker.Utility.Multipliers;
 using Humanizer;
+using System.ComponentModel;
+using System.Globalization;
 using System.Text;
 
 namespace GamedayTracker.Utility
@@ -27,7 +32,7 @@ namespace GamedayTracker.Utility
                 #region COMPONENTS - BUTTONS
                 case DiscordInteractionType.Component:
                 {
-
+                        var betMultiplier = new BetMultiplier();
                         var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                         DiscordComponent[] backBtns =
                         [
@@ -36,6 +41,7 @@ namespace GamedayTracker.Utility
 
                         var id = eventArgs.Interaction.Data.CustomId;
 
+                        #region BETTING AWAY/HOME/OVER/UNDER
                         if (id.StartsWith("betting_away"))
                         {
                             await eventArgs.Interaction.DeferAsync();
@@ -43,6 +49,7 @@ namespace GamedayTracker.Utility
                             var teamName = details[1];
                             var eventId = details[2];
                             var wagerAmount = details[3];
+                            var multiplier = betMultiplier.GetMultiplier(BetType.Moneyline);
                             var bet = new Bet
                             {
                                 Selection = teamName,
@@ -51,14 +58,18 @@ namespace GamedayTracker.Utility
                                 PlacedAt = DateTime.UtcNow,
                                 UserId = eventArgs.Interaction.User.Id,
                                 Type = BetType.Moneyline,
-                                Odds = 10,
+                                Payout = decimal.Parse(wagerAmount) * multiplier,
                                 Status = BetStatus.Pending,
                                 Id = Guid.NewGuid()
                             };
 
+                            var msg = await embedService.BuildBettingResultEmbed(bet);
                             //here we save the bet to the json file, we can also add a confirmation message to the user that their bet was placed successfully
-                            await eventArgs.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder()
-                                .WithContent($"Your bet on the **{teamName}** has been placed successfully with a wager of **${wagerAmount}**! Good luck! 🍀"));
+                            var builder = new DiscordWebhookBuilder(new DiscordMessageBuilder()
+                                            .EnableV2Components()
+                                            .AddContainerComponent(msg));
+
+                            await eventArgs.Interaction.EditOriginalResponseAsync(builder);
 
                         }
                         else if (id.StartsWith("betting_home"))
@@ -68,6 +79,7 @@ namespace GamedayTracker.Utility
                             var teamName = details[1];
                             var eventId = details[2];
                             var wagerAmount = details[3];
+                            var multiplier = betMultiplier.GetMultiplier(BetType.Moneyline);
                             var bet = new Bet
                             {
                                 Selection = teamName,
@@ -76,15 +88,85 @@ namespace GamedayTracker.Utility
                                 PlacedAt = DateTime.UtcNow,
                                 UserId = eventArgs.Interaction.User.Id,
                                 Type = BetType.Moneyline,
-                                Odds = 10,
+                                Payout = decimal.Parse(wagerAmount) * multiplier,
                                 Status = BetStatus.Pending,
                                 Id = Guid.NewGuid()
                             };
 
+                            var msg = await embedService.BuildBettingResultEmbed(bet);
                             //here we save the bet to the json file, we can also add a confirmation message to the user that their bet was placed successfully
-                            await eventArgs.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder()
-                                .WithContent($"Your bet on the **{teamName}** has been placed successfully with a wager of **${wagerAmount}**! Good luck! 🍀"));
+                            var builder = new DiscordWebhookBuilder(new DiscordMessageBuilder()
+                                            .EnableV2Components()
+                                            .AddContainerComponent(msg));
+
+
+                            await eventArgs.Interaction.EditOriginalResponseAsync(builder);
                         }
+                        else if (id.StartsWith("betting_over"))
+                        {
+                            await eventArgs.Interaction.DeferAsync();
+                            //var details = eventArgs.Interaction.Data.CustomId.Split(":");
+                            //var teamName = details[1];
+                            //var eventId = details[2];
+                            //var wagerAmount = details[3];
+                            //var multiplier = betMultiplier.GetMultiplier(BetType.OverUnder);
+                            //var bet = new Bet
+                            //{
+                            //    Selection = teamName,
+                            //    EventId = $"{eventId}",
+                            //    WagerAmount = decimal.Parse(wagerAmount),
+                            //    PlacedAt = DateTime.UtcNow,
+                            //    UserId = eventArgs.Interaction.User.Id,
+                            //    Type = BetType.OverUnder,
+                            //    Payout = decimal.Parse(wagerAmount) * multiplier,
+                            //    Status = BetStatus.Pending,
+                            //    Id = Guid.NewGuid()
+                            //};
+                            //var msg = await embedService.BuildBettingResultEmbed(bet);
+                            ////here we save the bet to the json file, we can also add a confirmation message to the user that their bet was placed successfully
+                            //var builder = new DiscordWebhookBuilder(new DiscordMessageBuilder()
+                            //                .EnableV2Components()
+                            //                .AddContainerComponent(msg));
+                            await eventArgs.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                                .AddEmbed(new DiscordEmbedBuilder()
+                                    .WithTitle("Over/Under Betting is currently unavailable")
+                                    .WithDescription("The Over/Under betting option is currently unavailable as we are working on integrating a new odds provider. We appreciate your patience and understanding as we work to bring you the best betting experience possible.")
+                                    .WithColor(DiscordColor.Red)
+                                    .Build()));
+                        }
+                        else if (id.StartsWith("betting_under"))
+                        {
+                            await eventArgs.Interaction.DeferAsync();
+                            //var details = eventArgs.Interaction.Data.CustomId.Split(":");
+                            //var teamName = details[1];
+                            //var eventId = details[2];
+                            //var wagerAmount = details[3];
+                            //var multiplier = betMultiplier.GetMultiplier(BetType.OverUnder);
+                            //var bet = new Bet
+                            //{
+                            //    Selection = teamName,
+                            //    EventId = $"{eventId}",
+                            //    WagerAmount = decimal.Parse(wagerAmount),
+                            //    PlacedAt = DateTime.UtcNow,
+                            //    UserId = eventArgs.Interaction.User.Id,
+                            //    Type = BetType.OverUnder,
+                            //    Payout = decimal.Parse(wagerAmount) * multiplier,
+                            //    Status = BetStatus.Pending,
+                            //    Id = Guid.NewGuid()
+                            //};
+                            //var msg = await embedService.BuildBettingResultEmbed(bet);
+                            ////here we save the bet to the json file, we can also add a confirmation message to the user that their bet was placed successfully
+                            //var builder = new DiscordWebhookBuilder(new DiscordMessageBuilder()
+                            //                .EnableV2Components()
+                            //                .AddContainerComponent(msg));
+                            await eventArgs.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                               .AddEmbed(new DiscordEmbedBuilder()
+                                   .WithTitle("Over/Under Betting is currently unavailable")
+                                   .WithDescription("The Over/Under betting option is currently unavailable as we are working on integrating a new odds provider. We appreciate your patience and understanding as we work to bring you the best betting experience possible.")
+                                   .WithColor(DiscordColor.Red)
+                                   .Build()));
+                        }
+                        #endregion
 
                         switch (eventArgs.Interaction.Data.CustomId)
                         {
@@ -537,6 +619,7 @@ namespace GamedayTracker.Utility
                                 var betDetails = eventArgs.Interaction.Data.Values[0].Split(":");
                                 var pickedGame = await gameService.GetScoreboardByEventId(betDetails[1]);
                                 var betAmount = betDetails[2];
+                                var odds = pickedGame.Events[0].Odds ?? new List<Odds>() { new() { Moneyline = new Moneyline() { Away = 0, Home = 0 } }};
                                 var bettingMsg = await embedService.BuildBettingEmbed(betDetails[0], betAmount); 
                                
                                 bettingMsg.AddActionRowComponent(new DiscordActionRowComponent(CreateBettingButtons($"{betDetails[0]}:{betDetails[1]}:{betDetails[2]}")));
@@ -559,7 +642,7 @@ namespace GamedayTracker.Utility
                     await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Ping is in development, the devs are hard at work implementing this feature!"));
                     break;
                 case DiscordInteractionType.AutoComplete:
-                   // await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Auto Complete is in development, the devs are hard at work implementing this feature!"));
+                    // await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Auto Complete is in development, the devs are hard at work implementing this feature!"));
                     break;
                 
                 #region MODAL SUBMIT

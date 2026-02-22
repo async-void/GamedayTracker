@@ -1,10 +1,7 @@
-﻿using DSharpPlus.Entities;
+﻿using DSharpPlus;
+using DSharpPlus.Entities;
+using GamedayTracker.Models;
 using GamedayTracker.Models.NFL;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GamedayTracker.Interfaces
 {
@@ -18,6 +15,7 @@ namespace GamedayTracker.Interfaces
         Task<DiscordMessageBuilder> CreateTeamStatsPage(NflTeamStatisticsResponse teamStats, string emoji, NFLSeasonType seasonType, int seasonYear, int pageIndex);
         Task<DiscordMessageBuilder> CreateScoreboardPage(NFLScoreboard scores, string emoji, NFLSeasonType seasonType, int seasonYear, int pageIndex);
         Task<DiscordMessageBuilder> BuildBettingEmbed(string data, string amount);
-        Task<DiscordMessageBuilder> BuildBettingResultEmbed(string data, string amount, string userName);
+        Task<DiscordContainerComponent> BuildBettingResultEmbed(Bet bet);
+        Task<DiscordContainerComponent> BuildErrorContainer(DiscordClient client, string errorMessage, ulong guildId, DiscordColor color);
     }
 }

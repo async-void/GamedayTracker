@@ -33,5 +33,8 @@ namespace GamedayTracker.Models.NFL
 
         [JsonPropertyName("status")]
         public Status Status { get; set; }
+
+        [JsonPropertyName("odds")]
+        public List<Odds> Odds { get; set; }
     }
 }

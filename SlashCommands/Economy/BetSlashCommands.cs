@@ -27,10 +27,10 @@ namespace GamedayTracker.SlashCommands.Economy
 
             var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var user = ctx.User;
-            
             if (user is not null)
             {
                 var userFromJson = await jsonService.GetMemberFromJsonAsync(user.Id, ctx.Guild?.Id ?? 0);
+              
                 if (userFromJson.IsOk && userFromJson.Value.Bank is { } bank)
                 {
                     var canAffordBet = await bettingService.CanAffordBetAsync(bank, amount);
