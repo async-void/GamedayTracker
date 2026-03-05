@@ -14,9 +14,11 @@ namespace GamedayTracker.Models
 
         public ulong UserId { get; set; }
         public string EventId { get; set; } = ""; // ESPN game ID
+        public DateTimeOffset GameDate { get; set; }
         public DateTime PlacedAt { get; set; } = DateTime.UtcNow;
 
         public decimal WagerAmount { get; set; }
+        public decimal Multiplier { get; set; }
 
         // What the user bet on
         public BetType Type { get; set; }

@@ -53,12 +53,11 @@ namespace GamedayTracker.Services
 
         }
 
-
         public TimeSpan GetInterval(RealTimeScoresMode mode) => mode switch
         {
             RealTimeScoresMode.LiveGame => TimeSpan.FromSeconds(30),
-            RealTimeScoresMode.PreGame => TimeSpan.FromMinutes(5),
-            RealTimeScoresMode.PostGame => TimeSpan.FromHours(1),
+            RealTimeScoresMode.PreGame => TimeSpan.FromMinutes(15),
+            RealTimeScoresMode.PostGame => TimeSpan.FromHours(4),
             RealTimeScoresMode.Offseason => TimeSpan.FromHours(24),
             _ => TimeSpan.FromHours(24)
         };

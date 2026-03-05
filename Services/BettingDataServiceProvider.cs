@@ -8,7 +8,7 @@ using System.Security.Principal;
 
 namespace GamedayTracker.Services
 {
-    public class BettingDataServiceProvider(IGameData gameData, IJsonDataService jsonDataService, IGuildMemberService memberService): IBetting
+    public class BettingDataServiceProvider(IGameData gameData, IJsonDataService jsonDataService, IGuildMemberService memberService) : IBetting
     {
         #region CAN AFFORD BET
         public Task<Result<BalanceCheckResult, SystemError<BettingDataServiceProvider>>> CanAffordBetAsync(Bank bank, decimal amount)
@@ -19,7 +19,7 @@ namespace GamedayTracker.Services
                     Result<BalanceCheckResult, SystemError<BettingDataServiceProvider>>
                         .Err(new SystemError<BettingDataServiceProvider>
                         {
-                           ErrorMessage = "Bet amount must be greater than zero."
+                            ErrorMessage = "Bet amount must be greater than zero."
                         }
                 ));
             }
@@ -32,7 +32,7 @@ namespace GamedayTracker.Services
                         {
                             ErrorMessage = $"Insufficient funds. Your balance is {bank.Balance}."
                         }
-                       
+
                 ));
             }
 
@@ -52,13 +52,13 @@ namespace GamedayTracker.Services
         #region PLACE BET
         public async Task<Result<Bet, SystemError<BettingDataServiceProvider>>> PlaceBet(Bet bet)
         {
-           
+
             throw new NotImplementedException();
         }
         #endregion
 
         #region CALCULATE PAYOUT
-        public Result<BetPayoutResult, SystemError<BettingDataServiceProvider>> CalculatePayout( Bet bet, int americanOdds)
+        public Result<BetPayoutResult, SystemError<BettingDataServiceProvider>> CalculatePayout(Bet bet, int americanOdds)
         {
             if (bet.WagerAmount <= 0)
                 return new SystemError<BettingDataServiceProvider>
@@ -96,6 +96,56 @@ namespace GamedayTracker.Services
                 return 1m + (odds / 100m);
 
             return 1m + (100m / Math.Abs(odds));
+        }
+        #endregion
+
+        #region GET MEMBER BETS
+        public async Task<Result<IReadOnlyList<Bet>, SystemError<BettingDataServiceProvider>>> GetMemberBetsByIdAsync(ulong memberId, ulong guildId)
+        {
+            var member = await jsonDataService.GetMemberFromJsonAsync(memberId, guildId);
+            if (member.IsOk)
+            {
+                var bets = member.Value.Bets ?? [];
+                return Result<IReadOnlyList<Bet>, SystemError<BettingDataServiceProvider>>.Ok(bets);
+            }
+            else
+            {
+                return Result<IReadOnlyList<Bet>, SystemError<BettingDataServiceProvider>>.Err(new SystemError<BettingDataServiceProvider>
+                {
+                    ErrorMessage = $"Failed to retrieve member bets for memberId: {memberId} in guildId: {guildId}.",
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedBy = this
+                });
+            }
+        }
+        #endregion
+
+        #region GET ALL BETS IN ALL OF PROVIDED TYPE
+        public async Task<Result<IReadOnlyList<Bet>, SystemError<JsonDataServiceProvider>>>GetAllBetsAsync(BetType type)
+        {
+            var membersResult = await jsonDataService.GetAllMembersAsync();
+
+            if (!membersResult.IsOk)
+                return Result<IReadOnlyList<Bet>, SystemError<JsonDataServiceProvider>>
+                    .Err(membersResult.Error!);
+            if (membersResult.Value.Count == 0)
+                return Result<IReadOnlyList<Bet>, SystemError<JsonDataServiceProvider>>
+                    .Err(new SystemError<JsonDataServiceProvider>
+                    {
+                        ErrorMessage = "No members found in the system.",
+                        ErrorType = ErrorType.INFORMATION,
+                        CreatedAt = DateTimeOffset.UtcNow,
+                        CreatedBy = new JsonDataServiceProvider()
+                    });
+            var allBets = membersResult.Value!
+                .SelectMany(m => m.Bets ?? Enumerable.Empty<Bet>())
+                .Where(b => b.Type == type)
+                .OrderBy(b => b.PlacedAt)
+                .ToList();
+
+            return Result<IReadOnlyList<Bet>, SystemError<JsonDataServiceProvider>>
+                .Ok(allBets);
         }
         #endregion
     }

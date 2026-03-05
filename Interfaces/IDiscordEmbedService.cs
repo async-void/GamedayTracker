@@ -17,5 +17,6 @@ namespace GamedayTracker.Interfaces
         Task<DiscordMessageBuilder> BuildBettingEmbed(string data, string amount);
         Task<DiscordContainerComponent> BuildBettingResultEmbed(Bet bet);
         Task<DiscordContainerComponent> BuildErrorContainer(DiscordClient client, string errorMessage, ulong guildId, DiscordColor color);
+        Task<DiscordMessageBuilder> CreateMemberBetsPage(IReadOnlyList<Bet> bets, DiscordClient client, int pageIndex);
     }
 }

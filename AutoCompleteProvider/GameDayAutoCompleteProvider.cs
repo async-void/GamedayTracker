@@ -16,7 +16,7 @@ namespace GamedayTracker.AutoCompleteProvider
 
         public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
         {
-            var games = await _gameData.GetNFLScoresAsync(2025, 3, 2);
+            var games = await _gameData.GetNFLScoresAsync();
 
             if (games?.Events == null || games.Events.Count == 0)
             {

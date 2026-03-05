@@ -9,16 +9,21 @@ using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Models.Betting;
 using GamedayTracker.Models.NFL;
+using GamedayTracker.Pagination.Registry;
 using GamedayTracker.Services;
 using GamedayTracker.Utility.Multipliers;
 using Humanizer;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using System.ComponentModel;
 using System.Globalization;
+using System.Numerics;
 using System.Text;
 
 namespace GamedayTracker.Utility
 {
-    public class InteractionHandler(ITeamData teamData, IPlayerData playerDataService, IDiscordEmbedService embedService, IGameData gameService): IEventHandler<InteractionCreatedEventArgs>
+    public class InteractionHandler(ITeamData teamData, IPlayerData playerDataService, IDiscordEmbedService embedService, 
+        IGameData gameService, IJsonDataService jsonDataService, ILogger<InteractionHandler> logger): IEventHandler<InteractionCreatedEventArgs>
     {
         public async Task HandleEventAsync(DiscordClient sender, InteractionCreatedEventArgs eventArgs)
         {
@@ -34,6 +39,7 @@ namespace GamedayTracker.Utility
                 {
                         var betMultiplier = new BetMultiplier();
                         var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                        logger.LogInformation("Component interaction received with CustomId: {CustomId}", eventArgs.Interaction.Data.CustomId);
                         DiscordComponent[] backBtns =
                         [
                             new DiscordButtonComponent(DiscordButtonStyle.Secondary, "backId", "⬅️ Back"),
@@ -45,31 +51,49 @@ namespace GamedayTracker.Utility
                         if (id.StartsWith("betting_away"))
                         {
                             await eventArgs.Interaction.DeferAsync();
-                            var details = eventArgs.Interaction.Data.CustomId.Split(":");
+                            var details = eventArgs.Interaction.Data.CustomId.Split(",");
                             var teamName = details[1];
                             var eventId = details[2];
                             var wagerAmount = details[3];
+                            var gameDate = details[4];
                             var multiplier = betMultiplier.GetMultiplier(BetType.Moneyline);
                             var bet = new Bet
                             {
                                 Selection = teamName,
                                 EventId = $"{eventId}",
+                                GameDate = DateTimeOffset.Parse(gameDate),
                                 WagerAmount = decimal.Parse(wagerAmount),
                                 PlacedAt = DateTime.UtcNow,
                                 UserId = eventArgs.Interaction.User.Id,
                                 Type = BetType.Moneyline,
-                                Payout = decimal.Parse(wagerAmount) * multiplier,
+                                Multiplier = multiplier,
+                                Payout = decimal.Parse(wagerAmount) + multiplier,
                                 Status = BetStatus.Pending,
                                 Id = Guid.NewGuid()
                             };
 
-                            var msg = await embedService.BuildBettingResultEmbed(bet);
-                            //here we save the bet to the json file, we can also add a confirmation message to the user that their bet was placed successfully
-                            var builder = new DiscordWebhookBuilder(new DiscordMessageBuilder()
-                                            .EnableV2Components()
-                                            .AddContainerComponent(msg));
+                            var betResult = await jsonDataService.WriteMemberBetToJsonAsync(eventArgs.Interaction.User.Id, eventArgs.Interaction.Guild.Id,  bet);
+                            if (betResult.IsOk)
+                            {
+                                var msg = await embedService.BuildBettingResultEmbed(bet);
+                                //here we save the bet to the json file, we can also add a confirmation message to the user that their bet was placed successfully
+                                var builder = new DiscordWebhookBuilder(new DiscordMessageBuilder()
+                                                .EnableV2Components()
+                                                .AddContainerComponent(msg));
 
-                            await eventArgs.Interaction.EditOriginalResponseAsync(builder);
+                                await eventArgs.Interaction.EditOriginalResponseAsync(builder);
+                            }
+                            else
+                            {
+                                var errContainer = await embedService.BuildErrorContainer(sender, $"{betResult.Error.ErrorMessage}", eventArgs.Interaction.Guild.Id, DiscordColor.DarkRed);
+                                var builder = new DiscordMessageBuilder()
+                                           .EnableV2Components()
+                                           .AddContainerComponent(errContainer);
+                                await eventArgs.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder(builder));
+                                var logChannel = await sender.GetChannelAsync(1384436855524692048);
+                                await logChannel.SendMessageAsync(builder);
+                            }
+                            
 
                         }
                         else if (id.StartsWith("betting_home"))
@@ -85,10 +109,11 @@ namespace GamedayTracker.Utility
                                 Selection = teamName,
                                 EventId = $"{eventId}",
                                 WagerAmount = decimal.Parse(wagerAmount),
+                                Multiplier = multiplier,
                                 PlacedAt = DateTime.UtcNow,
                                 UserId = eventArgs.Interaction.User.Id,
                                 Type = BetType.Moneyline,
-                                Payout = decimal.Parse(wagerAmount) * multiplier,
+                                Payout = decimal.Parse(wagerAmount) + multiplier,
                                 Status = BetStatus.Pending,
                                 Id = Guid.NewGuid()
                             };
@@ -514,115 +539,65 @@ namespace GamedayTracker.Utility
 
                             #region PREVIOUS
                             case "prev":
-                                var paginationData = TeamStatsPaginationCache.Get(eventArgs.Interaction.Message.Id);
-                                if (paginationData == null)
+                                var envelope = PaginationCache.Get(eventArgs.Interaction.Message.Id);
+                               
+                                if (envelope == null)
                                 {
-                                    await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
-                                        new DiscordInteractionResponseBuilder()
-                                            .WithContent("Pagination expired. Please run the command again."));
+                                    await Expired(eventArgs.Interaction);
                                     return;
                                 }
-                                
-                                paginationData.CurrentPage--;
 
-                                var msg = await embedService.CreateTeamStatsPage(
-                                                   paginationData.TeamStats,
-                                                   paginationData.Emoji,
-                                                   paginationData.SeasonType,
-                                                   paginationData.Season,
-                                                   paginationData.CurrentPage);
+                                var data = envelope.Data;
+                                var handler = PaginationHandlerRegistry.GetHandler(data.GetType());
+                                if (handler is null)
+                                {
+                                    await eventArgs.Interaction.CreateFollowupMessageAsync(
+                                        new DiscordFollowupMessageBuilder()
+                                            .WithContent("Unknown pagination type."));
+                                    return;
+                                }
 
-                                var buttons = CreateNavigationButtons(paginationData.CurrentPage, paginationData.TotalPages);
-                                msg.AddActionRowComponent(new DiscordActionRowComponent(buttons));
-                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
-                                        new DiscordInteractionResponseBuilder(msg));
+                                await handler.HandlePreviousAsync(envelope.Data, eventArgs);
                                 break;
                             #endregion
 
                             #region NEXT
                             case "next":
-                                paginationData = TeamStatsPaginationCache.Get(eventArgs.Interaction.Message.Id);
-                                if (paginationData == null)
-                                {
-                                    await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
-                                        new DiscordInteractionResponseBuilder()
-                                            .WithContent("Pagination expired. Please run the command again."));
-                                    return;
-                                }
+                                    envelope = PaginationCache.Get(eventArgs.Interaction.Message.Id);
+                               
+                                    if (envelope == null)
+                                    {
+                                        await Expired(eventArgs.Interaction);
+                                        return;
+                                    }
 
-                                paginationData.CurrentPage++;
+                                    data = envelope.Data;
+                                    handler = PaginationHandlerRegistry.GetHandler(data.GetType());
+                                    if (handler is null)
+                                    {
+                                        await eventArgs.Interaction.CreateFollowupMessageAsync(
+                                            new DiscordFollowupMessageBuilder()
+                                                .WithContent("Unknown pagination type."));
+                                        return;
+                                    }
 
-                                msg = await embedService.CreateTeamStatsPage(
-                                                   paginationData.TeamStats,
-                                                   paginationData.Emoji,
-                                                   paginationData.SeasonType,
-                                                   paginationData.Season,
-                                                   paginationData.CurrentPage);
-                                
-                                buttons = CreateNavigationButtons(paginationData.CurrentPage, paginationData.TotalPages);
-                                msg.AddActionRowComponent(new DiscordActionRowComponent(buttons));
+                                   await handler.HandleNextAsync(envelope.Data, eventArgs);
 
-                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
-                                        new DiscordInteractionResponseBuilder(msg));
                                 break;
                             #endregion
 
-                            #region SCOREBOARD NEXT
-                            case "scoreboard_next":
-                                var scoreBoardPaginationData = ScoreboardPaginationCache.Get(eventArgs.Interaction.Message.Id);
-                                if (scoreBoardPaginationData == null)
-                                {
-                                    await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
-                                        new DiscordInteractionResponseBuilder()
-                                            .WithContent("Pagination expired. Please run the command again."));
-                                    return;
-                                }
-                                scoreBoardPaginationData.CurrentPage++;
-
-                                if (scoreBoardPaginationData.CurrentPage > scoreBoardPaginationData.TotalPages)
-                                    scoreBoardPaginationData.CurrentPage = scoreBoardPaginationData.TotalPages;
-
-                                var scoreboardMsg = await embedService.CreateScoreboardPage(scoreBoardPaginationData.Scoreboard,
-                                    scoreBoardPaginationData.Emoji, scoreBoardPaginationData.SeasonType, scoreBoardPaginationData.Season,
-                                    scoreBoardPaginationData.CurrentPage);
-                                var scoreboardButtons = CreateScoreboardNavigationButtons(scoreBoardPaginationData.CurrentPage, scoreBoardPaginationData.TotalPages);
-                                scoreboardMsg.AddActionRowComponent(new DiscordActionRowComponent(scoreboardButtons));
-                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
-                                        new DiscordInteractionResponseBuilder(scoreboardMsg));
-                                break;
-                            #endregion
-
-                            #region SCOREBOARD PREVIOUS
-                            case "scoreboard_prev":
-                                scoreBoardPaginationData = ScoreboardPaginationCache.Get(eventArgs.Interaction.Message.Id);
-                                if (scoreBoardPaginationData == null)
-                                {
-                                    await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
-                                        new DiscordInteractionResponseBuilder()
-                                            .WithContent("Pagination expired. Please run the command again."));
-                                    return;
-                                }
-                                scoreBoardPaginationData.CurrentPage--;
-                                scoreboardMsg = await embedService.CreateScoreboardPage(scoreBoardPaginationData.Scoreboard,
-                                    scoreBoardPaginationData.Emoji, scoreBoardPaginationData.SeasonType, scoreBoardPaginationData.Season,
-                                    scoreBoardPaginationData.CurrentPage);
-                                scoreboardButtons = CreateScoreboardNavigationButtons(scoreBoardPaginationData.CurrentPage, scoreBoardPaginationData.TotalPages);
-                                scoreboardMsg.AddActionRowComponent(new DiscordActionRowComponent(scoreboardButtons));
-                                await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
-                                        new DiscordInteractionResponseBuilder(scoreboardMsg));
-                                break;
-                            #endregion
                             #endregion
 
                             #region BETTING
                             case "betting":
                                 var betDetails = eventArgs.Interaction.Data.Values[0].Split(":");
                                 var pickedGame = await gameService.GetScoreboardByEventId(betDetails[1]);
+                                var gameDate = pickedGame.Events[0].Date;
                                 var betAmount = betDetails[2];
-                                var odds = pickedGame.Events[0].Odds ?? new List<Odds>() { new() { Moneyline = new Moneyline() { Away = 0, Home = 0 } }};
+                                var odds = pickedGame.Events[0].Odds ?? [new() { Moneyline = new Moneyline() { Away = 0, Home = 0 } }];
                                 var bettingMsg = await embedService.BuildBettingEmbed(betDetails[0], betAmount); 
                                
-                                bettingMsg.AddActionRowComponent(new DiscordActionRowComponent(CreateBettingButtons($"{betDetails[0]}:{betDetails[1]}:{betDetails[2]}")));
+                                bettingMsg.AddActionRowComponent(new DiscordActionRowComponent(CreateBettingButtons($"{betDetails[0]},{betDetails[1]},{betDetails[2]}", gameDate)));
                                 await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
                                        new DiscordInteractionResponseBuilder(bettingMsg));
                                 break;
@@ -686,64 +661,21 @@ namespace GamedayTracker.Utility
         }
 
         #region BUTTON COMPONENT CREATORS
-        private DiscordComponent[] CreateNavigationButtons(int currentPage, int totalPages)
-        {
-            return
-            [
-                new DiscordButtonComponent(
-                    DiscordButtonStyle.Primary,
-                    $"prev",
-                    "◀ Previous",
-                    currentPage == 0),
-                new DiscordButtonComponent(
-                    DiscordButtonStyle.Secondary,
-                    $"page",
-                    $"Page {currentPage + 1}/{totalPages}",
-                    true),
-                new DiscordButtonComponent(
-                    DiscordButtonStyle.Primary,
-                    $"next",
-                    "Next ▶",
-                    currentPage >= totalPages - 1)
-            ];
-        }
 
-        private DiscordComponent[] CreateScoreboardNavigationButtons(int currentPage, int totalPages)
+        private DiscordComponent[] CreateBettingButtons(string gameData, DateTime gameDate)
         {
-            return
-            [
-                new DiscordButtonComponent(
-                    DiscordButtonStyle.Primary,
-                    $"scoreboard_prev",
-                    "◀ Previous",
-                    currentPage == 0),
-                new DiscordButtonComponent(
-                    DiscordButtonStyle.Secondary,
-                    $"page",
-                    $"Page {currentPage + 1}/{totalPages}",
-                    true),
-                new DiscordButtonComponent(
-                    DiscordButtonStyle.Primary,
-                    $"scoreboard_next",
-                    "Next ▶",
-                    currentPage >= totalPages - 1)
-            ];
-        }
-
-        private DiscordComponent[] CreateBettingButtons(string gameData)
-        {
-            var gameInfo = gameData.Split(":");
+            var gameInfo = gameData.Split(",");
             var teamNames = gameInfo[0].Split("at");
             return
             [
                 new DiscordButtonComponent(
                     DiscordButtonStyle.Primary,
-                    $"betting_away:{teamNames[0]}:{gameInfo[1]}:{gameInfo[2]}",
+                    $"betting_away,{teamNames[0]},{gameInfo[1]},{gameInfo[2]},{gameDate}",
                     $"{teamNames[0].Trim()}"),
 
                 new DiscordButtonComponent(
                     DiscordButtonStyle.Primary,
-                    $"betting_home:{teamNames[1]}:{gameInfo[1]}:{gameInfo[2]}",
+                    $"betting_home,{teamNames[1]},{gameInfo[1]},{gameInfo[2]},{gameDate}",
                     $"{teamNames[1].Trim()}"),
 
                 new DiscordButtonComponent(
@@ -758,5 +690,14 @@ namespace GamedayTracker.Utility
             ];
         }
         #endregion
+
+        #region EXPIRED
+        private async Task Expired(DiscordInteraction interaction)
+        {
+            await interaction.CreateFollowupMessageAsync(
+                new DiscordFollowupMessageBuilder()
+                    .WithContent("Pagination expired. Please run the command again."));
+        }
+        #endregion
+        }
     }
-}

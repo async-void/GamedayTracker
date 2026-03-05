@@ -8,6 +8,7 @@ using GamedayTracker.Extensions;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Models.NFL;
+using GamedayTracker.Pagination;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
 using System.Collections;
@@ -35,30 +36,29 @@ namespace GamedayTracker.SlashCommands.NFL
             var completedGames = gameService.GetCompletedGames(scores);
             var page = await embedService.CreateScoreboardPage(scores, emoji, seasonType, season ?? 2025, 0);
             var totalPages = (int)Math.Ceiling(completedGames.Count / 4.0);
-            var lastPageIndex = totalPages;
-            var buttons = CreateNavigationButtons(ctx.User.Id, 0, lastPageIndex);
+            
+            var buttons = PaginationBuilder.CreateNavigationButtons(0, totalPages);
             page.AddActionRowComponent(new DiscordActionRowComponent(buttons));
-           
-            await ctx.RespondAsync(page);
 
+            await ctx.RespondAsync(page);
             var response = await ctx.GetResponseAsync();
             var paginationData = new NFLScoreboardPaginationData
             {
                 Scoreboard = scores,
                 CurrentPage = 0,
-                TotalPages = lastPageIndex,
+                TotalPages = totalPages,
                 SeasonType = seasonType,
                 Season = season ?? DateTimeOffset.UtcNow.Year,
                 Emoji = emoji,
                 UserId = ctx.User.Id,
                 MessageId = response.Id,
             };
-            ScoreboardPaginationCache.Store(response.Id, paginationData);
-
+            PaginationCache.Store(response.Id, paginationData);
+            
             _ = Task.Run(async () =>
             {
                 await Task.Delay(TimeSpan.FromMinutes(10));
-                ScoreboardPaginationCache.Remove(response.Id);
+                PaginationCache.Remove(response.Id);
             });
         }
 
@@ -108,28 +108,6 @@ namespace GamedayTracker.SlashCommands.NFL
             }
             else
                 await ctx.RespondAsync($"No games found for {teamName} in {season}");
-        }
-
-        private DiscordComponent[] CreateNavigationButtons(ulong userId, int currentPage, int totalPages)
-        {
-            return
-            [
-                new DiscordButtonComponent(
-                    DiscordButtonStyle.Primary,
-                    $"scoreboard_prev",
-                    "◀ Previous",
-                    currentPage == 0),
-                new DiscordButtonComponent(
-                    DiscordButtonStyle.Secondary,
-                    $"scoreboard_page",
-                    $"Page {currentPage + 1}/{totalPages}",
-                    true),
-                new DiscordButtonComponent(
-                    DiscordButtonStyle.Primary,
-                    $"scoreboard_next",
-                    "Next ▶",
-                    currentPage >= totalPages - 1)
-            ];
         }
     }
 }

@@ -367,6 +367,36 @@ namespace GamedayTracker.Services
         }
         #endregion
 
+        #region CREATE MEMBER BETS PAGE
+        public async Task<DiscordMessageBuilder> CreateMemberBetsPage(IReadOnlyList<Bet> bets, DiscordClient client, int pageIndex)
+        {
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var member = await client.GetUserAsync(bets[0].UserId);
+            var components = new List<DiscordComponent>
+            {
+               new DiscordTextDisplayComponent($"**{member.Username}'s Bets**"),
+               new DiscordSeparatorComponent(true),
+            };
+            var betsToShow = bets
+                     .Skip(pageIndex * 4)
+                     .Take(4)
+                     .ToList();
+            foreach (var bet in betsToShow)
+            {
+                var payout = (bet.WagerAmount + bet.Payout!).Value.ToString("C", CultureInfo.GetCultureInfo("en-US"));
+                components.Add(new DiscordTextDisplayComponent(
+                    $"**{bet.Selection}** on {bet.GameDate} | Wager: {bet.WagerAmount.ToString("C", CultureInfo.GetCultureInfo("en-US"))} | Multiplier: {bet.Multiplier} | Payout: {payout} | Status: {bet.Status}\r\n"));
+            }
+            components.Add(new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large));
+            components.Add(new DiscordTextDisplayComponent($"Gameday Tracker {timestamp}"));
+
+            var msg = new DiscordMessageBuilder()
+                .EnableV2Components()
+                .AddContainerComponent(new DiscordContainerComponent(components, false, DiscordColor.Lilac));
+            return msg;
+        }
+        #endregion
+
         #region CREATE BETTING EMBED
         public async Task<DiscordMessageBuilder> BuildBettingEmbed(string data, string amount)
         {
@@ -393,14 +423,16 @@ namespace GamedayTracker.Services
         public async Task<DiscordContainerComponent> BuildBettingResultEmbed(Bet bet)
         {
             var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
-           
+            var payout = (bet.WagerAmount + bet.Payout).Value.ToString("C", CultureInfo.GetCultureInfo("en-US"));
             var components = new List<DiscordComponent>
             {
                new DiscordTextDisplayComponent($"Bet Placed"),
                new DiscordSeparatorComponent(true),
                new DiscordTextDisplayComponent($"**Bet**: {bet.Selection} to win in the amount of {bet.WagerAmount.ToString("C", CultureInfo.GetCultureInfo("en-US"))}"),
+               new DiscordTextDisplayComponent($"**Game Date**: {bet.GameDate}"),
                new DiscordTextDisplayComponent($"**Placed At**: {bet.PlacedAt}"),
-               new DiscordTextDisplayComponent($"**Payout**: {bet.WagerAmount + bet.Payout}"),
+               new DiscordTextDisplayComponent($"**Multiplier**: {bet.Multiplier}"),
+               new DiscordTextDisplayComponent($"**Payout**: {payout}"),
                new DiscordTextDisplayComponent($"**Status**: {bet.Status}"),
                new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                new DiscordTextDisplayComponent($"Gameday Tracker {timestamp}"),
@@ -421,10 +453,11 @@ namespace GamedayTracker.Services
             {
                new DiscordTextDisplayComponent($"❌ Error ❌"),
                new DiscordSeparatorComponent(true),
-               new DiscordTextDisplayComponent($"Guild: {guild.Name}"),
-               new DiscordTextDisplayComponent(errorMessage),
-               new DiscordSectionComponent(new DiscordTextDisplayComponent(""),
-                   new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem("https://imgur.com/BlC9X8b.png"))),
+               new DiscordTextDisplayComponent($"**Where**: {guild.Name}"),
+               new DiscordTextDisplayComponent($"**When**: {DateTimeOffset.UtcNow:MM-dd-yyyy hh:mm:ss tt}"),
+               new DiscordTextDisplayComponent($"**Why**: {errorMessage}"),
+               new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+               new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem("https://imgur.com/BlC9X8b.png")),
                new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                new DiscordTextDisplayComponent($"Gameday Tracker ©️ {timestamp}"),
             };

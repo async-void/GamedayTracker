@@ -402,7 +402,7 @@ namespace GamedayTracker.Services
         }
         #endregion
 
-        #region GET ALL TEAM STATS
+        #region GET TEAM INJURIES
 
         #endregion
 

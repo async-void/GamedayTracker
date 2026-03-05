@@ -185,6 +185,62 @@ namespace GamedayTracker.Services
 
         #endregion
 
+        #region WRITE MEMBER BET TO JSON
+        public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteMemberBetToJsonAsync(ulong memberId, ulong guildId, Bet bet)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "members.json");
+            if (!File.Exists(path))
+            {
+                return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                {
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("\"f416e176-85b0-4f94-b172-8dc8f084242e\"")),
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    ErrorType = ErrorType.INFORMATION,
+                    ErrorCode = Guid.Parse("\"f416e176-85b0-4f94-b172-8dc8f084242e\""),
+                    CreatedBy = this
+                });
+            }
+            var file = await File.ReadAllTextAsync(path);
+            var members = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
+            var member = members.FirstOrDefault(m => m.MemberId.Equals(memberId) && m.GuildId.Equals(guildId));
+            if (member is { })
+            {
+                var existingBet = member.Bets.FirstOrDefault(b => b.EventId == bet.EventId);
+                if (existingBet is not null)
+                {
+                    return Result<bool, SystemError<JsonDataServiceProvider>>.Err(
+                        new SystemError<JsonDataServiceProvider>
+                        {
+                            ErrorMessage = "Bet with the same ID already exists for this member.",
+                            CreatedAt = DateTimeOffset.UtcNow,
+                            ErrorType = ErrorType.INFORMATION,
+                            CreatedBy = this
+                        });
+                }
+                else
+                {
+                    member.Bets.Add(bet);
+
+                    var options = JsonHelper.DefaultJsonOptions;
+                    var updatedJson = JsonSerializer.Serialize(members, options);
+                    await File.WriteAllTextAsync(path, updatedJson);
+
+                    return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
+                }
+
+
+            }
+            return Result<bool, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+            {
+                ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("6b24c3ac-0a78-49fd-9c6e-40d749e6559e")),
+                CreatedAt = DateTimeOffset.UtcNow,
+                ErrorType = ErrorType.INFORMATION,
+                ErrorCode = Guid.Parse("6b24c3ac-0a78-49fd-9c6e-40d749e6559e"),
+                CreatedBy = this
+            });
+        }
+        #endregion
+
         #region GET ALL MEMBERS FOR SCOPE
         public async Task<Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>> GetAllMembersForScope(int scope, ulong guildId)
         {
@@ -262,6 +318,33 @@ namespace GamedayTracker.Services
         }
         #endregion
 
+        #region GET ALL MEMBERS
+        public async Task<Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>> GetAllMembersAsync()
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "members.json");
+            if (!File.Exists(path))
+            {
+                return Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+                {
+                    ErrorMessage = "Player data file not found.",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    ErrorType = ErrorType.INFORMATION,
+                    CreatedBy = this
+                });
+            }
+            var file = await File.ReadAllTextAsync(path);
+            var members = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
+            if (members.Count > 0) return Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>.Ok(members);
+            return Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
+            {
+                ErrorMessage = "No members found.",
+                CreatedAt = DateTimeOffset.UtcNow,
+                ErrorType = ErrorType.INFORMATION,
+                CreatedBy = this
+            });
+        }
+        #endregion
+
         #region GET MEMBER FROM JSON
         public async Task<Result<GuildMember, SystemError<JsonDataServiceProvider>>> GetMemberFromJsonAsync(ulong memberId, ulong guildId)
         {
@@ -270,9 +353,9 @@ namespace GamedayTracker.Services
             {
                 return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
                 {
-                    ErrorMessage = "Player data file not found.",
-                    CreatedAt = DateTimeOffset.UtcNow,
+                    ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("f416e176-85b0-4f94-b172-8dc8f084242e")),
                     ErrorType = ErrorType.INFORMATION,
+                    ErrorCode = Guid.Parse("f416e176-85b0-4f94-b172-8dc8f084242e"),
                     CreatedBy = this
                 });
             }
@@ -286,9 +369,10 @@ namespace GamedayTracker.Services
             //member is not found
             return Result<GuildMember, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
-                ErrorMessage = "Member data not found.",
+                ErrorMessage = SystemErrorCodes.GetErrorMessage(Guid.Parse("6b24c3ac-0a78-49fd-9c6e-40d749e6559e")),
                 CreatedAt = DateTimeOffset.UtcNow,
                 ErrorType = ErrorType.INFORMATION,
+                ErrorCode = Guid.Parse("6b24c3ac-0a78-49fd-9c6e-40d749e6559e"),
                 CreatedBy = this
             });
         }

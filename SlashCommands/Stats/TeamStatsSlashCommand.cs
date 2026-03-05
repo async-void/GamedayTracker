@@ -9,6 +9,7 @@ using GamedayTracker.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models.NFL;
+using GamedayTracker.Pagination;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
 using System.ComponentModel;
@@ -46,12 +47,13 @@ namespace GamedayTracker.SlashCommands.Stats
             }
             else
             {
-                var normalizedTeamName = NflTeamMatcher.MatchTeam(teamName);
-                var abbr = normalizedName.ToAbbr();
+              
+                var teamDetail = normalizedName?.Split(" ")[0] ?? normalizedName;
+                var abbr = teamDetail?.ToAbbr() ?? NflEmojiService.GetEmoji("default");
                 var teamEmoji = NflEmojiService.GetEmoji(abbr);
                 var msg = await embedService.CreateTeamStatsPage(stats.Value,teamEmoji, seasonChoice, season, 0);
 
-                var buttons = CreateNavigationButtons(ctx.User.Id, 0, stats.Value.Splits.Categories.Count);
+                var buttons = PaginationBuilder.CreateNavigationButtons(0, stats.Value.Splits.Categories.Count);
                 msg.AddActionRowComponent(new DiscordActionRowComponent(buttons));
                 //var embed = await embedService.CreateTeamStatsEmbed(stats.Value, seasonChoice, season, abbr);
                 await ctx.RespondAsync(msg);
@@ -70,37 +72,14 @@ namespace GamedayTracker.SlashCommands.Stats
                     MessageId = response.Id
                 };
 
-                TeamStatsPaginationCache.Store(response.Id, paginationData);
+                PaginationCache.Store(response.Id, paginationData);
 
-                // Auto-cleanup after 10 minutes
                 _ = Task.Run(async () =>
                 {
                     await Task.Delay(TimeSpan.FromMinutes(10));
                     TeamStatsPaginationCache.Remove(response.Id);
                 });
             }
-        }
-
-        private DiscordComponent[] CreateNavigationButtons(ulong userId, int currentPage, int totalPages)
-        {
-            return
-            [
-                new DiscordButtonComponent(
-                    DiscordButtonStyle.Primary,
-                    $"prev",
-                    "◀ Previous",
-                    currentPage == 0),
-                new DiscordButtonComponent(
-                    DiscordButtonStyle.Secondary,
-                    $"page",
-                    $"Page {currentPage + 1}/{totalPages}",
-                    true),
-                new DiscordButtonComponent(
-                    DiscordButtonStyle.Primary,
-                    $"next",
-                    "Next ▶",
-                    currentPage >= totalPages - 1)
-            ];
         }
     }
  }

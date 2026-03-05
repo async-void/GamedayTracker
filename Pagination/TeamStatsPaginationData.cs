@@ -1,14 +1,15 @@
-﻿using System;
+﻿using GamedayTracker.Models.NFL;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GamedayTracker.Models.NFL
+namespace GamedayTracker.Pagination
 {
-    public class NFLScoreboardPaginationData
+    public class TeamStatsPaginationData
     {
-        public NFLScoreboard Scoreboard{ get; set; }
+        public NflTeamStatisticsResponse TeamStats { get; set; }
         public string Emoji { get; set; }
         public NFLSeasonType SeasonType { get; set; }
         public int Season { get; set; }

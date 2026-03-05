@@ -1,5 +1,6 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
+using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
@@ -10,7 +11,7 @@ using System.Text;
 
 namespace GamedayTracker.Jobs
 {
-    public class DailyStandingsJob(ITeamData teamDataService, IGameData gameDataService, DiscordClient client, ILogger<DailyStandingsJob> logger) : IJob
+    public class DailyStandingsJob(IEvaluator evaluator, ITeamData teamDataService, IGameData gameDataService, DiscordClient client, ILogger<DailyStandingsJob> logger) : IJob
     {
         
 
@@ -21,6 +22,13 @@ namespace GamedayTracker.Jobs
 
         public async Task SendDailyStandingsAsync()
         {
+            var seasonType = evaluator.Evaluate(DateTime.Now);
+
+            if (seasonType == RealTimeScoresMode.Offseason)
+            {
+                logger.LogInformation("Offseason Mode.... Skipping DailyStandingsJob");
+                return;
+            }
             var curSeason = gameDataService.GetCurSeason();
             logger.LogInformation("Fetching daily standings for NFL season {season}.", curSeason.Value);
             var standings = await gameDataService.GetNFLStandingsAsync();

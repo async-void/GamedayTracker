@@ -1,5 +1,4 @@
-﻿
-using GamedayTracker.Models.NFL;
+﻿using GamedayTracker.Pagination;
 
 namespace GamedayTracker.Cache
 {

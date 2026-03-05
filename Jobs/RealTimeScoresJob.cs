@@ -3,27 +3,28 @@ using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
+using Microsoft.Extensions.Logging;
 using Quartz;
 using Serilog;
 using System.Text;
 
 namespace GamedayTracker.Jobs
 {
-    public class RealTimeScoresJob(IGameData gameDataService, IDiscordEmbedService embedService, DiscordClient client, IEvaluator evaluator) : IJob
+    public class RealTimeScoresJob(IGameData gameDataService, IDiscordEmbedService embedService, DiscordClient client, IEvaluator evaluator, ILogger<RealTimeScoresJob> logger) : IJob
     {
         private readonly IGameData _gameDataService = gameDataService;
         private readonly DiscordClient _client = client;
         public async Task Execute(IJobExecutionContext context)
         {
-            Log.Information("Fetching realtime scores....[started]");
+            
             var seasonType = evaluator.Evaluate(DateTimeOffset.Now);
 
             if (seasonType.Equals(Enums.RealTimeScoresMode.Offseason))
             {
-                Log.Information("Fetching realtime scores....[skipped] - season is currently in offseason mode");
+                logger.LogInformation("Fetching realtime scores....[skipped] - season is currently in offseason mode");
                 return;
             }
-
+            logger.LogInformation("Fetching realtime scores....[started]");
             var scoreboard = await _gameDataService.GetNFLScoresAsync();
             var chnl = await _client.GetChannelAsync(1398021337498390539);
 
@@ -34,17 +35,17 @@ namespace GamedayTracker.Jobs
                 try
                 {
                     await chnl.CrosspostMessageAsync(msg);
-                    Log.Information("Fetching realtime scores....[success] - scores sent to live-scores channel");
+                    logger.LogInformation("Fetching realtime scores....[success] - scores sent to live-scores channel");
                 }
                 catch(Exception ex)
                 {
-                    Log.Error($"Error sending message to live-scores channel: {ex.Message}");
+                    logger.LogError($"Error sending message to live-scores channel: {ex.Message}");
                 }
 
             }
             else
             {
-                Log.Error($"Fetching realtime scores....[failed] REASON: could not find scores for season {scoreboard.Season.Year}");
+                logger.LogError($"Fetching realtime scores....[failed] REASON: could not find scores for season {scoreboard.Season.Year}");
                 await chnl.SendMessageAsync($"fetching real time score failed: Season Mode is {seasonType}");
             }
         }

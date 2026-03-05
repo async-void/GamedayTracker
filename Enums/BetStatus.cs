@@ -12,6 +12,5 @@ namespace GamedayTracker.Enums
         Won,
         Lost,
         Push
-
     }
 }

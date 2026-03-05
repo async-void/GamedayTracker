@@ -1,5 +1,6 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
+using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Utility;
 using Microsoft.Extensions.Logging;
@@ -9,12 +10,19 @@ using System.Text;
 
 namespace GamedayTracker.Jobs
 {
-    public class DailyHeadlineJob(INewsService newsService, DiscordClient client, ILogger<DailyHeadlineJob> logger) : IJob
+    public class DailyHeadlineJob(IEvaluator evaluator, INewsService newsService, DiscordClient client, ILogger<DailyHeadlineJob> logger) : IJob
     {
        
         public async Task Execute(IJobExecutionContext context)
         {
             logger.LogInformation("Executing Daily Headline Job...");
+            var seasonType = evaluator.Evaluate(DateTime.Now);
+
+            if (seasonType == RealTimeScoresMode.Offseason)
+            {
+                logger.LogInformation("Offseason mode, skipping DailyHeadlineJob...");
+                return;
+            }
             var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var rnd = new Random();
             var articles = await newsService.GetNews();
@@ -23,7 +31,7 @@ namespace GamedayTracker.Jobs
             {
                 var sBuilder = new StringBuilder();
                 var count = articles.Value.Count;
-                var embedTitle = $"**Latest NFL News {DateTime.UtcNow.ToLongDateString()}**";
+                var embedTitle = $"**Latest NFL News {DateTimeOffset.UtcNow:D}**";
 
                 for (var i = 0; i < count; i++)
                 {

@@ -125,12 +125,15 @@ namespace GamedayTracker.SlashCommands.Utility
             await ctx.DeferResponseAsync();
             var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var bot = ctx.Client.CurrentUser;
+            var botMemory = Process.GetCurrentProcess().WorkingSet64.Bytes().Humanize();
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             DateTimeOffset buildDate = File.GetLastWriteTime(Assembly.GetExecutingAssembly().Location);
+            
             var buildText = new StringBuilder()
                 .AppendLine($"**Version:** {version}")
                 .AppendLine($"**Last Build:** {buildDate:ddd MMM yyyy hh:mm:ss tt}")
-                .AppendLine($"**Guilds:** {ctx.Client.Guilds.Count}");
+                .AppendLine($"**Guilds:** {ctx.Client.Guilds.Count}")
+                .AppendLine($"**Memory:** {botMemory}");
 
             var aboutText = new StringBuilder()
                 .AppendLine("**Created by:** <@524434302361010186>")
@@ -157,6 +160,8 @@ namespace GamedayTracker.SlashCommands.Utility
                 new DiscordTextDisplayComponent(buildText.ToString()),
                 new DiscordSeparatorComponent(true),
                 new DiscordTextDisplayComponent(aboutText.ToString()),
+                new DiscordSeparatorComponent(true),
+                new DiscordTextDisplayComponent("### Currently Working On: Daily Numbers Lottery Game"),
                 new DiscordSeparatorComponent(true),
                 new DiscordActionRowComponent(linkBtns),
                 new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),

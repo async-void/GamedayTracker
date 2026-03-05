@@ -31,9 +31,9 @@ namespace GamedayTracker.Helpers
             { "nyj", "New York Jet" },
 
             // AFC North
-            { "ravens", "Boltimore Ravens" },
-            { "baltimore", "Boltimore Ravens" },
-            { "bal", "Boltimore Ravens" },
+            { "ravens", "Baltimore Ravens" },
+            { "baltimore", "Baltimore Ravens" },
+            { "bal", "Baltimore Ravens" },
 
             { "bengals", "Cincinnati Bengals" },
             { "cincinnati", "Cincinnati Bengals" },

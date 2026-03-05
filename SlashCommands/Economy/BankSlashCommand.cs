@@ -6,6 +6,7 @@ using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
+using GamedayTracker.Utility.Ansi;
 using Humanizer;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel;
@@ -69,8 +70,10 @@ namespace GamedayTracker.SlashCommands.Economy
             var logChannel = await ctx.Client.GetChannelAsync(1384436855524692048);
             await logChannel.SendMessageAsync(errMessage);
                 
+            var consoleMagenta = AnsiColors.GetAnsiCode("magenta");
+            var resetConsole = AnsiColors.GetAnsiCode("reset");
             Console.ForegroundColor = ConsoleColor.Magenta;
-            _logger.LogInformation("unable to fetch {MemberName}'s balance - error: {ErrorMessage}", member.Username, player.Error.ErrorMessage);
+            _logger.LogInformation("unable to fetch member [{MemberName}] balance - error: {ErrorMessage}", member.Username, player.Error.ErrorMessage);
             Console.ResetColor();
             await ctx.EditResponseAsync(errMessage);
         }
@@ -125,9 +128,15 @@ namespace GamedayTracker.SlashCommands.Economy
                         }
                         else
                         {
-                            await ctx.FollowupAsync(new DiscordFollowupMessageBuilder()
-                                .WithContent($"Error fetching updated user data: {updatedUser.Error.ErrorMessage!} with ErrorCode: {updatedUser.Error.ErrorCode}")
-                                .AsEphemeral(true));
+                            var errContainer = await _embedService.BuildErrorContainer(ctx.Client, $"Error fetching updated user data: {updatedUser.Error.ErrorMessage!} with ErrorCode: {updatedUser.Error.ErrorCode}", ctx.Guild?.Id ?? 0, DiscordColor.Red);
+                            var errEmbed = new DiscordMessageBuilder()
+                                .EnableV2Components()
+                                .AddContainerComponent(errContainer);
+
+
+                            await ctx.EditResponseAsync(new DiscordMessageBuilder()
+                                .AddContainerComponent(errContainer));
+                                
                         }
                     }
                     else
