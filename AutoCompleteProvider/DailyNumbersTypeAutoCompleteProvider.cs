@@ -12,7 +12,7 @@ namespace GamedayTracker.AutoCompleteProvider
             [
                 new DiscordAutoCompleteChoice("Straight", "straight"),
                 new DiscordAutoCompleteChoice("Box", "box"),
-                new DiscordAutoCompleteChoice("BosStraight", "boxstraight")
+                new DiscordAutoCompleteChoice("BoxStraight", "boxstraight")
             ];
 
             return types;

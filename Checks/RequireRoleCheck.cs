@@ -1,7 +1,9 @@
 ﻿using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using GamedayTracker.Attributes;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,19 +12,19 @@ using System.Threading.Tasks;
 
 namespace GamedayTracker.Checks
 {
-    public class RequireRoleCheck : IContextCheck<RequireRoleAttribute>
+    public class RequireRoleCheck(ulong roleId) : IContextCheck
     {
-        public async ValueTask<string?> ExecuteCheckAsync(RequireRoleAttribute attribute, CommandContext context)
+        private readonly ulong _roleId = roleId;
+
+        public async ValueTask<bool> ExecuteCheckAsync(CommandContext ctx)
         {
-            DiscordGuild? guild = context.Guild;
-            if (guild! == null!)
-                return "Command has to be executed in a guild!"; // Return error, if command was executed in dm (if possible)
+            if (ctx.Guild is null)
+                return false;
 
-            DiscordRole requiredRole = await guild.GetRoleAsync(attribute.RequiredRoleId);
-            if (!context.Member!.Roles.Contains(requiredRole))
-                return $"You'll need the **{requiredRole.Name}** role to use this command!"; // Return error if user doesn't have role
+            var member = await ctx.Guild.GetMemberAsync(ctx.User.Id);
 
-            return null;
+            return member.Roles.Any(r => r.Id == _roleId);
         }
+
     }
 }

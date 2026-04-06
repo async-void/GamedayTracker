@@ -1,9 +1,11 @@
 ﻿using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace GamedayTracker.Services
@@ -22,5 +24,6 @@ namespace GamedayTracker.Services
 
             return Task.FromResult(Result<int[], SystemError<DailyNumbersLotteryService>>.Ok(numbers));
         }
+     
     }
 }

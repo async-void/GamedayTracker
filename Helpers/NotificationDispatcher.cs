@@ -30,7 +30,7 @@ namespace GamedayTracker.Helpers
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Unexpected error in notification dispatcher loop.");
+                    _logger.LogError("Error: {error}", ex.Message);
                     await Task.Delay(2000, stoppingToken);
                 }
             }
@@ -48,8 +48,14 @@ namespace GamedayTracker.Helpers
                     return;
                 }
                 var notificationChannel = guild.GetDefaultChannel();
-                await notificationChannel.SendMessageAsync(payload.Message);
-                _logger.LogInformation("Sent message to {GuildId}.", payload.GuildId);
+
+                if (notificationChannel is not null)
+                {
+                    await notificationChannel.SendMessageAsync(payload.Message);
+                    _logger.LogInformation("Sent message to {GuildId}.", payload.GuildId);
+                }
+                else
+                    _logger.LogInformation("Notification Channel not found: GuildId: {GuildId} | Guild Name: {guildName}.", payload.GuildId, guild.Name);
             }
             catch (Exception ex)
             {

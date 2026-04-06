@@ -1,4 +1,5 @@
 ﻿using DSharpPlus;
+using DSharpPlus.Entities;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using Microsoft.Extensions.Hosting;
@@ -30,10 +31,21 @@ namespace GamedayTracker.Helpers
                         await Task.Delay(250, stoppingToken); // idle wait
                     }
                 }
+                catch (OperationCanceledException op)
+                {
+                    _logger.LogInformation(op, "DmDispatcher graceful shutdown called in main console.");
+                    return;
+                }
+                catch (ObjectDisposedException od)
+                {
+                    // Discord client or host services were disposed first
+                    _logger.LogInformation(od, "DmDispatcher stopping because dependencies were disposed.");
+                    return;
+                }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Unexpected error in DM dispatcher loop.");
-                    await Task.Delay(2000, stoppingToken);
+                    _logger.LogError(ex, "An error occurred in the DM Dispatcher loop.");
+                    return;
                 }
             }
 
@@ -42,21 +54,21 @@ namespace GamedayTracker.Helpers
 
         private async Task ProcessPayloadAsync(DmPayload payload, CancellationToken ct)
         {
+            var user = await _client.GetUserAsync(payload.UserId); ;
             try
             {
-                var user = await _client.GetUserAsync(payload.UserId);
-                if (user is null)
+               if (user is null)
                 {
-                    _logger.LogWarning("User {UserId} not found for DM.", payload.UserId);
+                    _logger.LogWarning("User {User} not found for DM | ID: {ID}", user.Username, payload.UserId);
                     return;
                 }
 
                 await user.SendMessageAsync(payload.Message);
-                _logger.LogInformation("Sent DM to {UserId}.", payload.UserId);
+                _logger.LogInformation("Sent DM to {User}.", user.Username);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send DM to {UserId}.", payload.UserId);
+                _logger.LogError(ex, "Failed to send DM to {User} | with ID: {userId}", user.Username, payload.UserId);
             }
         }
 

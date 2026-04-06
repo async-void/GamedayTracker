@@ -64,7 +64,7 @@ namespace GamedayTracker.Services
             else
             {
                 var file = await File.ReadAllTextAsync(path);
-                var json = JsonSerializer.Deserialize<List<Matchup>>(file);
+                var json = JsonSerializer.Deserialize<List<Matchup>>(file, JsonHelper.DefaultJsonOptions);
                 json!.Add(matchup);
                 var options = JsonHelper.DefaultJsonOptions;
                 var updatedJson = JsonSerializer.Serialize(json, options);
@@ -89,7 +89,7 @@ namespace GamedayTracker.Services
             else
             {
                 var file = await File.ReadAllTextAsync(path);
-                var existingMatchups = JsonSerializer.Deserialize<List<Matchup>>(file);
+                var existingMatchups = JsonSerializer.Deserialize<List<Matchup>>(file, JsonHelper.DefaultJsonOptions);
                 existingMatchups!.AddRange(matchups);
                 var options = JsonHelper.DefaultJsonOptions;
                 var updatedJson = JsonSerializer.Serialize(existingMatchups, options);
@@ -158,26 +158,26 @@ namespace GamedayTracker.Services
         public async Task<Result<bool, SystemError<JsonDataServiceProvider>>> WriteMemberToJsonAsync(GuildMember member)
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json", "members.json");
-            var options = JsonHelper.DefaultJsonOptions;
+           
             List<GuildMember> members;
 
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 members = [member];
-                var json = JsonSerializer.Serialize(members, options);
+                var json = JsonSerializer.Serialize(members, JsonHelper.DefaultJsonOptions);
                 await File.WriteAllTextAsync(path, json);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
             }
             else
             {
                 var file = await File.ReadAllTextAsync(path);
-                members = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
+                members = JsonSerializer.Deserialize<List<GuildMember>>(file, JsonHelper.DefaultJsonOptions) ?? [];
                 var curMember = members.FirstOrDefault(m => m.GuildId.Equals(member.GuildId) && m.MemberId.Equals(member.MemberId));
                 if (curMember is null)
                     members.Add(member);
             }
-            var updatedJson = JsonSerializer.Serialize(members, options);
+            var updatedJson = JsonSerializer.Serialize(members, JsonHelper.DefaultJsonOptions);
             await File.WriteAllTextAsync(path, updatedJson);
             return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
 
@@ -201,7 +201,7 @@ namespace GamedayTracker.Services
                 });
             }
             var file = await File.ReadAllTextAsync(path);
-            var members = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
+            var members = JsonSerializer.Deserialize<List<GuildMember>>(file, JsonHelper.DefaultJsonOptions) ?? [];
             var member = members.FirstOrDefault(m => m.MemberId.Equals(memberId) && m.GuildId.Equals(guildId));
             if (member is { })
             {
@@ -221,8 +221,7 @@ namespace GamedayTracker.Services
                 {
                     member.Bets.Add(bet);
 
-                    var options = JsonHelper.DefaultJsonOptions;
-                    var updatedJson = JsonSerializer.Serialize(members, options);
+                    var updatedJson = JsonSerializer.Serialize(members, JsonHelper.DefaultJsonOptions);
                     await File.WriteAllTextAsync(path, updatedJson);
 
                     return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
@@ -262,7 +261,7 @@ namespace GamedayTracker.Services
                     if (guildId is not 0)
                     {
                         var file = await File.ReadAllTextAsync(path);
-                        var members = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
+                        var members = JsonSerializer.Deserialize<List<GuildMember>>(file, JsonHelper.DefaultJsonOptions) ?? [];
                         var guildMembers = members
                             .Where(m => m.GuildId == guildId)
                             .ToList();
@@ -291,7 +290,7 @@ namespace GamedayTracker.Services
 
                 case 1://Global Scope
                     var _file = await File.ReadAllTextAsync(path);
-                    var _members = JsonSerializer.Deserialize<List<GuildMember>>(_file) ?? [];
+                    var _members = JsonSerializer.Deserialize<List<GuildMember>>(_file, JsonHelper.DefaultJsonOptions) ?? [];
                     if (_members.Count > 0)
                     {
                         return Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>.Ok(_members);
@@ -333,7 +332,7 @@ namespace GamedayTracker.Services
                 });
             }
             var file = await File.ReadAllTextAsync(path);
-            var members = JsonSerializer.Deserialize<List<GuildMember>>(file) ?? [];
+            var members = JsonSerializer.Deserialize<List<GuildMember>>(file, JsonHelper.DefaultJsonOptions) ?? [];
             if (members.Count > 0) return Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>.Ok(members);
             return Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>.Err(new SystemError<JsonDataServiceProvider>
             {
@@ -360,7 +359,7 @@ namespace GamedayTracker.Services
                 });
             }
             var file = await File.ReadAllTextAsync(path);
-            var members = JsonSerializer.Deserialize<List<GuildMember>>(file);
+            var members = JsonSerializer.Deserialize<List<GuildMember>>(file, JsonHelper.DefaultJsonOptions);
             var member = members!
                 .Where(p => p.MemberId.Equals(memberId) && p.GuildId.Equals(guildId))
                 .FirstOrDefault();
@@ -393,15 +392,15 @@ namespace GamedayTracker.Services
                 });
             }
             var json = await File.ReadAllTextAsync(path);
-            List<GuildMember> members = JsonSerializer.Deserialize<List<GuildMember>>(json) ?? [];
+            List<GuildMember> members = JsonSerializer.Deserialize<List<GuildMember>>(json, JsonHelper.DefaultJsonOptions) ?? [];
 
             var memberToUpdate = members.FirstOrDefault(g => g.GuildId.Equals(member.GuildId) && g.MemberId.Equals(member.MemberId));
-            var jsonOptions = JsonHelper.DefaultJsonOptions;;
+            
             if (memberToUpdate is { })
             {
                 members.Remove(memberToUpdate);
                 members.Add(member);
-                var updatedJson = JsonSerializer.Serialize(members, jsonOptions);
+                var updatedJson = JsonSerializer.Serialize(members, JsonHelper.DefaultJsonOptions);
                 await File.WriteAllTextAsync(path, updatedJson);
                 return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
             }
@@ -427,7 +426,7 @@ namespace GamedayTracker.Services
             else
             {
                 var file = await File.ReadAllTextAsync(path);
-                var players = JsonSerializer.Deserialize<List<PoolPlayer>>(file) ?? [];
+                var players = JsonSerializer.Deserialize<List<PoolPlayer>>(file, JsonHelper.DefaultJsonOptions) ?? [];
                 var maxId = players.Max(p => p.Id);
                 return Result<int, SystemError<JsonDataServiceProvider>>.Ok(maxId + 1);
             }
@@ -690,7 +689,7 @@ namespace GamedayTracker.Services
                 });
             }
             var file = await File.ReadAllTextAsync(path);
-            var members = JsonSerializer.Deserialize<List<GuildMember>>(file);
+            var members = JsonSerializer.Deserialize<List<GuildMember>>(file, JsonHelper.DefaultJsonOptions);
             var member = members!
                 .Where(p => p.MemberId.ToString().Equals(memberId))
                 .FirstOrDefault();
@@ -900,6 +899,57 @@ namespace GamedayTracker.Services
         //    return Result<bool, SystemError<JsonDataServiceProvider>>.Ok(true);
         //}
 
-       #endregion
+        #endregion
+
+        #region WRITE DAILY NUMBERS LOTTERY USER PICKS FOR DAY
+        public async Task<bool> WriteDailyNumbersPicksToJsonAsync(DailyNumberPick pick, ulong guildId, string date)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Data","Json",$"DailyNumbers_{guildId}_{date:yyyyMMdd}.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+            List<DailyNumberPick> existingPicks;
+
+            if (File.Exists(path))
+            {
+                var file = await File.ReadAllTextAsync(path);
+                existingPicks = JsonSerializer.Deserialize<List<DailyNumberPick>>(file, JsonHelper.DefaultJsonOptions)
+                                ?? [];
+            }
+            else
+            {
+                existingPicks = [];
+            }
+
+            existingPicks.Add(pick);
+
+            var updatedJson = JsonSerializer.Serialize(existingPicks, JsonHelper.DefaultJsonOptions);
+            await File.WriteAllTextAsync(path, updatedJson);
+
+            return true;
+        }
+        #endregion
+
+        #region GET USER DAILY NUMBERS
+        public async Task<IReadOnlyList<DailyNumberPick>> GetUserDailyNumbersFromJsonAsync(ulong guildId,ulong userId,DateOnly date)
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data","Json",$"DailyNumbers_{guildId}_{date:yyyyMMdd}.json");
+
+            if (!File.Exists(path))
+                return [];
+
+            var file = await File.ReadAllTextAsync(path);
+            var allPicks = JsonSerializer.Deserialize<List<DailyNumberPick>>(file, JsonHelper.DefaultJsonOptions) ?? [];
+
+            var userPicks = allPicks
+                .Where(p =>
+                    p.GuildId == guildId &&
+                    p.UserId == userId &&
+                    p.Date == date)
+                .ToList();
+
+            return userPicks;
+        }
+        #endregion
+
     }
 }

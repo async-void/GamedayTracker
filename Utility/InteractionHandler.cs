@@ -7,17 +7,12 @@ using GamedayTracker.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
-using GamedayTracker.Models.Betting;
 using GamedayTracker.Models.NFL;
 using GamedayTracker.Pagination.Registry;
 using GamedayTracker.Services;
 using GamedayTracker.Utility.Multipliers;
 using Humanizer;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
-using System.ComponentModel;
-using System.Globalization;
-using System.Numerics;
 using System.Text;
 
 namespace GamedayTracker.Utility

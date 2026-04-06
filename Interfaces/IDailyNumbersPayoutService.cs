@@ -10,7 +10,7 @@ namespace GamedayTracker.Interfaces
 {
     public interface IDailyNumbersPayoutService
     {
-        Task<Result<IReadOnlyList<DailyNumbersResult>, SystemError<DailyNumbersPayoutService>>> CalculateWinnersAsync(DateOnly date, CancellationToken ct = default);
+        Task<Result<IReadOnlyList<DailyNumbersResult>, SystemError<DailyNumbersPayoutService>>> CalculateWinnersAsync(string date, CancellationToken ct = default);
         Task<Result<GuildMember, SystemError<DailyNumbersPayoutService>>> ApplyPayoutAsync(ulong userId, ulong guildId, decimal payout);
     }
 }

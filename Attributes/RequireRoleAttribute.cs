@@ -7,9 +7,8 @@ using System.Threading.Tasks;
 
 namespace GamedayTracker.Attributes
 {
-    public class RequireRoleAttribute: ContextCheckAttribute
+    public class RequireRoleAttribute(ulong roleId) : ContextCheckAttribute
     {
-        public ulong RequiredRoleId;
-        public RequireRoleAttribute(ulong roleId) => RequiredRoleId = roleId;
+        public ulong RequiredRoleId = roleId;
     }
 }

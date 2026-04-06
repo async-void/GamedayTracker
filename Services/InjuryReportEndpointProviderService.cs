@@ -45,7 +45,7 @@ namespace GamedayTracker.Services
 
         };
 
-        public static string GetTeamInjuryReport(string teamName)
+        public static string GetTeamInjuryReportEndpoint(string teamName)
         {
             if (string.IsNullOrWhiteSpace(teamName))
                 throw new ArgumentException("Team name cannot be empty.", nameof(teamName));

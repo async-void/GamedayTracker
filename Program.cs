@@ -3,8 +3,12 @@ using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using DSharpPlus.Extensions;
+using DSharpPlus.Interactivity;
 using GamedayTracker.Checks;
+using GamedayTracker.Handlers;
+using GamedayTracker.Handlers.Modal;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Jobs;
@@ -12,6 +16,7 @@ using GamedayTracker.Models;
 using GamedayTracker.Pagination;
 using GamedayTracker.Pagination.Handlers;
 using GamedayTracker.Pagination.Registry;
+using GamedayTracker.Repositories;
 using GamedayTracker.Schedules;
 using GamedayTracker.Services;
 using GamedayTracker.Utility;
@@ -20,6 +25,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Quartz;
 using Serilog;
+using Serilog.Formatting.Json;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Reflection;
 
@@ -73,6 +79,7 @@ namespace GamedayTracker
                 .WriteTo.Console(theme: theme, outputTemplate: "[{Timestamp:yyyy-MM-dd hh:mm:ss.fff tt zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
                 .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "TextFiles", "Logs", "bot_logs.txt"), rollingInterval: RollingInterval.Day,
                  outputTemplate: "[{Timestamp:yyyy-MM-dd hh:mm:ss.fff tt zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
+                .WriteTo.File(new JsonFormatter(), "Data/Json/Logs/logs.json", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
             var host = Host.CreateDefaultBuilder()
@@ -81,13 +88,18 @@ namespace GamedayTracker
                .ConfigureServices((context, services) =>
                {
                    services.AddHostedService<BotService>()
-                       .AddDiscordClient(token.Value, intents)
-                       .AddCommandsExtension((context, config) =>
-                       {
-                           config.AddCommands(Assembly.GetExecutingAssembly());
-                           config.AddCheck<RequireRoleCheck>();
-                       });
+                    .AddDiscordClient(token.Value, intents)
+                    .Configure<DiscordConfiguration>(config =>
+                    {
+                        config.LogUnknownEvents = false;
+                    })
+                    .AddCommandsExtension((context, config) =>
+                    {
+                        config.AddCommands(Assembly.GetExecutingAssembly());
+                        config.AddCheck<RequireRoleCheck>();
+                    });
                    services.AddMemoryCache();
+                 
                    services.AddSingleton<HttpClient>();
                    services.AddLogging(logging => logging.ClearProviders().AddSerilog(logger));
                    services.AddScoped<ITeamData, TeamDataService>();
@@ -110,14 +122,19 @@ namespace GamedayTracker
                    services.AddSingleton<TeamStatsPaginationHandler>(); 
                    services.AddSingleton<MemberBetsPaginationHandler>();
                    services.AddSingleton<IDailyNumbersCache, DailyNumbersCacheService>();
+                   services.AddSingleton<IInjuryReport, InjuryReportProviderService>();
                    services.AddSingleton<DailyNumbersCacheService>();
-                   
+                  
                    services.AddSingleton<IDailyNumbersCache>(sp =>
                        sp.GetRequiredService<DailyNumbersCacheService>());
 
                    services.AddSingleton<IDailyNumbersRepository>(sp =>
                        sp.GetRequiredService<DailyNumbersCacheService>());
                   
+                   services.AddSingleton<TicketStore>(sp => 
+                        new TicketStore(Path.Combine(AppContext.BaseDirectory, "Data", "json", "tickets.json")));
+
+                   services.AddSingleton<ITicketProvider, TicketProviderService>();
                    services.AddSingleton<ILotteryService, DailyNumbersLotteryService>();
                    services.AddSingleton<IGlobalWinningNumberService, GlobalWinningNumberService>();
                    services.AddSingleton<IDailyNumbersPayoutRules, DefaultDailyNumbersPayoutRules>();
@@ -125,7 +142,9 @@ namespace GamedayTracker
                    services.AddSingleton<IDmQueue>(sp =>
                         new JsonDmQueue(Path.Combine(AppContext.BaseDirectory, "dmqueue.json")));
                    services.AddHostedService<DmDispatcher>();
-                  // services.AddHostedService<NotificationDispatcher>();
+                   services.AddSingleton<TicketIdGenerator>();
+                   services.AddSingleton<TicketCoordinator>();
+                   // services.AddHostedService<NotificationDispatcher>();
 
                    #region QUARTZ
                    services.AddQuartz(q =>
@@ -200,7 +219,7 @@ namespace GamedayTracker
                        q.AddTrigger(opts => opts
                            .ForJob(dailyNumbersJobKey)
                            .WithIdentity("DailyNumbers-trigger")
-                           .WithCronSchedule("0 0 0 * * ?", x => x
+                           .WithCronSchedule("0 55 23 * * ?", x => x
                                 .InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"))));
                            
                            
@@ -209,13 +228,19 @@ namespace GamedayTracker
                    services.AddQuartzHostedService(q =>
                    {
                        q.WaitForJobsToComplete = true;
+                       q.StartDelay = TimeSpan.FromMinutes(2);
                    });
 
                    #endregion
 
                    #region CONFIGURE EVENT HANDLERS
                    services.ConfigureEventHandlers(
-                       e => e.AddEventHandlers<InteractionHandler>(ServiceLifetime.Singleton));
+                       e => e.AddEventHandlers<InteractionHandler>(ServiceLifetime.Singleton)
+                             .AddEventHandlers<TicketInteractionHandler>(ServiceLifetime.Singleton)
+                             .AddEventHandlers<GuildMemberAddedEventHandler>(ServiceLifetime.Singleton)
+                             .AddEventHandlers<GuildAddedEventHandler>(ServiceLifetime.Singleton)
+                             .AddEventHandlers<ModalInteractionHandler>(ServiceLifetime.Singleton));
+
                    services.ConfigureEventHandlers(
 
                     #region MESSAGE EVENT HANDLERS
@@ -224,7 +249,7 @@ namespace GamedayTracker
                            return Task.CompletedTask;
                        })
 
-                   #endregion
+#endregion
 
                     #region INTERACTION EVENT HANDLERS
                     .HandleInteractionCreated(async (sender, args) =>
@@ -247,69 +272,6 @@ namespace GamedayTracker
                         await logChnl.SendMessageAsync(
                             $"Updated bot status: {statusMessage} with a total of ``{userCount}`` users.");
                         logger.Information($"Session Resumed");
-                    })
-                    #endregion
-
-                    #region GUILD CREATED
-                    .HandleGuildCreated(async (sender, args) =>
-                    {
-                        var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                        var jsonService = sender.ServiceProvider.GetRequiredService<IJsonDataService>();
-
-                        var guild = new Guild()
-                        {
-                            GuildId = args.Guild.Id,
-                            GuildName = args.Guild.Name,
-                            GuildOwnerId = args.Guild.OwnerId,
-                            DateAdded = DateTimeOffset.UtcNow,
-                            IsDailyHeadlinesEnabled = true,
-                            IsRealTimeScoresEnabled = true,
-                            ReceiveSystemMessages = true,
-                            NotificationChannelId = args.Guild.GetDefaultChannel()!.Id.ToString(),
-                            DiscordMembers = args.Guild.Members.ToDictionary()
-
-                        };
-                        var supportChnl = await sender.GetChannelAsync(1384436855524692048);
-                        var guilds = sender.Guilds.Values;
-
-                        var newChnl = args.Guild.GetDefaultChannel();
-                        if (newChnl is { } chnl)
-                        {
-                            DiscordComponent[] components =
-                            [
-                                new DiscordTextDisplayComponent("## Welcome to Gameday Tracker!"),
-                                new DiscordSeparatorComponent(true),
-                                new DiscordSectionComponent(new DiscordTextDisplayComponent("Use the `help button` to get started!"),
-                                    new DiscordButtonComponent(DiscordButtonStyle.Primary, "helpId", "Help")),
-                                new DiscordSeparatorComponent(true),
-                                new DiscordSectionComponent(new DiscordTextDisplayComponent("Headlines and Realtime Scores are enabled by default!"),
-                                    new DiscordButtonComponent(DiscordButtonStyle.Primary, "settingsId", "Settings")),
-                                new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                                new DiscordSectionComponent(
-                                    new DiscordTextDisplayComponent($"Powered by GamedayTracker ©️ <t:{unixTimestamp}:F>"),
-                                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
-                            ];
-
-                            var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
-                            var embed = new DiscordMessageBuilder()
-                                .EnableV2Components()
-                                .AddContainerComponent(container);
-                            await chnl.SendMessageAsync(embed);
-                        }
-                        var guildOwner = await args.Guild.GetMemberAsync(args.Guild.OwnerId);
-                        await supportChnl.SendMessageAsync(
-                            $"Guild Added: <t:{unixTimestamp}:R> ``{args.Guild.Name}:({args.Guild.Id}) - Total Guilds: {guilds.Count()}``\r\n" +
-                            $"``OwnerId: {guildOwner.Id} Owner Membername: {guildOwner.Username}``");
-                        var guildResult = await jsonService.WriteGuildToJsonAsync(guild);
-
-                        if (guildResult.IsOk)
-                            logger.Information($"Guild Added: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}");
-                        else
-                            logger.Error($"GUild Added to Discord: {args.Guild.Name} ({args.Guild.Id}) - Total Guilds: {guilds.Count()}\r\n" +
-                                $"but unable to write guild info to json file: Error Message - {guildResult.Error.ErrorMessage}");
-
-
-
                     })
                     #endregion
 
@@ -349,6 +311,7 @@ namespace GamedayTracker
                     #endregion
 
                     #endregion
+
                    );
                    #endregion
 

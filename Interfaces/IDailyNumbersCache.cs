@@ -10,7 +10,7 @@ namespace GamedayTracker.Interfaces
     public interface IDailyNumbersCache
     {
         bool HasUserSubmitted(ulong guildId, ulong userId, DateOnly date);
-        void AddUserPick(DailyNumberPick pick);
+        Task AddUserPick(DailyNumberPick pick);
         IReadOnlyList<DailyNumberPick> GetGuildPicks(ulong guildId, DateOnly date);
         IReadOnlyList<ulong> GetActiveGuildIds(DateOnly date);
         DailyNumberPick? GetUserPicks(ulong guildId, ulong UserId, DateOnly date);

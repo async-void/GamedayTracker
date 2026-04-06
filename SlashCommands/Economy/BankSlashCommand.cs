@@ -42,6 +42,8 @@ namespace GamedayTracker.SlashCommands.Economy
             if (player.IsOk)
             {
                 var balance = player.Value.Bank?.Balance ?? 5;
+                var depositAmount = player.Value.Bank?.LastDepositAmount ?? 0m;
+                var depositAmountHumanized = depositAmount.ToString("C", CultureInfo.GetCultureInfo("en-US"));
                 var depositTimestamp = player.Value.Bank?.DepositTimestamp ?? DateTimeOffset.UtcNow;  
                 var depositedTimestamp = depositTimestamp.ToUnixTimeSeconds();
 
@@ -49,8 +51,9 @@ namespace GamedayTracker.SlashCommands.Economy
                             .WithTitle($"{player.Value.MemberName}'s Bank")
                             .WithColor(DiscordColor.DarkGreen)
                             .WithThumbnail(member.AvatarUrl)
-                            .AddField("Balance", balance.ToString(), true)
+                            .AddField("Balance", balance.ToString().Humanize(), true)
                             .AddField("Last Deposit", depositTimestamp.Humanize(), true)
+                            .AddField("Deposit Amount", depositAmountHumanized, true)
                             .WithFooter($"Gameday Tracker ©️ ")
                             .WithTimestamp(DateTimeOffset.UtcNow)
                             .Build();
@@ -122,7 +125,9 @@ namespace GamedayTracker.SlashCommands.Economy
                             .AddEmbed(new DiscordEmbedBuilder()
                                 .WithTitle($"Daily Command")
                                 .WithDescription($"Done!  **{updatedUser.Value.MemberName}'s** balance is <:money:1337795714855600188> {balance.ToString("C", CultureInfo.CreateSpecificCulture("en-US"))}\r\nyou can use daily again {unixTimestamp} from now")
-                                .WithFooter($"Gameday Tracker ©️ {timestamp}"));
+                                .WithFooter($"Gameday Tracker ©️ ")
+                                .WithTimestamp(DateTimeOffset.UtcNow)
+                                .Build());
 
                             await ctx.EditResponseAsync(new DiscordWebhookBuilder(message));
                         }

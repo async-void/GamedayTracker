@@ -23,6 +23,7 @@ namespace GamedayTracker.Services
         {
             logger.LogInformation($"Connecting to {AnsiColors.GetAnsiCode("orange")}Discord...");
             await dClient.ConnectAsync(new DiscordActivity($"Scores", DiscordActivityType.Watching), DiscordUserStatus.Online);
+            
             string[] handlers = [ "MemberBetsPaginationHandler", "NFLScoreboardPaginationHandler", "TeamStatsPaginationHandler" ];
             logger.LogInformation($"Registering Pagination Handlers [{AnsiColors.GetAnsiCode("orange")} {string.Join(",", handlers)}]");
         }

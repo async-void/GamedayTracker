@@ -1,4 +1,5 @@
 ﻿using GamedayTracker.Enums;
+using GamedayTracker.Extensions;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using Microsoft.Extensions.Logging;
@@ -9,9 +10,10 @@ namespace GamedayTracker.Services
     public sealed class DailyNumbersPayoutService(IDailyNumbersRepository repository,IGlobalWinningNumberService winningNumberService,IDailyNumbersPayoutRules payoutRules,
         ILogger<DailyNumbersPayoutService> logger, IJsonDataService jsonDataService): IDailyNumbersPayoutService
     {
-        public async Task<Result<IReadOnlyList<DailyNumbersResult>, SystemError<DailyNumbersPayoutService>>> CalculateWinnersAsync(DateOnly date, CancellationToken ct = default)
+        public async Task<Result<IReadOnlyList<DailyNumbersResult>, SystemError<DailyNumbersPayoutService>>> CalculateWinnersAsync(string date, CancellationToken ct = default)
         {
-            var winningNumberResult = await winningNumberService.GetWinningNumberAsync(date);
+           
+            var winningNumberResult = await winningNumberService.GetWinningNumberAsync(date.FormatDate());
             if (!winningNumberResult.IsOk || winningNumberResult.Value.Length <= 0)
                 return Result<IReadOnlyList<DailyNumbersResult>, SystemError<DailyNumbersPayoutService>>
                     .Err(new SystemError<DailyNumbersPayoutService>
@@ -23,17 +25,19 @@ namespace GamedayTracker.Services
                         ErrorType = ErrorType.INFORMATION
                     });
 
-            var picksResult = await repository.GetPicksForDateAsync(date, ct);
-            if (!picksResult.IsOk || picksResult.Value.Count <= 0)
+            var picksResult = await repository.GetPicksForDateAsync(date.FormatDate(), ct);
+            if (!picksResult.IsOk)
                 return Result<IReadOnlyList<DailyNumbersResult>, SystemError<DailyNumbersPayoutService>>
                     .Err(new SystemError<DailyNumbersPayoutService>
                     {
                         ErrorCode = Guid.NewGuid(),
-                        ErrorMessage = $"Failed to retrieve winning picks for {date}: {winningNumberResult.Error.ErrorMessage}",
+                        ErrorMessage = $"Failed to retrieve winning picks for {date}",
                         CreatedBy = this,
                         CreatedAt = DateTimeOffset.UtcNow,
                         ErrorType = ErrorType.INFORMATION
                     });
+            if (picksResult.Value.Count == 0)
+                return Result<IReadOnlyList<DailyNumbersResult>, SystemError<DailyNumbersPayoutService>>.Ok(Array.Empty<DailyNumbersResult>());
 
             var winningNumber = winningNumberResult.Value;
             var picks = picksResult.Value;
@@ -43,11 +47,19 @@ namespace GamedayTracker.Services
                     .Ok(Array.Empty<DailyNumbersResult>());
 
             var results = new List<DailyNumbersResult>(picks.Count);
-
+            decimal payout = 0m;
             foreach (var pick in picks)
             {
                 int matchCount = CountMatches(pick.Numbers, winningNumber);
-                decimal payout = payoutRules.GetPayout(matchCount);
+                if (matchCount <= 0)
+                {
+                    continue;
+                }
+                var exactMatch = IsExactMatch(pick.Numbers, winningNumber);
+                if (exactMatch)
+                    payout = 1500m;
+                else
+                    payout = payoutRules.GetPayout(matchCount);
 
                 logger.LogInformation(
                     "User {UserId} in Guild {GuildId} matched {MatchCount} numbers with payout {Payout}",
@@ -122,5 +134,8 @@ namespace GamedayTracker.Services
             }
             return matches;
         }
+
+        public static bool IsExactMatch(IReadOnlyList<int> pick, IReadOnlyList<int> winning) => pick.SequenceEqual(winning);
+        
     }
 }

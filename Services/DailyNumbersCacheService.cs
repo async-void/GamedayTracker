@@ -1,4 +1,5 @@
-﻿using GamedayTracker.Enums;
+﻿using DSharpPlus;
+using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using Microsoft.Extensions.Caching.Memory;
@@ -6,11 +7,13 @@ using Microsoft.Extensions.Logging;
 
 namespace GamedayTracker.Services
 {
-    public sealed class DailyNumbersCacheService(IMemoryCache cache, ILogger<DailyNumbersCacheService> logger) : IDailyNumbersCache, IDailyNumbersRepository
+    public sealed class DailyNumbersCacheService(IMemoryCache cache, ILogger<DailyNumbersCacheService> logger,
+        IJsonDataService jsonService, DiscordClient client) : IDailyNumbersCache, IDailyNumbersRepository
     {
         private readonly IMemoryCache _cache = cache;
         private readonly ILogger<DailyNumbersCacheService> _logger = logger;
-
+        private readonly IJsonDataService _jsonDataService = jsonService;
+        private readonly DiscordClient _discordClient = client;
         private static string UserKey(ulong guildId, ulong userId, DateOnly date)
             => $"DailyNumbers:{guildId}:{userId}:{date:yyyyMMdd}";
 
@@ -19,6 +22,7 @@ namespace GamedayTracker.Services
 
         private readonly HashSet<(ulong GuildId, DateOnly Date)> _activeGuildKeys = [];
 
+ 
         // ------------------------------------------------------------
         // CHECK IF USER HAS SUBMITTED
         // ------------------------------------------------------------
@@ -31,7 +35,7 @@ namespace GamedayTracker.Services
         // ------------------------------------------------------------
         // ADD USER PICK
         // ------------------------------------------------------------
-        public void AddUserPick(DailyNumberPick pick)
+        public async Task AddUserPick(DailyNumberPick pick)
         {
             var userKey = UserKey(pick.GuildId, pick.UserId, pick.Date);
             var guildKey = GuildKey(pick.GuildId, pick.Date);
@@ -40,14 +44,38 @@ namespace GamedayTracker.Services
             _activeGuildKeys.Add((pick.GuildId, pick.Date));
 
             // Store individual user pick
-            _cache.Set(userKey, pick, TimeSpan.FromDays(2));
+            _cache.Set(userKey, pick);
 
             // Store in guild list
             var list = _cache.Get<List<DailyNumberPick>>(guildKey) ?? [];
             list.Add(pick);
-            _cache.Set(guildKey, list, TimeSpan.FromDays(1));
+            _cache.Set(guildKey, list);
 
+            var userResult = await _jsonDataService.GetMemberFromJsonAsync(pick.UserId, pick.GuildId);
+            if (!userResult.IsOk)
+            {
+                var guild = await _discordClient.GetGuildAsync(pick.GuildId);
+                var user = await _discordClient.GetUserAsync(pick.UserId);
+                var bank = new Bank 
+                { 
+                    Balance = 1000, 
+                    LastDepositAmount = 1000,
+                    DepositTimestamp = DateTimeOffset.UtcNow,
+                    GuildMemberId = pick.UserId
+                };
+                var newUser = new GuildMember()
+                { 
+                    GuildName = guild.Name, 
+                    GuildId = pick.GuildId, 
+                    MemberId = pick.UserId, 
+                    MemberName = user.Username,
+                    Bank = bank
+                };
+                await _jsonDataService.WriteMemberToJsonAsync(newUser);
+                _logger.LogInformation("Member data not found, new member created!");
+            }
             _logger.LogInformation("Stored daily numbers for {UserId} in guild {GuildId}", pick.UserId, pick.GuildId);
+            return;
         }
 
         // ------------------------------------------------------------
@@ -96,13 +124,12 @@ namespace GamedayTracker.Services
             try
             {
                 var allGuildKeys = GetActiveGuildIds(date); 
-
                 var allPicks = new List<DailyNumberPick>();
 
                 foreach (var guildId in allGuildKeys)
                 {
                     var key = $"DailyNumbers:{guildId}:{date:yyyyMMdd}";
-                    if (_cache.TryGetValue(key, out List<DailyNumberPick>? picks))
+                    if (_cache.TryGetValue(key, out List<DailyNumberPick>? picks) && picks is not null)
                     {
                         allPicks.AddRange(picks);
                     }
@@ -142,7 +169,7 @@ namespace GamedayTracker.Services
                 var guildKey = GuildKey(guildId, date);
                 var picks = _cache.Get<List<DailyNumberPick>>(guildKey);
 
-                if (picks != null)
+                if (picks is not null)
                 {
                     foreach (var pick in picks)
                     {

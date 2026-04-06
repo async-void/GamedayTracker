@@ -85,12 +85,15 @@ namespace GamedayTracker.Extensions
                 // AFC East
                 ["buffalo"] = "BUF",
                 ["bills"] = "BUF",
+                ["buf"] = "BUF",
 
                 ["miami"] = "MIA",
                 ["dolphins"] = "MIA",
+                ["the fish"] = "MIA",
 
                 ["new england"] = "NE",
                 ["patriots"] = "NE",
+                ["pats"] = "NE",
 
                 ["ny jets"] = "NYJ",
                 ["jets"] = "NYJ",
@@ -107,6 +110,7 @@ namespace GamedayTracker.Extensions
 
                 ["pittsburgh"] = "PIT",
                 ["steelers"] = "PIT",
+                ["pit"] = "PIT",
 
                 // AFC South
                 ["houston"] = "HOU",
@@ -149,16 +153,20 @@ namespace GamedayTracker.Extensions
 
                 ["washington"] = "WSH",
                 ["commanders"] = "WSH",
+                ["skins"] = "WSH",
+                ["redskins"] = "WSH",
 
                 // NFC North
                 ["chicago"] = "CHI",
                 ["bears"] = "CHI",
+                ["da bears"] = "CHI",
 
                 ["detroit"] = "DET",
                 ["lions"] = "DET",
 
                 ["green bay"] = "GB",
                 ["packers"] = "GB",
+                ["chesse heads"] = "GB",
 
                 ["minnesota"] = "MIN",
                 ["vikings"] = "MIN",
@@ -172,6 +180,7 @@ namespace GamedayTracker.Extensions
 
                 ["new orleans"] = "NO",
                 ["saints"] = "NO",
+                ["who dat"] = "NO",
 
                 ["tampa bay"] = "TB",
                 ["buccaneers"] = "TB",
