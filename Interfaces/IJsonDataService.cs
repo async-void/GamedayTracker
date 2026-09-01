@@ -1,5 +1,6 @@
 ﻿using GamedayTracker.Helpers;
 using GamedayTracker.Models;
+using GamedayTracker.Models.DailyNumbers;
 using GamedayTracker.Services;
 using System;
 using System.Collections.Generic;
@@ -40,5 +41,6 @@ namespace GamedayTracker.Interfaces
         Task<Result<List<GuildMember>, SystemError<JsonDataServiceProvider>>> GetAllMembersAsync();
         Task<bool> WriteDailyNumbersPicksToJsonAsync(DailyNumberPick picks, ulong guildId, string date);
         Task<IReadOnlyList<DailyNumberPick>> GetUserDailyNumbersFromJsonAsync(ulong guildId, ulong userId, DateOnly date);
+        Task<DailyNumberPick?> GetUserLastLotterySubmissionAsync(ulong guildId, ulong userId);
     }
 }

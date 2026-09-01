@@ -1,12 +1,8 @@
 ﻿using DSharpPlus;
-using DSharpPlus.Entities;
+using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
-using GamedayTracker.Services;
-using GamedayTracker.Utility;
 using Microsoft.Extensions.Logging;
 using Quartz;
-using Serilog;
-using System.Text;
 
 namespace GamedayTracker.Jobs
 {
@@ -19,7 +15,7 @@ namespace GamedayTracker.Jobs
             
             var seasonType = evaluator.Evaluate(DateTimeOffset.Now);
 
-            if (seasonType.Equals(Enums.RealTimeScoresMode.Offseason))
+            if (seasonType.Equals(RealTimeScoresMode.Offseason))
             {
                 logger.LogInformation("Fetching realtime scores....[skipped] - season is currently in offseason mode");
                 return;
@@ -45,7 +41,7 @@ namespace GamedayTracker.Jobs
             }
             else
             {
-                logger.LogError($"Fetching realtime scores....[failed] REASON: could not find scores for season {scoreboard.Season.Year}");
+                logger.LogError("Fetching realtime scores....[failed] REASON: no scoreboard  [{type}]", seasonType);
                 await chnl.SendMessageAsync($"fetching real time score failed: Season Mode is {seasonType}");
             }
         }

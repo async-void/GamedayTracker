@@ -1,9 +1,7 @@
 ﻿using System.ComponentModel;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
-using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
-using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
@@ -86,7 +84,7 @@ namespace GamedayTracker.SlashCommands.Settings.User
         //#region ENABLE UPDATES
         //[Command("user-settings")]
         //[Description("user settings")]
-        //public async Task UserSettings(CommandContext ctx, [SlashChoiceProvider<UserSettingsChoiceProvider>] int choice)
+        //public async Task UserSettings(SlashCommandContext ctx, [SlashChoiceProvider<UserSettingsChoiceProvider>] int choice)
         //{
         //    await ctx.DeferResponseAsync();
         //    switch (choice)

@@ -3,9 +3,9 @@ using GamedayTracker.Extensions;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Models.DailyNumbers;
 using GamedayTracker.Utility;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 
 namespace GamedayTracker.Services
 {
@@ -949,6 +949,36 @@ namespace GamedayTracker.Services
 
             return userPicks;
         }
+        #endregion
+
+        #region GET USER LAST DAILY NUMBER SUBMISSION
+        public async Task<DailyNumberPick?> GetUserLastLotterySubmissionAsync(ulong guildId, ulong userId)
+        {
+            var dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Json");
+
+            var files = Directory
+                .EnumerateFiles(dir, "DailyNumbers_*.json", SearchOption.TopDirectoryOnly)
+                .OrderByDescending(f => f) // filenames contain yyyyMMdd → lexicographical sort works
+                .ToList();
+
+            foreach (var file in files)
+            {
+                var json = await File.ReadAllTextAsync(file);
+                var picks = JsonSerializer.Deserialize<List<DailyNumberPick>>(json, JsonHelper.DefaultJsonOptions)
+                           ?? [];
+
+                var userPick = picks
+                    .Where(p => p.UserId == userId && p.GuildId == guildId)
+                    .OrderByDescending(p => p.Date)
+                    .FirstOrDefault();
+
+                if (userPick != null)
+                    return userPick;
+            }
+
+            return null;
+        }
+
         #endregion
 
     }

@@ -14,9 +14,9 @@ namespace GamedayTracker.Models.NFL
         public DateTime EndDate { get; set; }
 
         [JsonPropertyName("displayName")]
-        public string DisplayName { get; set; }
+        public string? DisplayName { get; set; }
 
         [JsonPropertyName("type")]
-        public SeasonType Type { get; set; }
+        public SeasonType? Type { get; set; }
     }
 }

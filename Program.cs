@@ -1,25 +1,31 @@
-﻿using DSharpPlus;
+﻿#region USING
+using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.SlashCommands.InteractionNamingPolicies;
 using DSharpPlus.Commands.Processors.TextCommands;
-using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
 using DSharpPlus.Extensions;
-using DSharpPlus.Interactivity;
 using GamedayTracker.Checks;
+using GamedayTracker.Data;
+using GamedayTracker.Enums;
 using GamedayTracker.Handlers;
+using GamedayTracker.Handlers.Guilds;
+using GamedayTracker.Handlers.Interactions;
+using GamedayTracker.Handlers.Message;
 using GamedayTracker.Handlers.Modal;
+using GamedayTracker.Handlers.Session;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Jobs;
-using GamedayTracker.Models;
 using GamedayTracker.Pagination;
 using GamedayTracker.Pagination.Handlers;
 using GamedayTracker.Pagination.Registry;
 using GamedayTracker.Repositories;
 using GamedayTracker.Schedules;
 using GamedayTracker.Services;
+using GamedayTracker.Services.Espn;
 using GamedayTracker.Utility;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -28,6 +34,7 @@ using Serilog;
 using Serilog.Formatting.Json;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Reflection;
+#endregion
 
 namespace GamedayTracker
 {
@@ -73,7 +80,7 @@ namespace GamedayTracker
                 [ConsoleThemeStyle.LevelError] = "\x1b[31m"
             });
 
-            var logger = Serilog.Log.Logger = new LoggerConfiguration()
+            var logger = Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .MinimumLevel.Override("System.Net.Http", Serilog.Events.LogEventLevel.Error)
                 .WriteTo.Console(theme: theme, outputTemplate: "[{Timestamp:yyyy-MM-dd hh:mm:ss.fff tt zzz} {SourceContext} {Level:u3}] {Message:lj}{NewLine}")
@@ -95,8 +102,13 @@ namespace GamedayTracker
                     })
                     .AddCommandsExtension((context, config) =>
                     {
+                        config.AddProcessor(new SlashCommandProcessor(new SlashCommandConfiguration()
+                        {
+                            NamingPolicy = new KebabCaseNamingPolicy()
+                        }));
                         config.AddCommands(Assembly.GetExecutingAssembly());
                         config.AddCheck<RequireRoleCheck>();
+                        
                     });
                    services.AddMemoryCache();
                  
@@ -124,7 +136,15 @@ namespace GamedayTracker
                    services.AddSingleton<IDailyNumbersCache, DailyNumbersCacheService>();
                    services.AddSingleton<IInjuryReport, InjuryReportProviderService>();
                    services.AddSingleton<DailyNumbersCacheService>();
-                  
+                   services.AddDbContextFactory<BotDbContext>((context, options) =>
+                   {
+                       var dataService = context.GetRequiredService<IConfigurationData>();
+                       var result = dataService.GetConnectionString(ConnectionStringType.Gameday);
+                       if (!result.IsOk)
+                           throw new InvalidOperationException("Missing connection string");
+
+                       options.UseNpgsql(result.Value);
+                   });
                    services.AddSingleton<IDailyNumbersCache>(sp =>
                        sp.GetRequiredService<DailyNumbersCacheService>());
 
@@ -144,6 +164,8 @@ namespace GamedayTracker
                    services.AddHostedService<DmDispatcher>();
                    services.AddSingleton<TicketIdGenerator>();
                    services.AddSingleton<TicketCoordinator>();
+                   services.AddSingleton<EspnOptions>();
+                   services.AddSingleton<IEspnClient,  EspnClient>();
                    // services.AddHostedService<NotificationDispatcher>();
 
                    #region QUARTZ
@@ -188,7 +210,7 @@ namespace GamedayTracker
                        q.AddTrigger(opts => opts
                            .ForJob(dailyStandingsJobKey)
                            .WithIdentity("DailyStandings-trigger")
-                           .StartNow()
+                           .StartAt(DateTimeOffset.UtcNow.AddMinutes(2))
                            .WithSimpleSchedule(x => x
                                .WithInterval(TimeSpan.FromHours(standingsInterval))
                                .RepeatForever().Build()));
@@ -233,87 +255,20 @@ namespace GamedayTracker
 
                    #endregion
 
-                   #region CONFIGURE EVENT HANDLERS
+                   #region EVENT HANDLERS
                    services.ConfigureEventHandlers(
                        e => e.AddEventHandlers<InteractionHandler>(ServiceLifetime.Singleton)
                              .AddEventHandlers<TicketInteractionHandler>(ServiceLifetime.Singleton)
                              .AddEventHandlers<GuildMemberAddedEventHandler>(ServiceLifetime.Singleton)
                              .AddEventHandlers<GuildAddedEventHandler>(ServiceLifetime.Singleton)
-                             .AddEventHandlers<ModalInteractionHandler>(ServiceLifetime.Singleton));
-
-                   services.ConfigureEventHandlers(
-
-                    #region MESSAGE EVENT HANDLERS
-                       e => e.HandleMessageCreated((sender, args) =>
-                       {
-                           return Task.CompletedTask;
-                       })
-
-#endregion
-
-                    #region INTERACTION EVENT HANDLERS
-                    .HandleInteractionCreated(async (sender, args) =>
-                    {
-                        var userBet = args.Interaction.Data.CustomId;
-                        var test = "";
-                    })
-                    #endregion
-
-                    #region GUILD EVENT HANDLERS
-
-                    #region SESSION RESUMED
-                    .HandleSessionResumed(async (sender, args) =>
-                    {
-                        var guildCount = sender.Guilds.Count;
-                        var userCount = sender.Guilds.Values.Sum(g => g.Members.Count);
-                        var statusMessage = $"Serving {guildCount} Servers";
-                        await sender.UpdateStatusAsync(new DiscordActivity($"Scores in {guildCount} Servers", DiscordActivityType.Watching));
-                        var logChnl = await sender.GetChannelAsync(1384436855524692048);
-                        await logChnl.SendMessageAsync(
-                            $"Updated bot status: {statusMessage} with a total of ``{userCount}`` users.");
-                        logger.Information($"Session Resumed");
-                    })
-                    #endregion
-
-                    #region GUILD DELETED
-                    .HandleGuildDeleted(async (sender, args) =>
-                    {
-                        var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
-                        var jsonService = sender.ServiceProvider.GetRequiredService<IJsonDataService>();
-                        var guildResult = await jsonService.GetGuildFromJsonAsync(args.Guild.Id);
-                        if (guildResult.IsOk)
-                        {
-                            var removedResult = await jsonService.RemoveGuildDataAsync(guildResult.Value.GuildId);
-                            var guildOwner = await args.Guild.GetMemberAsync(args.Guild.OwnerId);
-                            if (removedResult.IsOk)
-                            {
-                                await guildOwner.SendMessageAsync(
-                                    $"``Gameday Tracker has been removed at: [{unixTimestamp}]``\r\nyou will no longer be receiving Daily Headlines or Realtime Scores Updates");
-                                logger.Information($"GamedayTracker has been removed from: {args.Guild.Name}");
-                            }
-                            else
-                            {
-                                await args.Guild.GetDefaultChannel()!.SendMessageAsync(
-                                    $"``Error removing Gameday Tracker from {args.Guild.Name} ({args.Guild.Id}) at: [{unixTimestamp}]``\r\n{removedResult.Error.ErrorMessage}");
-                                logger.Error($"Error removing guild {args.Guild.Name} ({args.Guild.Id}): {removedResult.Error.ErrorMessage}");
-                            }
-
-                        }
-                    })
-                    #endregion
-
-                    #region GUILD DOWNLOAD COMPLETED
-                    .HandleGuildDownloadCompleted(async (sender, args) =>
-                    {
-                        var count = sender.Guilds.Count;
-                        await sender.UpdateStatusAsync(new DiscordActivity($"Scores in {count} Servers", DiscordActivityType.Watching));
-                    })
-                    #endregion
-
-                    #endregion
-
-                   );
+                             .AddEventHandlers<ModalInteractionHandler>(ServiceLifetime.Singleton)
+                             .AddEventHandlers<MessageCreatedEventHandler>(ServiceLifetime.Singleton)
+                             .AddEventHandlers<GuildDownloadCompletedHandler>(ServiceLifetime.Singleton)
+                             .AddEventHandlers<GuildDeletedEventHandler>(ServiceLifetime.Singleton)
+                             .AddEventHandlers<SessionResumedEventHandler>(ServiceLifetime.Singleton)
+                             .AddEventHandlers<ConfigureComponentInteractionHandler>());
                    #endregion
+
 
                }).Build();
                RegisterPaginationHandlers(host.Services);

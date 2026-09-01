@@ -1,20 +1,22 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
 using GamedayTracker.Enums;
-using GamedayTracker.Extensions;
 using GamedayTracker.Interfaces;
+using GamedayTracker.Models.NFL;
 using GamedayTracker.Services;
+using GamedayTracker.Services.Espn;
 using GamedayTracker.Utility;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Logging;
 using Quartz;
 using System.Text;
 
 namespace GamedayTracker.Jobs
 {
-    public class DailyStandingsJob(IEvaluator evaluator, ITeamData teamDataService, IGameData gameDataService, DiscordClient client, ILogger<DailyStandingsJob> logger) : IJob
+    public class DailyStandingsJob(IEvaluator evaluator, IGameData gameDataService, DiscordClient client,
+        ILogger<DailyStandingsJob> logger, IEspnClient espnClient) : IJob
     {
-        
-
+        private readonly IEspnClient _espnClient = espnClient;
         public async Task Execute(IJobExecutionContext context)
         {
             await SendDailyStandingsAsync();
@@ -23,62 +25,76 @@ namespace GamedayTracker.Jobs
         public async Task SendDailyStandingsAsync()
         {
             var seasonType = evaluator.Evaluate(DateTime.Now);
+            var chnl = await client.GetChannelAsync(1398735401048608960);
 
             if (seasonType == RealTimeScoresMode.Offseason)
             {
+                await client.SendMessageAsync(chnl, "NFL is currently in Off Season, Daily Standing will begin again once the regular season starts.");
                 logger.LogInformation("Offseason Mode.... Skipping DailyStandingsJob");
                 return;
             }
-            var curSeason = gameDataService.GetCurSeason();
-            logger.LogInformation("Fetching daily standings for NFL season {season}.", curSeason.Value);
-            var standings = await gameDataService.GetNFLStandingsAsync();
-            var sb = new StringBuilder();
+            var curSeason = await _espnClient.GetSeasonAsync();
+            logger.LogInformation("Fetching daily standings for NFL season {season}.", curSeason.Year);
+            var standings = await _espnClient.GetStandingsAsync();
 
-            if (standings is { }  curStandings && curStandings.Children.Count > 0) 
+            var sb = new StringBuilder();
+            if (standings.Children is null)
+            {
+                await chnl.SendMessageAsync("Unable to fetch standings from ESPN API. Please check the API or try again later.");
+                logger.LogInformation("Unable to fetch standings from the Espn Api, Season Mode is {seasonMode}", seasonType);
+                return;
+            }
+
+            if (standings is { } curStandings && curStandings.Children.Count > 0) 
             {
                 var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
                 for (var i = 0; i < curStandings.Children.Count; i++)
                 {
-                    var division = standings.Children.ElementAt(i);
-                    sb.AppendLine($"\r\n**{division.Name}**\r\n");
-                    sb.AppendLine("__`Team\t W\t L\t Pct`__");
-                    // Sort the entries BEFORE looping
-                    var sorted = division.Standings.Entries
-                        .OrderByDescending(e => double.Parse(e.Stats[10].DisplayValue)) // win %
-                        .ThenByDescending(e => int.Parse(e.Stats[11].DisplayValue))     // wins
-                        .ThenBy(e => int.Parse(e.Stats[3].DisplayValue))                // losses
-                        .ThenBy(e => e.Team.Abbreviation)                               // final tiebreaker
-                        .ToList();
+                    var division = standings.Children?.ElementAt(i);
+                    var divisionAbbr = division!.Name!.StartsWith("American") ? "AFC" : "NFC";
+                    var divEmoji = NflEmojiService.GetEmoji(divisionAbbr);
+                    sb.AppendLine($"\r\n**{divisionAbbr}** {divEmoji}\r\n");
+                    sb.AppendLine("__`Team\t  W\t L\t Pct`__");
 
-                    foreach (var entry in sorted)
+                    if (division is not null)
                     {
-                        var teamName = entry.Team.Name;
-                        var wins = entry.Stats[11].DisplayValue;
-                        var losses = entry.Stats[3].DisplayValue;
-                        var winPercent = entry.Stats[10].DisplayValue;
-                        var teamAbbr = entry.Team.Abbreviation ?? "default";
-                        var emoji = NflEmojiService.GetEmoji(teamAbbr);
+                        var sorted = division.Standings.Entries
+                           .OrderByDescending(e => double.Parse(e.Stats[10].DisplayValue))
+                           .ThenByDescending(e => int.Parse(e.Stats[11].DisplayValue))
+                           .ThenBy(e => int.Parse(e.Stats[3].DisplayValue))
+                           .ThenBy(e => e.Team.Abbreviation)
+                           .ToList();
 
-                        sb.AppendLine($"{emoji} `{teamAbbr,-3} {wins,4} {losses,4} {winPercent,7}`");
+                        foreach (var entry in sorted)
+                        {
+                            var teamName = entry.Team.Name;
+                            var wins = entry.Stats[11].DisplayValue;
+                            var losses = entry.Stats[3].DisplayValue;
+                            var winPercent = entry.Stats[10].DisplayValue;
+                            var teamAbbr = entry.Team.Abbreviation ?? "default";
+                            var emoji = NflEmojiService.GetEmoji(teamAbbr);
+
+                            sb.AppendLine($"{emoji} `{teamAbbr,-3} {wins,4} {losses,4} {winPercent,7}`");
+                        }
                     }
-
                 }
 
                 DiscordComponent[] components =
                 [
-                    new DiscordTextDisplayComponent($"## NFL Standings\r\n-# {curSeason.Value}"),
+                    new DiscordTextDisplayComponent($"## NFL Standings\r\n-# {curSeason.Year}"),
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"{sb}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordSectionComponent(new DiscordTextDisplayComponent($"-# Powered by GamedayTracker ©️ {timestamp}"),
-                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate")),
+                    new DiscordTextDisplayComponent($"-# last updated at {timestamp}")
                 ];
                 var container = new DiscordContainerComponent(components, false, DiscordColor.DarkButNotBlack);
                 var embed = new DiscordMessageBuilder()
                     .EnableV2Components()
                     .AddContainerComponent(container);
-                var chnl = await client.GetChannelAsync(1398735401048608960);
-                logger.LogInformation("Sending daily standings for NFL season {season}.", curSeason.Value);
+                
+                logger.LogInformation("Sending daily standings for NFL season {season}.", curSeason.Year);
                 var msg = await chnl.SendMessageAsync(embed);
 
                 try

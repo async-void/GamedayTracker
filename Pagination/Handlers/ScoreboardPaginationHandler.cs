@@ -21,7 +21,6 @@ namespace GamedayTracker.Pagination.Handlers
             var msg = await embedService.CreateScoreboardPage(
                 pagination.Scoreboard,
                 pagination.Emoji,
-                pagination.SeasonType,
                 pagination.Season,
                 pagination.CurrentPage);
 
@@ -42,7 +41,6 @@ namespace GamedayTracker.Pagination.Handlers
             var msg = await embedService.CreateScoreboardPage(
                 pagination.Scoreboard,
                 pagination.Emoji,
-                pagination.SeasonType,
                 pagination.Season,
                 pagination.CurrentPage);
 

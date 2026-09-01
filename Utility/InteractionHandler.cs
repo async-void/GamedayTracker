@@ -194,7 +194,7 @@ namespace GamedayTracker.Utility
                             case "afcDropdown":
                             {
                                 var tName = eventArgs.Interaction.Data.Values[0];
-                                var draftResult = await teamData.GetDraftResultForTeamAsync(2025, tName);
+                                var draftResult = await teamData.GetDraftResultForTeamAsync(2026, tName);
                                 var msgBuilder = new StringBuilder();
 
                                 foreach (var draftEntity in draftResult.Value)
@@ -206,11 +206,11 @@ namespace GamedayTracker.Utility
 
                                 DiscordComponent[] components =
                                 [
-                                    new DiscordTextDisplayComponent($"**2025** Draft Results for **{tName}**{emoji}"),
+                                    new DiscordTextDisplayComponent($"**2026** Draft Results for **{tName}**{emoji}"),
                                     new DiscordSeparatorComponent(true),
                                     new DiscordTextDisplayComponent(msgBuilder.ToString()),
                                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                                    new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem("https://i.imgur.com/i6yCh8q.png"))
+                                    new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem("https://imgur.com/a/zqvrBdA.png"))
                                 ];
                                 var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
 
@@ -228,7 +228,7 @@ namespace GamedayTracker.Utility
                             {
 
                                 var tName = eventArgs.Interaction.Data.Values[0];
-                                var draftResult = await teamData.GetDraftResultForTeamAsync(2025, tName);
+                                var draftResult = await teamData.GetDraftResultForTeamAsync(2026, tName);
                                 var msgBuilder = new StringBuilder();
 
                                 foreach (var draftEntity in draftResult.Value)
@@ -239,11 +239,11 @@ namespace GamedayTracker.Utility
                                 var emoji = NflEmojiService.GetEmoji(shortName.ToAbbr());
                                 DiscordComponent[] components =
                                 [
-                                    new DiscordTextDisplayComponent($"**2025** Draft Results for **{tName}**{emoji}"),
+                                    new DiscordTextDisplayComponent($"**2026** Draft Results for **{tName}**{emoji}"),
                                     new DiscordSeparatorComponent(true),
                                     new DiscordTextDisplayComponent(msgBuilder.ToString()),
                                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                                    new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem("https://i.imgur.com/i6yCh8q.png"))
+                                    new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem("https://imgur.com/a/zqvrBdA.png"))
                                 ];
                                 var container = new DiscordContainerComponent(components, false, DiscordColor.DarkGray);
 
@@ -592,7 +592,7 @@ namespace GamedayTracker.Utility
                                 var odds = pickedGame.Events[0].Odds ?? [new() { Moneyline = new Moneyline() { Away = 0, Home = 0 } }];
                                 var bettingMsg = await embedService.BuildBettingEmbed(betDetails[0], betAmount); 
                                
-                                bettingMsg.AddActionRowComponent(new DiscordActionRowComponent(CreateBettingButtons($"{betDetails[0]},{betDetails[1]},{betDetails[2]}", gameDate)));
+                                bettingMsg.AddActionRowComponent(new DiscordActionRowComponent(CreateBettingButtons($"{betDetails[0]},{betDetails[1]},{betDetails[2]}", gameDate.Value)));
                                 await eventArgs.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage,
                                        new DiscordInteractionResponseBuilder(bettingMsg));
                                 break;

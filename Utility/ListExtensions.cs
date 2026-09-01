@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace GamedayTracker.Utility
+﻿namespace GamedayTracker.Utility
 {
     public static class ListExtensions
     {
@@ -19,9 +13,7 @@ namespace GamedayTracker.Utility
             {
                 n--;
                 var k = rng.Next(n + 1);
-                T value = list[k];
-                list[k] = list[n];
-                list[n] = value;
+                (list[n], list[k]) = (list[k], list[n]);
             }
             return list;
         }

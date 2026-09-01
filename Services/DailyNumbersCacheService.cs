@@ -2,6 +2,7 @@
 using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Models.DailyNumbers;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 

@@ -1,4 +1,4 @@
-﻿using GamedayTracker.Models;
+﻿using GamedayTracker.Models.DailyNumbers;
 using System;
 using System.Collections.Generic;
 using System.Linq;

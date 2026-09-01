@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DSharpPlus.Entities;
+﻿using GamedayTracker.Models.DailyNumbers;
 using GamedayTracker.Models.Tickets;
+using System.ComponentModel.DataAnnotations;
 
 namespace GamedayTracker.Models
 {
     public class GuildMember
     {
+        [Key]
         public ulong MemberId { get; set; } 
         public ulong GuildId { get; set; }
         public required string MemberName { get; set; }

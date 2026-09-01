@@ -13,7 +13,7 @@ namespace GamedayTracker.Interfaces
         Task<DiscordEmbed> CreateStandingsEmbedAsync(string? conference = null);
         Task<DiscordMessageBuilder> CreateTeamStatsEmbed(NflTeamStatisticsResponse teamStats, NFLSeasonType seasonType, int seasonYear, string teamAbbr);
         Task<DiscordMessageBuilder> CreateTeamStatsPage(NflTeamStatisticsResponse teamStats, string emoji, NFLSeasonType seasonType, int seasonYear, int pageIndex);
-        Task<DiscordMessageBuilder> CreateScoreboardPage(NFLScoreboard scores, string emoji, NFLSeasonType seasonType, int seasonYear, int pageIndex);
+        Task<DiscordMessageBuilder> CreateScoreboardPage(NFLScoreboard scores, string emoji, int seasonYear, int pageIndex);
         Task<DiscordMessageBuilder> BuildBettingEmbed(string data, string amount);
         Task<DiscordContainerComponent> BuildBettingResultEmbed(Bet bet);
         Task<DiscordContainerComponent> BuildErrorContainer(DiscordClient client, string errorMessage, ulong guildId, DiscordColor color);

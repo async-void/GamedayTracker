@@ -1,17 +1,13 @@
 ﻿using DSharpPlus.Entities;
 using GamedayTracker.Enums;
 using GamedayTracker.Extensions;
-using GamedayTracker.Factories;
+using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Models.NFL;
+using GamedayTracker.Models.NFL.InjuryReport;
 using HtmlAgilityPack;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using System.Buffers.Text;
-using System.Diagnostics;
-using System.Globalization;
-using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -403,6 +399,84 @@ namespace GamedayTracker.Services
         #endregion
 
         #region GET TEAM INJURIES
+        public async Task<Result<List<EspnInjury>, SystemError<TeamDataService>>> GetTeamInjuriesAsync(string userInput)
+        {
+            try
+            {
+                // 1. Normalize user input → canonical team name
+                if (!userInput.TryResolveTeamToShortName(out var canonical))
+                {
+                    return Result<List<EspnInjury>, SystemError<TeamDataService>>.Err(
+                        new SystemError<TeamDataService>
+                        {
+                            Id = 100,
+                            ErrorCode = Guid.NewGuid(),
+                            ErrorMessage = $"Unknown team: '{userInput}'.",
+                            CreatedBy = this,
+                            CreatedAt = DateTimeOffset.UtcNow,
+                            ErrorType = ErrorType.INFORMATION
+                        });
+                }
+
+                // 2. Canonical → ESPN team ID
+                if (!canonical.TryToEspnTeamId(out var teamId))
+                {
+                    return Result<List<EspnInjury>, SystemError<TeamDataService>>.Err(
+                        new SystemError<TeamDataService>
+                        {
+                            Id = 101,
+                            ErrorCode = Guid.NewGuid(),
+                            ErrorMessage = $"No ESPN team ID found for '{canonical}'.",
+                            CreatedBy = this,
+                            CreatedAt = DateTimeOffset.UtcNow,
+                            ErrorType = ErrorType.INFORMATION
+                        });
+                }
+
+                // 3. Build ESPN endpoint
+                var endpoint = $"https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{teamId}/injuries";
+
+                // 4. Fetch JSON
+                var response = await client.GetAsync(endpoint);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return Result<List<EspnInjury>, SystemError<TeamDataService>>.Err(
+                        new SystemError<TeamDataService>
+                        {
+                            Id = 102,
+                            ErrorCode = Guid.NewGuid(),
+                            ErrorMessage = $"Failed to fetch injury report for '{canonical}'. Status: {response.StatusCode}",
+                            CreatedBy = this,
+                            CreatedAt = DateTimeOffset.UtcNow,
+                            ErrorType = ErrorType.WARNING
+                        });
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+
+                // 5. Deserialize
+                var data = JsonSerializer.Deserialize<EspnInjuryResponse>(content);
+
+                data ??= new EspnInjuryResponse();
+                data.Injuries ??= [];
+
+                return Result<List<EspnInjury>, SystemError<TeamDataService>>.Ok(data.Injuries);
+            }
+            catch (Exception ex)
+            {
+                return Result<List<EspnInjury>, SystemError<TeamDataService>>.Err(
+                    new SystemError<TeamDataService>
+                    {
+                        Id = 103,
+                        ErrorCode = Guid.NewGuid(),
+                        ErrorMessage = $"Exception while fetching injuries for '{userInput}': {ex.Message}",
+                        CreatedBy = this,
+                        CreatedAt = DateTimeOffset.UtcNow,
+                        ErrorType = ErrorType.FATAL
+                    });
+            }
+        }
 
         #endregion
 

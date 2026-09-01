@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
 namespace GamedayTracker.Models.NFL
 {
     public class NflStandings
     {
-        public List<Conference> Children { get; set; }
+        [JsonPropertyName("season")]
+        public Season? Season { get; set; }
+        [JsonPropertyName("children")]
+        public List<Conference>? Children { get; set; }
     }
 }

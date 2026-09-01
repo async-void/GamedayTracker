@@ -1,11 +1,12 @@
-﻿using System;
+﻿using GamedayTracker.Helpers;
+using GamedayTracker.Models;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using GamedayTracker.Models;
 
 namespace GamedayTracker.Extensions
 {
@@ -59,137 +60,14 @@ namespace GamedayTracker.Extensions
         #region TO ABBREVIATION
         public static string ToAbbr(this string name)
         {
-            if (string.IsNullOrWhiteSpace(name)) return "UNKNOWN";
+            if (string.IsNullOrWhiteSpace(name))
+                return TeamAliasMap.Map.TryGetValue("default", out var defaultCode) ? defaultCode : string.Empty;
 
-            var key = name.Trim().ToLowerInvariant();
+            var normalized = Normalize(name);
 
-            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                // NFC West
-                ["arizona"] = "ARI",
-                ["cardinals"] = "ARI",
-
-                ["la rams"] = "LAR",
-                ["los angeles rams"] = "LAR",
-                ["rams"] = "LAR",
-                ["st louis"] = "LAR",
-                ["louis"] = "LAR",
-
-                ["san francisco"] = "SF",
-                ["49ers"] = "SF",
-                ["niners"] = "SF",
-
-                ["seattle"] = "SEA",
-                ["seahawks"] = "SEA",
-
-                // AFC East
-                ["buffalo"] = "BUF",
-                ["bills"] = "BUF",
-                ["buf"] = "BUF",
-
-                ["miami"] = "MIA",
-                ["dolphins"] = "MIA",
-                ["the fish"] = "MIA",
-
-                ["new england"] = "NE",
-                ["patriots"] = "NE",
-                ["pats"] = "NE",
-
-                ["ny jets"] = "NYJ",
-                ["jets"] = "NYJ",
-
-                // AFC North
-                ["baltimore"] = "BAL",
-                ["ravens"] = "BAL",
-
-                ["cincinnati"] = "CIN",
-                ["bengals"] = "CIN",
-
-                ["cleveland"] = "CLE",
-                ["browns"] = "CLE",
-
-                ["pittsburgh"] = "PIT",
-                ["steelers"] = "PIT",
-                ["pit"] = "PIT",
-
-                // AFC South
-                ["houston"] = "HOU",
-                ["texans"] = "HOU",
-
-                ["indianapolis"] = "IND",
-                ["colts"] = "IND",
-
-                ["jacksonville"] = "JAX",
-                ["jaguars"] = "JAX",
-
-                ["tennessee"] = "TEN",
-                ["titans"] = "TEN",
-
-                // AFC West
-                ["denver"] = "DEN",
-                ["broncos"] = "DEN",
-
-                ["kansas city"] = "KC",
-                ["chiefs"] = "KC",
-
-                ["las vegas"] = "LV",
-                ["oakland"] = "LV",
-                ["raiders"] = "LV",
-
-                ["la chargers"] = "LAC",
-                ["los angeles chargers"] = "LAC",
-                ["san diego"] = "LAC",
-                ["chargers"] = "LAC",
-
-                // NFC East
-                ["dallas"] = "DAL",
-                ["cowboys"] = "DAL",
-
-                ["ny giants"] = "NYG",
-                ["giants"] = "NYG",
-
-                ["philadelphia"] = "PHI",
-                ["eagles"] = "PHI",
-
-                ["washington"] = "WSH",
-                ["commanders"] = "WSH",
-                ["skins"] = "WSH",
-                ["redskins"] = "WSH",
-
-                // NFC North
-                ["chicago"] = "CHI",
-                ["bears"] = "CHI",
-                ["da bears"] = "CHI",
-
-                ["detroit"] = "DET",
-                ["lions"] = "DET",
-
-                ["green bay"] = "GB",
-                ["packers"] = "GB",
-                ["chesse heads"] = "GB",
-
-                ["minnesota"] = "MIN",
-                ["vikings"] = "MIN",
-
-                // NFC South
-                ["atlanta"] = "ATL",
-                ["falcons"] = "ATL",
-
-                ["carolina"] = "CAR",
-                ["panthers"] = "CAR",
-
-                ["new orleans"] = "NO",
-                ["saints"] = "NO",
-                ["who dat"] = "NO",
-
-                ["tampa bay"] = "TB",
-                ["buccaneers"] = "TB",
-                ["bucs"] = "TB",
-            };
-
-            return map.TryGetValue(key, out var abbr)
-                ? abbr
-                : "UNKNOWN";
+            return TeamAliasMap.Map.TryGetValue(normalized, out var code)
+                ? code
+                : string.Empty;
         }
         #endregion
 
@@ -327,6 +205,148 @@ namespace GamedayTracker.Extensions
             };
 
             return result;
+        }
+        #endregion
+
+        #region TO TEAM ID
+        private static readonly Dictionary<string, int> EspnTeamIds = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["bills"] = 2,
+            ["buf"] = 2,
+            ["buffalo"] = 2,
+
+            ["mia"] = 15,
+            ["maimi"] = 15,
+            ["dolphins"] = 15,
+
+            ["pat"] = 17,
+            ["new england"] = 17,
+            ["patriots"] = 17,
+
+            ["nyj"] = 20,
+            ["jets"] = 20,
+            ["ny jets"] = 20,
+
+            ["bal"] = 33,
+            ["ravens"] = 33,
+            ["baltimore"] = 33,
+
+            ["cin"] = 4,
+            ["bengals"] = 4,
+
+            ["cle"] = 5,
+            ["browns"] = 5,
+
+            ["pit"] = 23,
+            ["pitsburgh"] = 23,
+            ["steelers"] = 23,
+
+            ["hou"] = 34,
+            ["texans"] = 34,
+
+            ["ind"] = 11,
+            ["colts"] = 11,
+
+            ["jax"] = 30,
+            ["jaguars"] = 30,
+
+            ["ten"] = 10,
+            ["titans"] = 10,
+
+            ["den"] = 7,
+            ["broncos"] = 7,
+
+            ["kc"] = 12,
+            ["chiefs"] = 12,
+
+            ["lv"] = 13,
+            ["raiders"] = 13,
+
+            ["lac"] = 24,
+            ["chargers"] = 24,
+
+            ["dal"] = 6,
+            ["cowboys"] = 6,
+
+            ["nyg"] = 19,
+            ["ny giants"] = 19,
+            ["giants"] = 19,
+
+            ["phi"] = 21,
+            ["eagles"] = 21,
+
+            ["wsh"] = 28,
+            ["washington"] = 28,
+            ["commanders"] = 28,
+
+            ["chi"] = 3,
+            ["da bears"] = 3,
+            ["bears"] = 3,
+
+            ["det"] = 8,
+            ["lions"] = 8,
+
+            ["gb"] = 9,
+            ["green bay"] = 9,
+            ["packers"] = 9,
+
+            ["ind"] = 16,
+            ["vikings"] = 16,
+
+            ["atl"] = 1,
+            ["falcons"] = 1,
+
+            ["car"] = 29,
+            ["carolina"] = 29,
+            ["panthers"] = 29,
+
+            ["no"] = 18,
+            ["new orleans"] = 18,
+            ["who dat"] = 18,
+            ["saints"] = 18,
+
+            ["tb"] = 27,
+            ["tampa bay"] = 27,
+            ["bucs"] = 27,
+            ["buccaneers"] = 27,
+
+            ["ari"] = 22,
+            ["arizona"] = 22,
+            ["cardinals"] = 22,
+
+            ["lar"] = 14,
+            ["rams"] = 14,
+
+            ["sf"] = 25,
+            ["san fran"] = 25,
+            ["49ers"] = 25,
+
+            ["sea"] = 26,
+            ["seattle"] = 26,
+            ["seahawks"] = 26,
+        };
+
+        public static bool TryToEspnTeamId(this string teamName, out int teamId)
+            => EspnTeamIds.TryGetValue(teamName, out teamId);
+
+        public static int ToEspnTeamId(this string teamName)
+            => EspnTeamIds.TryGetValue(teamName, out var id)
+                ? id
+                : throw new KeyNotFoundException($"Unknown NFL team: '{teamName}'.");
+
+
+        #endregion
+
+        #region NORMALIZE
+        private static string Normalize(string input)
+        {
+            return input
+                .Trim()
+                .ToLowerInvariant()
+                .Replace(".", "")
+                .Replace(",", "")
+                .Replace("-", " ")
+                .Replace("  ", " ");
         }
         #endregion
     }

@@ -3,14 +3,10 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace GamedayTracker.Handlers
+using Microsoft.Extensions.Logging;
+
+namespace GamedayTracker.Handlers.Guilds
 {
     public class GuildAddedEventHandler(IJsonDataService jsonService, ILogger<GuildAddedEventHandler> logger) : IEventHandler<GuildCreatedEventArgs>
     {

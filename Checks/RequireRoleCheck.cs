@@ -1,14 +1,5 @@
 ﻿using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.CommandsNext.Attributes;
-using DSharpPlus.Entities;
-using GamedayTracker.Attributes;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GamedayTracker.Checks
 {

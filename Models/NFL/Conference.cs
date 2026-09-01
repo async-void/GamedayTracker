@@ -1,8 +1,12 @@
-﻿namespace GamedayTracker.Models.NFL
+﻿using System.Text.Json.Serialization;
+
+namespace GamedayTracker.Models.NFL
 {
     public class Conference
     {
-        public string Name { get; set; }
-        public StandingsData Standings { get; set; }
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+        [JsonPropertyName("standings")]
+        public StandingsData? Standings { get; set; }
     }
 }

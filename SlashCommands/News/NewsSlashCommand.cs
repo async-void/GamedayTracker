@@ -63,13 +63,13 @@ namespace GamedayTracker.SlashCommands.News
             }
             else
             {
-                await ctx.DeferResponseAsync();
                 var errorMessage = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle($"Error: {articles.Error.ErrorMessage}")
+                        .WithTitle($"Error:")
+                        .WithDescription($"An error occurred while fetching the news. Please try again later.\r\n{articles.Error.ErrorMessage}")
                         .AddField("CreatedBy", articles!.Error!.CreatedBy!.ToString()!, true)
                         .AddField("CreatedAt", articles!.Error!.CreatedAt!.ToString()!, true));
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder(errorMessage));
+                await ctx.RespondAsync(new DiscordWebhookBuilder(errorMessage));
 
             }
         }

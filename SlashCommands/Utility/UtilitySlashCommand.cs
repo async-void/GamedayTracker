@@ -161,7 +161,7 @@ namespace GamedayTracker.SlashCommands.Utility
                 new DiscordSeparatorComponent(true),
                 new DiscordTextDisplayComponent(aboutText.ToString()),
                 new DiscordSeparatorComponent(true),
-                new DiscordTextDisplayComponent("### Currently Working On: Daily Numbers Lottery Game"),
+                new DiscordTextDisplayComponent("### Currently Working On: Current Scoreboard"),
                 new DiscordSeparatorComponent(true),
                 new DiscordActionRowComponent(linkBtns),
                 new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),

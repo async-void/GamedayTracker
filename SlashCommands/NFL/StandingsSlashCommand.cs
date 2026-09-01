@@ -3,14 +3,8 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using GamedayTracker.ChoiceProviders;
-using GamedayTracker.Extensions;
-using GamedayTracker.Factories;
 using GamedayTracker.Interfaces;
-using GamedayTracker.Services;
-using GamedayTracker.Utility;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
 
 namespace GamedayTracker.SlashCommands.NFL
 {

@@ -42,7 +42,7 @@ namespace GamedayTracker.SlashCommands.Economy
                     {
                         var scoreboard = await gameDataService.GetNFLScoresAsync();
                         var scheduled = scoreboard.Events
-                            .Where(s => s.Date.DayOfWeek.ToString().Equals(day))
+                            .Where(s => s.Date.Value.DayOfWeek.ToString().Equals(day))
                             .ToList();
                         if (scheduled.Count == 0)
                         {

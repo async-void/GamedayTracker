@@ -1,12 +1,13 @@
-﻿using System;
+﻿using DSharpPlus.Entities;
+using GamedayTracker.Models;
+using GamedayTracker.Models.NFL;
+using GamedayTracker.Models.NFL.InjuryReport;
+using GamedayTracker.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using DSharpPlus.Entities;
-using GamedayTracker.Models;
-using GamedayTracker.Models.NFL;
-using GamedayTracker.Services;
 
 namespace GamedayTracker.Interfaces
 {
@@ -22,5 +23,6 @@ namespace GamedayTracker.Interfaces
         Result<List<DiscordSelectComponentOption>, SystemError<TeamDataService>> BuildSelectOptionForUserPicks();
         bool IsValidTeamName(string name);
         Task<(string, NFLTeam)> GetTeamRecordAsync(string teamAbbr);
+        Task<Result<List<EspnInjury>, SystemError<TeamDataService>>> GetTeamInjuriesAsync(string userInput);
     }
 }

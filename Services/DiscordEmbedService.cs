@@ -142,6 +142,16 @@ namespace GamedayTracker.Services
         public async Task<List<DiscordEmbed>> CreateStandingsEmbedsByConferenceAsync()
         {
             var standings = await gameData.GetNFLStandingsAsync();
+            if (standings is null || standings.Children == null || standings.Children.Count == 0)
+            {
+                var errorEmbed = new DiscordEmbedBuilder()
+                    .WithColor(DiscordColor.Red)
+                    .WithTitle("NFL Standings")
+                    .WithDescription("No standings data available.")
+                    .WithFooter("Data from ESPN")
+                    .WithTimestamp(DateTime.UtcNow);
+                return [errorEmbed.Build()];
+            }
             var embeds = new List<DiscordEmbed>();
             var titleEmoji = NflEmojiService.GetEmoji("NFL");
             foreach (var conf in standings.Children)
@@ -205,7 +215,8 @@ namespace GamedayTracker.Services
             foreach (var conf in conferencesToDisplay)
             {
                 var sortedEntries = conf.Standings.Entries
-                    .OrderByDescending(e => e.Stats.Find(s => s.Name == "wins")?.Value ?? 0)
+                    .OrderByDescending(e => e.Team.DisplayName) // Sort by team name first
+                    .ThenByDescending(e => e.Stats.Find(s => s.Name == "wins")?.Value ?? 0)
                     .ThenByDescending(e => e.Stats.Find(s => s.Name == "winPercent")?.Value ?? 0);
 
                 var standingsLines = string.Join("\n", sortedEntries.Select(entry =>
@@ -221,7 +232,7 @@ namespace GamedayTracker.Services
                     : entry.Team.DisplayName;
 
                     var record = ties > 0 ? $"{wins}-{losses}-{ties}" : $"{wins}-{losses}";
-                    return $"**{teamName, -22}** {record, 7} ({winPercent, 6})";
+                    return $"{teamName, -22} {record, 7} ({winPercent, 6})";
                 }));
 
                 var standingsText = "```\n" + string.Join("\n", standingsLines) + "\n```";
@@ -317,7 +328,7 @@ namespace GamedayTracker.Services
         #endregion
 
         #region CREATE SCOREBOARD PAGE
-        public async Task<DiscordMessageBuilder> CreateScoreboardPage(NFLScoreboard scores, string emoji, NFLSeasonType seasonType, int seasonYear, int pageIndex)
+        public async Task<DiscordMessageBuilder> CreateScoreboardPage(NFLScoreboard scores, string emoji, int seasonYear, int pageIndex)
         {
             var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var titleEmoji = NflEmojiService.GetEmoji("NFL");

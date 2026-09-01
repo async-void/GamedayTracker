@@ -1,11 +1,18 @@
-﻿namespace GamedayTracker.Models.NFL
+﻿using System.Text.Json.Serialization;
+
+namespace GamedayTracker.Models.NFL
 {
     public class Stat
     {
-        public string Name { get; set; }
-        public string DisplayName { get; set; }
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+        [JsonPropertyName("displayName")]
+        public string? DisplayName { get; set; }
+        [JsonPropertyName("value")]
         public double Value { get; set; }
-        public string DisplayValue { get; set; }
-        public string RankDisplayValue { get; set; }
+        [JsonPropertyName("displayValue")]
+        public string? DisplayValue { get; set; }
+        [JsonPropertyName("rankDisplayValue")]
+        public string? RankDisplayValue { get; set; }
     }
 }

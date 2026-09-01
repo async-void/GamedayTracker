@@ -6,35 +6,48 @@ using GamedayTracker.Cache;
 using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Extensions;
 using GamedayTracker.Interfaces;
-using GamedayTracker.Models;
 using GamedayTracker.Models.NFL;
 using GamedayTracker.Pagination;
 using GamedayTracker.Services;
+using GamedayTracker.Services.Espn;
 using GamedayTracker.Utility;
-using System.Collections;
 using System.ComponentModel;
-using System.IO;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
-    public class ScoreboardSlashCommand(IGameData gameService, IDiscordEmbedService embedService)
+    public class ScoreboardSlashCommand(IGameData gameService, IDiscordEmbedService embedService, IEspnClient espnClient, IEvaluator evaluator)
     {
+        private readonly IEspnClient _espnClient = espnClient;
+        private readonly IEvaluator _evaluator = evaluator;
 
         [Command("scoreboard")]
         [Description("get the scores for a specified season & week")]
-        public async Task GetScoreboard(SlashCommandContext ctx, NFLSeasonType seasonType, [SlashChoiceProvider<SeasonChoiceProvider>] int? season = null,
+        public async Task GetScoreboard(SlashCommandContext ctx, [SlashChoiceProvider<SeasonTypeChoiceProvider>] int? seasonType = null, [SlashChoiceProvider<SeasonChoiceProvider>] int? season = null,
             [SlashChoiceProvider<WeekChoiceProvider>] int? week = null)
         {
             await ctx.DeferResponseAsync();
 
-            var scores = await gameService.GetNFLScoresAsync(season, week, (int)seasonType);
+            var noParams =
+                (!season.HasValue || season.Value == 0) &&
+                (!week.HasValue || week.Value == 0) &&
+                (!seasonType.HasValue || seasonType.Value == 0);
+
+            string seasonStr = season?.ToString() ?? "";
+            string weekStr = week?.ToString() ?? "";
+            string typeStr = seasonType?.ToString() ?? "";
+
+            var scores = noParams
+                ? await _espnClient.GetScoreboardAsync("", "", "")
+                : await _espnClient.GetScoreboardAsync(seasonStr, weekStr, typeStr);
+
+            var now = DateTime.Now;
+            var sType = _evaluator.Evaluate(DateTime.Now); 
+
             var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var emoji = NflEmojiService.GetEmoji("default");
 
             var completedGames = gameService.GetCompletedGames(scores);
-            var page = await embedService.CreateScoreboardPage(scores, emoji, seasonType, season ?? 2025, 0);
+            var page = await embedService.CreateScoreboardPage(scores, emoji, season ?? 2025, 0);
             var totalPages = (int)Math.Ceiling(completedGames.Count / 4.0);
             
             var buttons = PaginationBuilder.CreateNavigationButtons(0, totalPages);
@@ -47,7 +60,7 @@ namespace GamedayTracker.SlashCommands.NFL
                 Scoreboard = scores,
                 CurrentPage = 0,
                 TotalPages = totalPages,
-                SeasonType = seasonType,
+                SeasonType = NFLSeasonType.RegularSeason,
                 Season = season ?? DateTimeOffset.UtcNow.Year,
                 Emoji = emoji,
                 UserId = ctx.User.Id,
@@ -78,7 +91,7 @@ namespace GamedayTracker.SlashCommands.NFL
                 var teamAbbr = teamName.ToAbbr();
                 var teamScoreboard = gameService.GetTeamGames(scoreboard, teamAbbr);
                 var defaultEmoji = NflEmojiService.GetEmoji("");
-                var date = teamScoreboard[0].Date.Year;
+                var date = teamScoreboard[0].Date.Value.Year;
 
                 var components = new List<DiscordComponent>()
                 {

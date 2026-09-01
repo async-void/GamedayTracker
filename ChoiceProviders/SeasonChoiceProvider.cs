@@ -14,6 +14,7 @@ namespace GamedayTracker.ChoiceProviders
             new DiscordApplicationCommandOptionChoice("2023-24", 2023),
             new DiscordApplicationCommandOptionChoice("2024-25", 2024),
             new DiscordApplicationCommandOptionChoice("2025-26", 2025),
+            new DiscordApplicationCommandOptionChoice("2026-27", 2026),
         ];
 
         public ValueTask<IEnumerable<DiscordApplicationCommandOptionChoice>> ProvideAsync(CommandParameter parameter)

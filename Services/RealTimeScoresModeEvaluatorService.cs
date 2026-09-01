@@ -1,10 +1,5 @@
 ﻿using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GamedayTracker.Services
 {
@@ -14,9 +9,11 @@ namespace GamedayTracker.Services
         {
             // NFL season months: September (9) through Febuary (2)
             bool inSeason = now.Month >= 9 || now.Month <= 2;
+            bool inPreSeason = now.Month == 8; // August is preseason
 
             if (!inSeason)
             {
+                if (inPreSeason) return RealTimeScoresMode.Preseason;
                 return RealTimeScoresMode.Offseason; // Febuary–August
             }
 

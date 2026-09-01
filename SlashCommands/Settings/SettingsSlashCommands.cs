@@ -15,8 +15,10 @@ namespace GamedayTracker.SlashCommands.Settings
     {
         private readonly IJsonDataService _jsonDataService = jsonDataService;
 
-        [Command("toggle-notifications")]
-        [Description("turn on/off system wide notifications")]
+
+        #region TOGGLE NOTIFICATIONS
+        [Command("toggleNotifications")]
+        [Description("toggle system wide notifications")]
         [RequirePermissions(permissions: DiscordPermission.Administrator)]
         public async Task ToggleServerNotifications(SlashCommandContext ctx, [SlashChoiceProvider<ToggleChoiceProvider>] int choice)
         {
@@ -62,5 +64,37 @@ namespace GamedayTracker.SlashCommands.Settings
                 await ctx.EditResponseAsync(notFound);
             }
         }
+        #endregion
+
+        #region CONFIGURE DAILY STANDINGS / REALTIME SCORES / DAILY NEWS
+        [Command("configure")]
+        [Description("configure Daily Headlines | Daily News | Daily Standings")]
+        [RequirePermissions(permissions: DiscordPermission.ManageGuild)]
+        public async ValueTask Configure(SlashCommandContext ctx)
+        {
+            await ctx.DeferResponseAsync(ephemeral: true);
+
+            //build the container with the buttons to configure different sections
+
+            DiscordComponent[] comps =
+            [
+                new DiscordTextDisplayComponent("## Configure Daily Settings"),
+                new DiscordSectionComponent(new DiscordTextDisplayComponent("Configure Daily Standings"),
+                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "configure:standings", "Standings")),
+                new DiscordSectionComponent(new DiscordTextDisplayComponent("Configure Daily News"),
+                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "configure:news", "News")),
+                new DiscordSectionComponent(new DiscordTextDisplayComponent("Configure Live Scores"),
+                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "configure:scores", "Scores")),
+            ];
+
+            var container = new DiscordContainerComponent(comps, false, DiscordColor.Gray);
+            var msg = new DiscordMessageBuilder()
+                .EnableV2Components()
+                .AddContainerComponent(container);
+
+            await ctx.RespondAsync(msg);
+
+        }
+        #endregion
     }
 }

@@ -507,6 +507,7 @@ namespace GamedayTracker.Services
                     return cachedScores!;
                 }
 
+                //cache was empty - fetch new scoreboard from api
                 var response = await httpClient.GetStringAsync(url);
                 var scores = JsonSerializer.Deserialize<NFLScoreboard?>(response);
 
@@ -923,7 +924,7 @@ namespace GamedayTracker.Services
             }
             catch (Exception ex)
             {
-                logger.LogError($"Error fetching NFL standings: {ex.Message}");
+                logger.LogError("Error fetching NFL standings: {errorMessage}", ex.Message);
                 return new NflStandings();
             }
 

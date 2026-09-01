@@ -1,21 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
-using DSharpPlus.Commands.Processors.SlashCommands.Localization;
 using DSharpPlus.Entities;
-using DSharpPlus.Interactivity;
-using DSharpPlus.Interactivity.Extensions;
 using GamedayTracker.ChoiceProviders;
 using GamedayTracker.Interfaces;
-using GamedayTracker.Models;
-using GamedayTracker.Services;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
@@ -46,11 +35,11 @@ namespace GamedayTracker.SlashCommands.NFL
                         .AddContainerComponent(new DiscordContainerComponent(components, false, DiscordColor.DarkGray));
 
                     await ctx.RespondAsync(new DiscordInteractionResponseBuilder(optionEmbed));
-                    
+
                     break;
                 case 1:
                     var nfcOptions = teamData.BuildSelectOptionForNfc();
-                    var nfcDropDown = new DiscordSelectComponent("nfcDropdown", "NFC Options", nfcOptions.Value); 
+                    var nfcDropDown = new DiscordSelectComponent("nfcDropdown", "NFC Options", nfcOptions.Value);
                     components =
                     [
                         new DiscordTextDisplayComponent("# AFC Draft Results"),
@@ -65,7 +54,7 @@ namespace GamedayTracker.SlashCommands.NFL
 
                     break;
                 case 2:
-                    var drafts = await teamData.GetDraftResultsAsync("", 2025);
+                    var drafts = await teamData.GetDraftResultsAsync("", 2026);
                     break;
             }
         }

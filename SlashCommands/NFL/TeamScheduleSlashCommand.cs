@@ -11,14 +11,17 @@ using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models.NFL;
 using GamedayTracker.Services;
+using GamedayTracker.Services.Espn;
 using GamedayTracker.Utility;
 using Serilog;
 using ILogger = GamedayTracker.Interfaces.ILogger;
 
 namespace GamedayTracker.SlashCommands.NFL
 {
-    public class TeamScheduleSlashCommand(IGameData gameData, ITeamData teamData)
+    public class TeamScheduleSlashCommand(IGameData gameData, ITeamData teamData, IEspnClient espnClient)
     {
+        private readonly IEspnClient _espnClient = espnClient;
+
         [Command("schedule")]
         [Description("Get Current Season Team Schedule")]
         public async Task GetTeamSchedule(SlashCommandContext ctx, [Parameter("team")] string teamName, [SlashChoiceProvider<SeasonTypeChoiceProvider>] int seasonType, [SlashChoiceProvider<SeasonChoiceProvider>]int season)
@@ -33,13 +36,13 @@ namespace GamedayTracker.SlashCommands.NFL
             if (!teamId.IsOk)
             {
                 await ctx.EditResponseAsync(new DiscordMessageBuilder()
-                        .WithContent($"Invalid team name: {teamName}. Please use a valid team name."))
-                    .ConfigureAwait(false);
+                         .WithContent($"Invalid team name: {teamName}. Please use a valid team name."))
+                         .ConfigureAwait(false);
                 return;
             }
             var scheduleEspn = await gameData.GetEspnTeamScheduleAsync(teamId.Value, seasonType, season);
             var sb = new StringBuilder();
-            var titleEmoji = NflEmojiService.GetEmoji(normalizedName.ToAbbr());
+            var titleEmoji = NflEmojiService.GetEmoji(normalizedName?.ToAbbr() ?? "");
             if (scheduleEspn.Events.Count > 0)
             {
                 foreach (var match in scheduleEspn.Events)
@@ -49,7 +52,7 @@ namespace GamedayTracker.SlashCommands.NFL
 
                     var awayName = match.Competitions[0].Competitors[0].Team.Abbreviation;
                     var homeName = match.Competitions[0].Competitors[1].Team.Abbreviation;
-                    var date = match.Date.ToString("MMMM, dd yyyy hh:mm:ss tt");
+                    var date = match.Date.Value.ToString("MMMM, dd yyyy hh:mm:ss tt");
 
                     var awayEmoji = NflEmojiService.GetEmoji(awayName);
                     var homeEmoji = NflEmojiService.GetEmoji(homeName);
@@ -75,8 +78,9 @@ namespace GamedayTracker.SlashCommands.NFL
                         sb.AppendLine($"{result} `{date,-30}`");
                     }
                     else
-                        sb.AppendLine($"{awayEmoji} at {homeEmoji} `{date,-30}`");
-
+                    {
+                        sb.AppendLine($"`{date}`- {awayEmoji} at {homeEmoji}");
+                    }    
                 }
 
                 DiscordComponent[] components =
@@ -123,7 +127,7 @@ namespace GamedayTracker.SlashCommands.NFL
         {
             await ctx.DeferResponseAsync();
             var record = await teamData.GetTeamRecordAsync(teamAbbr);
-            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
             DiscordComponent[] components =
             [
                 new DiscordTextDisplayComponent($"**Record for: {record.Item2.DisplayName}** ({record.Item2.Abbreviation})"),
@@ -131,7 +135,7 @@ namespace GamedayTracker.SlashCommands.NFL
                 new DiscordTextDisplayComponent($"Summary: **{record.Item1}**"),
                 new DiscordTextDisplayComponent($"Home: {record.Item2.Record.Items[1].Summary} Road: {record.Item2.Record.Items[2].Summary}"),
                 new DiscordSeparatorComponent(true),
-                new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}")
+                new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {timestamp}")
             ];
                
             var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
@@ -140,5 +144,24 @@ namespace GamedayTracker.SlashCommands.NFL
                 .AddContainerComponent(container);
             await ctx.RespondAsync(msg);
         }
+
+        #region
+        [Command("teamRoster")]
+        [Description("fetch a specific team's roster")]
+        public async ValueTask GetRoster(SlashCommandContext ctx, [Parameter("team")] string teamName)
+        {
+            await ctx.DeferResponseAsync();
+            var teamId = TeamExtensions.ToEspnTeamId(teamName.ToLower());
+            var roster = await _espnClient.GetTeamRosterAsync(teamId.ToString());
+
+            if (roster is not null)
+            {
+                if (roster.Count > 0)
+                {
+                    //TODO: add paging for the player roster data
+                }
+            }
+        }
+        #endregion
     }
 }

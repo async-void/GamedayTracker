@@ -26,7 +26,7 @@ namespace GamedayTracker.AutoCompleteProvider
             .Where(e =>
             {
                 var local = e.Date;
-                return local.DayOfWeek == DayOfWeek.Sunday;
+                return local.Value.DayOfWeek == DayOfWeek.Sunday;
             })
             .ToList() ?? [];
 

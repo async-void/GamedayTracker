@@ -24,154 +24,143 @@ namespace GamedayTracker.Data.Migrations.BotDb
 
             modelBuilder.Entity("GamedayTracker.Models.Bank", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<decimal>("BankId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("numeric(20,0)");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    b.Property<decimal>("Balance")
+                        .HasColumnType("numeric");
 
-                    b.Property<double>("Balance")
-                        .HasColumnType("double precision");
-
-                    b.Property<double>("DepositAmount")
-                        .HasColumnType("double precision");
-
-                    b.Property<DateTime>("DepositTimestamp")
+                    b.Property<DateTimeOffset>("DepositTimestamp")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<double>("LastDeposit")
-                        .HasColumnType("double precision");
+                    b.Property<decimal>("GuildMemberId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.HasKey("Id");
+                    b.Property<decimal>("LastDepositAmount")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("BankId");
+
+                    b.HasIndex("GuildMemberId")
+                        .IsUnique();
 
                     b.ToTable("Bank");
                 });
 
             modelBuilder.Entity("GamedayTracker.Models.Bet", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EventId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("GameDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("GuildMemberMemberId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal>("Multiplier")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("Odds")
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    b.Property<decimal?>("Payout")
+                        .HasColumnType("numeric");
 
-                    b.Property<string>("AwayTeamName")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<DateTime>("PlacedAt")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<double>("BetAmount")
-                        .HasColumnType("double precision");
+                    b.Property<string>("Selection")
+                        .IsRequired()
+                        .HasColumnType("text");
 
-                    b.Property<int?>("GuildMemberId")
+                    b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<string>("HomeTeamName")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<int>("PoolPlayerId")
+                    b.Property<int>("Type")
                         .HasColumnType("integer");
+
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal>("WagerAmount")
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GuildMemberId");
-
-                    b.HasIndex("PoolPlayerId");
+                    b.HasIndex("GuildMemberMemberId");
 
                     b.ToTable("Bet");
                 });
 
             modelBuilder.Entity("GamedayTracker.Models.Guild", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<decimal>("GuildId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<DateTimeOffset>("DateAdded")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("GuildId")
-                        .HasColumnType("bigint");
 
                     b.Property<string>("GuildName")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<long?>("GuildOwnerId")
-                        .HasColumnType("bigint");
+                    b.Property<decimal>("GuildOwnerId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<long?>("NotificationChannelId")
-                        .HasColumnType("bigint");
+                    b.Property<bool>("IsDailyHeadlinesEnabled")
+                        .HasColumnType("boolean");
 
-                    b.HasKey("Id");
+                    b.Property<bool>("IsRealTimeScoresEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("NotificationChannelId")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("ReceiveSystemMessages")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("GuildId");
 
                     b.ToTable("Guilds");
                 });
 
             modelBuilder.Entity("GamedayTracker.Models.GuildMember", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<decimal>("MemberId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasMaxLength(100)
+                        .HasColumnType("numeric(20,0)");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("BankId")
+                    b.Property<int>("BetWins")
                         .HasColumnType("integer");
 
                     b.Property<string>("FavoriteTeam")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("GuildId")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<string>("MemberId")
+                    b.Property<string>("GuildName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
                     b.Property<string>("MemberName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int>("PlayerPicksId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PoolWins")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BankId");
-
-                    b.HasIndex("PlayerPicksId");
+                    b.HasKey("MemberId");
 
                     b.ToTable("Members");
-                });
-
-            modelBuilder.Entity("GamedayTracker.Models.PlayerPicks", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Season")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Week")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PlayerPicks");
                 });
 
             modelBuilder.Entity("GamedayTracker.Models.PoolPlayer", b =>
@@ -182,56 +171,173 @@ namespace GamedayTracker.Data.Migrations.BotDb
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<double>("Balance")
+                        .HasColumnType("double precision");
+
                     b.Property<string>("Company")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<DateTime>("DepositTimestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("GuildMemberId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("GuildMemberMemberId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.PrimitiveCollection<string[]>("Picks")
+                        .HasColumnType("text[]");
+
+                    b.Property<decimal>("PlayerId")
+                        .HasColumnType("numeric(20,0)");
+
                     b.Property<string>("PlayerName")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("GuildMemberMemberId");
+
                     b.ToTable("Players");
+                });
+
+            modelBuilder.Entity("GamedayTracker.Models.Tickets.Ticket", b =>
+                {
+                    b.Property<decimal>("TicketId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal?>("GuildMemberMemberId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("ThreadId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.HasKey("TicketId");
+
+                    b.HasIndex("GuildMemberMemberId");
+
+                    b.ToTable("Ticket");
+                });
+
+            modelBuilder.Entity("GamedayTracker.Models.Bank", b =>
+                {
+                    b.HasOne("GamedayTracker.Models.GuildMember", "GuildMember")
+                        .WithOne("Bank")
+                        .HasForeignKey("GamedayTracker.Models.Bank", "GuildMemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GuildMember");
                 });
 
             modelBuilder.Entity("GamedayTracker.Models.Bet", b =>
                 {
                     b.HasOne("GamedayTracker.Models.GuildMember", null)
-                        .WithMany("BetHistory")
-                        .HasForeignKey("GuildMemberId");
-
-                    b.HasOne("GamedayTracker.Models.PoolPlayer", "Player")
-                        .WithMany()
-                        .HasForeignKey("PoolPlayerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Player");
+                        .WithMany("Bets")
+                        .HasForeignKey("GuildMemberMemberId");
                 });
 
             modelBuilder.Entity("GamedayTracker.Models.GuildMember", b =>
                 {
-                    b.HasOne("GamedayTracker.Models.Bank", "Bank")
-                        .WithMany()
-                        .HasForeignKey("BankId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.OwnsMany("GamedayTracker.Models.DailyNumbers.DailyNumberPick", "DailyNumbers", b1 =>
+                        {
+                            b1.Property<decimal>("GuildMemberMemberId")
+                                .HasColumnType("numeric(20,0)");
 
-                    b.HasOne("GamedayTracker.Models.PlayerPicks", "PlayerPicks")
-                        .WithMany()
-                        .HasForeignKey("PlayerPicksId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer");
 
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<int>("Id"));
+
+                            b1.Property<DateOnly>("Date")
+                                .HasColumnType("date");
+
+                            b1.Property<decimal>("GuildId")
+                                .HasColumnType("numeric(20,0)");
+
+                            b1.PrimitiveCollection<int[]>("Numbers")
+                                .IsRequired()
+                                .HasColumnType("integer[]");
+
+                            b1.Property<string>("PlayType")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<DateTimeOffset>("Timestamp")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<decimal>("UserId")
+                                .HasColumnType("numeric(20,0)");
+
+                            b1.HasKey("GuildMemberMemberId", "Id");
+
+                            b1.ToTable("DailyNumberPick");
+
+                            b1.WithOwner()
+                                .HasForeignKey("GuildMemberMemberId");
+                        });
+
+                    b.Navigation("DailyNumbers");
+                });
+
+            modelBuilder.Entity("GamedayTracker.Models.PoolPlayer", b =>
+                {
+                    b.HasOne("GamedayTracker.Models.GuildMember", "GuildMember")
+                        .WithMany()
+                        .HasForeignKey("GuildMemberMemberId");
+
+                    b.Navigation("GuildMember");
+                });
+
+            modelBuilder.Entity("GamedayTracker.Models.Tickets.Ticket", b =>
+                {
+                    b.HasOne("GamedayTracker.Models.GuildMember", null)
+                        .WithMany("Tickets")
+                        .HasForeignKey("GuildMemberMemberId");
+                });
+
+            modelBuilder.Entity("GamedayTracker.Models.GuildMember", b =>
+                {
                     b.Navigation("Bank");
 
-                    b.Navigation("PlayerPicks");
-                });
+                    b.Navigation("Bets");
 
-            modelBuilder.Entity("GamedayTracker.Models.GuildMember", b =>
-                {
-                    b.Navigation("BetHistory");
+                    b.Navigation("Tickets");
                 });
 #pragma warning restore 612, 618
         }

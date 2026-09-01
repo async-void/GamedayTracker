@@ -16,14 +16,14 @@ namespace GamedayTracker.Jobs
         public async Task Execute(IJobExecutionContext context)
         {
             logger.LogInformation("Executing Daily Headline Job...");
-            var seasonType = evaluator.Evaluate(DateTime.Now);
+            //var seasonType = evaluator.Evaluate(DateTime.Now);
 
-            if (seasonType == RealTimeScoresMode.Offseason)
-            {
-                logger.LogInformation("Offseason mode, skipping DailyHeadlineJob...");
-                return;
-            }
-            var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            //if (seasonType == RealTimeScoresMode.Offseason)
+            //{
+            //    logger.LogInformation("Offseason mode, skipping DailyHeadlineJob...");
+            //    return;
+            //}
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var rnd = new Random();
             var articles = await newsService.GetNews();
             var imgList = new List<string>();
@@ -51,7 +51,7 @@ namespace GamedayTracker.Jobs
                     new DiscordSeparatorComponent(true),
                     new DiscordMediaGalleryComponent(new DiscordMediaGalleryItem(imgList[rnd.Next(0, imgList.Count)], "news", false)),
                     new DiscordSeparatorComponent(true),
-                    new DiscordSectionComponent( new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ {unixTimestamp}"),
+                    new DiscordSectionComponent( new DiscordTextDisplayComponent($"-# Powered by Gameday Tracker ©️ {timestamp}"),
                         new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
 
                 ];

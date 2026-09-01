@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GamedayTracker.Handlers
+namespace GamedayTracker.Handlers.Guilds
 {
     public class GuildMemberAddedEventHandler(TicketCoordinator ticketCoordinator) : IEventHandler<GuildMemberAddedEventArgs>
     {

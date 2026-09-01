@@ -2,6 +2,7 @@
 using GamedayTracker.Extensions;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
+using GamedayTracker.Models.DailyNumbers;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 

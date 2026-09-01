@@ -5,36 +5,39 @@ namespace GamedayTracker.Models.NFL
     public class Event
     {
         [JsonPropertyName("id")]
-        public string Id { get; set; }
+        public string? Id { get; set; }
 
         [JsonPropertyName("uid")]
-        public string Uid { get; set; }
+        public string? Uid { get; set; }
 
         [JsonPropertyName("date")]
-        public DateTime Date { get; set; }
+        public DateTime? Date { get; set; }
 
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [JsonPropertyName("shortName")]
-        public string ShortName { get; set; }
+        public string? ShortName { get; set; }
 
         [JsonPropertyName("season")]
-        public SeasonInfo Season { get; set; }
+        public SeasonInfo? Season { get; set; }
 
         [JsonPropertyName("week")]
-        public WeekInfo Week { get; set; }
+        public WeekInfo? Week { get; set; }
 
         [JsonPropertyName("competitions")]
-        public List<Competition> Competitions { get; set; }
+        public List<Competition>? Competitions { get; set; }
 
         [JsonPropertyName("links")]
-        public List<Link> Links { get; set; }
+        public List<Link>? Links { get; set; }
 
         [JsonPropertyName("status")]
-        public Status Status { get; set; }
+        public Status? Status { get; set; }
 
         [JsonPropertyName("odds")]
-        public List<Odds> Odds { get; set; }
+        public List<Odds>? Odds { get; set; }
+
+        [JsonPropertyName("weather")]
+        public NflEventWeather? Weather { get; set; }
     }
 }

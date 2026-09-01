@@ -4,9 +4,12 @@ using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using GamedayTracker.Data;
 using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
+using GamedayTracker.Models;
 using GamedayTracker.Utility;
+using Microsoft.EntityFrameworkCore;
 using Quartz;
 using Quartz.Impl.Matchers;
 using CommandAttribute = DSharpPlus.Commands.CommandAttribute;
@@ -18,7 +21,7 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
     [Command("moderation")]
     [Description("Moderation Slash Commands")]
     [RequirePermissions([DiscordPermission.Administrator, DiscordPermission.ManageGuild])]
-    public class ModerationSettingsSlashCommands(IJsonDataService jsonService, ISchedulerFactory schedulerFactory)
+    public class ModerationSettingsSlashCommands(IJsonDataService jsonService, ISchedulerFactory schedulerFactory, IDbContextFactory<BotDbContext> dbFactory)
     {
         private readonly IJsonDataService _jsonService = jsonService;
         private readonly ISchedulerFactory _schedulerFactory = schedulerFactory;
@@ -93,50 +96,54 @@ namespace GamedayTracker.SlashCommands.Settings.Moderation
         #endregion
 
         #region ENABLE/DISABLE REALTIME SCORES
-        //[Command("toggle-realtime-scores")]
-        //[Description("enable or disable realtime scores")]
-        //public async ValueTask EnableRealtimeScores(SlashCommandContext ctx, [Description("true : false")] bool enable)
-        //{
-        //    await ctx.DeferResponseAsync();
-        //    var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        //    var guildResult = await _jsonService.GetGuildFromJsonAsync(ctx.Guild!.Id);
-        //    if (guildResult.IsOk)
-        //    {
-        //        guildResult.Value.IsRealTimeScoresEnabled = enable;
-        //        await _jsonService.UpdateGuildDataAsync(guildResult.Value);
-        //        DiscordComponent[] components =
-        //        [
-        //            new DiscordTextDisplayComponent($"## 👍SUCCESS👍"),
-        //            new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-        //            new DiscordTextDisplayComponent($"realtime scores are now {(enable ? "enabled" : "disabled")}"),
-        //            new DiscordSeparatorComponent(true),
-        //            new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
-        //                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
-        //        ];
-        //        var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
-        //        var message = new DiscordMessageBuilder()
-        //            .EnableV2Components()
-        //            .AddContainerComponent(container);
-        //        await ctx.RespondAsync(message);
-        //    }
-        //    else
-        //    {
-        //        var errorId = Guid.NewGuid().ToString();
-        //        DiscordComponent[] components =
-        //        [
-        //            new DiscordTextDisplayComponent($"## ❌ FAILURE ❌"),
-        //            new DiscordSeparatorComponent(true),
-        //            new DiscordTextDisplayComponent($"unable to {(enable ? "enable" : "disable")} realtime scores, with error id: {errorId}\r\nError Message {guildResult.Error.ErrorMessage}"),
-        //            new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{unixTimestamp}:F>"),
-        //                new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
-        //        ];
-        //        var container = new DiscordContainerComponent(components, false, DiscordColor.DarkRed);
-        //        var message = new DiscordMessageBuilder()
-        //            .EnableV2Components()
-        //            .AddContainerComponent(container);
-        //        await ctx.RespondAsync(message);
-        //    }
-        //}
+        [Command("toggle-realtime-scores")]
+        [Description("enable or disable realtime scores")]
+        public async ValueTask EnableRealtimeScores(SlashCommandContext ctx)
+        {
+            await ctx.DeferResponseAsync();
+            var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            using var db = dbFactory.CreateDbContext();
+            var guild = db.Guilds?.Where(x => x.GuildId == ctx.Guild!.Id).FirstOrDefault();
+
+            if (guild is not null)
+            {
+                guild.IsRealTimeScoresEnabled = !guild.IsRealTimeScoresEnabled;
+                var isEnabled = guild.IsRealTimeScoresEnabled;
+                DiscordComponent[] components =
+                [
+                    new DiscordTextDisplayComponent($"## 👍SUCCESS👍"),
+                    new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
+                    new DiscordTextDisplayComponent($"realtime scores are now {(isEnabled ? "enabled" : "disabled")}"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ {timestamp}"),
+                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                ];
+                var container = new DiscordContainerComponent(components, false, DiscordColor.Blurple);
+                var message = new DiscordMessageBuilder()
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
+                await ctx.RespondAsync(message);
+                db.Update(guild);
+                await db.SaveChangesAsync();
+            }
+            else
+            {
+                var errorId = Guid.NewGuid().ToString();
+                DiscordComponent[] components =
+                [
+                    new DiscordTextDisplayComponent($"## ❌ FAILURE ❌"),
+                    new DiscordSeparatorComponent(true),
+                    new DiscordTextDisplayComponent($"unable to update realtime scores, please try again later!"),
+                    new DiscordSectionComponent(new DiscordTextDisplayComponent($"Powered by Gameday Tracker ©️ <t:{timestamp}:F>"),
+                        new DiscordButtonComponent(DiscordButtonStyle.Secondary, "donateId", "Donate"))
+                ];
+                var container = new DiscordContainerComponent(components, false, DiscordColor.DarkRed);
+                var message = new DiscordMessageBuilder()
+                    .EnableV2Components()
+                    .AddContainerComponent(container);
+                await ctx.RespondAsync(message);
+            }
+        }
         #endregion
 
         #region ENABLE/DISABLE HEADLINES

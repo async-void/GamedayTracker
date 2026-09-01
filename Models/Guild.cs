@@ -1,5 +1,6 @@
 ﻿using DSharpPlus.Entities;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GamedayTracker.Models
 {
@@ -14,6 +15,7 @@ namespace GamedayTracker.Models
         public bool IsRealTimeScoresEnabled { get; set; }
         public bool ReceiveSystemMessages { get; set; }
 
+        [NotMapped]
         public Dictionary<ulong, DiscordMember>? DiscordMembers { get; set; }
     }
 }

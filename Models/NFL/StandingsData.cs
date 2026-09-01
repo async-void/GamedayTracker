@@ -1,7 +1,10 @@
-﻿namespace GamedayTracker.Models.NFL
+﻿using System.Text.Json.Serialization;
+
+namespace GamedayTracker.Models.NFL
 {
     public class StandingsData
     {
-        public List<StandingEntry> Entries { get; set; }
+        [JsonPropertyName("entries")]
+        public List<StandingEntry>? Entries { get; set; }
     }
 }

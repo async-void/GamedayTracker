@@ -1,4 +1,4 @@
-﻿namespace GamedayTracker.Models
+﻿namespace GamedayTracker.Models.DailyNumbers
 {
     public sealed record DailyNumbersDmPayload(
         ulong UserId,

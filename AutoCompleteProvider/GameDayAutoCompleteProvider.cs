@@ -27,7 +27,7 @@ namespace GamedayTracker.AutoCompleteProvider
             }
 
             var days = games.Events
-                .Select(g => g.Date.DayOfWeek)
+                .Select(g => g.Date.Value.DayOfWeek)
                 .Distinct()
                 .OrderBy(d => d)
                 .ToList();

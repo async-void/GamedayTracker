@@ -9,6 +9,7 @@ namespace GamedayTracker.Enums
     public enum RealTimeScoresMode
     {
         Offseason,
+        Preseason,
         PreGame,
         LiveGame,
         PostGame

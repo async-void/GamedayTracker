@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GamedayTracker.Models
+namespace GamedayTracker.Models.DailyNumbers
 {
     public sealed record DailyNumbersDrawingResult (int[] WinningNumbers, DateOnly DrawDate, int WinnerCount)
     {

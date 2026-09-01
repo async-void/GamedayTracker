@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using GamedayTracker.Data;
+﻿using GamedayTracker.Data;
 using GamedayTracker.Enums;
 using GamedayTracker.Services;
 using Microsoft.EntityFrameworkCore;
