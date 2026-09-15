@@ -133,7 +133,7 @@ namespace GamedayTracker.Services
             var embed = new DiscordEmbedBuilder()
                 .WithColor(new DiscordColor(1, 51, 105))
                 .WithTitle($"{titleEmoji} NFL Scores\r\n{displayName}")
-                .WithDescription("");
+                .WithDescription("work on the pagination for the scoreboard");
             return embed;
         }
         #endregion
@@ -333,16 +333,16 @@ namespace GamedayTracker.Services
             var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var titleEmoji = NflEmojiService.GetEmoji("NFL");
             var displayName = gameData.GetFullSeasonWeekDisplay(scores);
-            var eventList = new List<List<Event>>();
+            var eventList = new List<Event>();
 
             var liveGames = gameData.GetLiveGames(scores);
             var completedGames = gameData.GetCompletedGames(scores);
             var scheduledGames = gameData.GetScheduledGames(scores);
-            eventList.Add(liveGames);
-            eventList.Add(completedGames);
-            eventList.Add(scheduledGames);
+            eventList.AddRange(liveGames);
+            eventList.AddRange(completedGames);
+            eventList.AddRange(scheduledGames);
 
-            var gamesToShow = completedGames
+            var gamesToShow = eventList
                      .Skip(pageIndex * 4)
                      .Take(4)
                      .ToList();

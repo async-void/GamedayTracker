@@ -24,9 +24,8 @@ namespace GamedayTracker.SlashCommands.NFL
 
         [Command("schedule")]
         [Description("Get Current Season Team Schedule")]
-        public async Task GetTeamSchedule(SlashCommandContext ctx, [Parameter("team")] string teamName, [SlashChoiceProvider<SeasonTypeChoiceProvider>] int seasonType, [SlashChoiceProvider<SeasonChoiceProvider>]int season)
+        public async Task GetTeamSchedule(SlashCommandContext ctx, [Parameter("team")] [Description("enter team abbreviation")] string teamName)
         {
-            
             await ctx.DeferResponseAsync();
            
             var unixTimestamp = DateTimeOffset.UtcNow.ToTimestamp();
@@ -40,7 +39,7 @@ namespace GamedayTracker.SlashCommands.NFL
                          .ConfigureAwait(false);
                 return;
             }
-            var scheduleEspn = await gameData.GetEspnTeamScheduleAsync(teamId.Value, seasonType, season);
+            var scheduleEspn = await _espnClient.GetTeamScheduleAsync(teamId.Value);
             var sb = new StringBuilder();
             var titleEmoji = NflEmojiService.GetEmoji(normalizedName?.ToAbbr() ?? "");
             if (scheduleEspn.Events.Count > 0)
@@ -59,34 +58,25 @@ namespace GamedayTracker.SlashCommands.NFL
                     var winEmoji = NflEmojiService.GetEmoji("Win");
                     var lossEmoji = NflEmojiService.GetEmoji("Loss");
 
+                    var awayScore = match.Competitions[0].Competitors[0].LineScores?.Select(ls => ls.Value).Sum() ?? 0;
+                    var homeScore = match.Competitions[0].Competitors[1].LineScores?.Select(ls => ls.Value).Sum() ?? 0;
+
                     string? result;
                     if (match.Competitions[0].Status.Type.Completed)
                     {
-                        if (awayCompetitor.Winner)
-                        {
-                            result = $"{awayEmoji} ✔️ at {homeEmoji} ❗";
-                        }
-                        else if (homeCompetitor.Winner)
-                        {
-                            result = $"{awayEmoji} ❗ at {homeEmoji} ✔️";
-                        }
-                        else
-                        {
-                            result = $"{awayEmoji} at {homeEmoji} (TIE)";
-                        }
-
-                        sb.AppendLine($"{result} `{date,-30}`");
+                        result = $"{awayEmoji} ``{awayScore}-{homeScore}`` {homeEmoji}";
+                        sb.AppendLine($"{result} || FINAL");
                     }
                     else
                     {
-                        sb.AppendLine($"`{date}`- {awayEmoji} at {homeEmoji}");
+                        sb.AppendLine($"{awayEmoji} at {homeEmoji} `{date, -30}`");
                     }    
                 }
 
                 DiscordComponent[] components =
                 [
                     new DiscordTextDisplayComponent($"{normalizedName} {titleEmoji}"),
-                    new DiscordTextDisplayComponent($"-# {season} Schedule"),
+                    new DiscordTextDisplayComponent($"-# {normalizedName} Schedule"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
                     new DiscordTextDisplayComponent($"{sb}"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
@@ -108,7 +98,7 @@ namespace GamedayTracker.SlashCommands.NFL
                 [
                     new DiscordTextDisplayComponent($"**ERROR**"),
                     new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                    new DiscordTextDisplayComponent($"no events found for season **{season}**"),
+                    new DiscordTextDisplayComponent($"no events found!"),
                     new DiscordSeparatorComponent(true),
                     new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {unixTimestamp}")
                 ];
@@ -126,14 +116,15 @@ namespace GamedayTracker.SlashCommands.NFL
         public async Task GetTeamRecord(SlashCommandContext ctx, string teamAbbr)
         {
             await ctx.DeferResponseAsync();
-            var record = await teamData.GetTeamRecordAsync(teamAbbr);
+            var record = await _espnClient.GetTeam(teamAbbr);
             var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
+            var emoji = NflEmojiService.GetEmoji(record.Abbreviation ?? "");
             DiscordComponent[] components =
             [
-                new DiscordTextDisplayComponent($"**Record for: {record.Item2.DisplayName}** ({record.Item2.Abbreviation})"),
+                new DiscordTextDisplayComponent($"**{record.Name}** ({record.Abbreviation}) {emoji}"),
                 new DiscordSeparatorComponent(true, DiscordSeparatorSpacing.Large),
-                new DiscordTextDisplayComponent($"Summary: **{record.Item1}**"),
-                new DiscordTextDisplayComponent($"Home: {record.Item2.Record.Items[1].Summary} Road: {record.Item2.Record.Items[2].Summary}"),
+                new DiscordTextDisplayComponent($"Summary: **{record.StandingSummary}**"),
+                new DiscordTextDisplayComponent($"Home: **{record.Record.Items[1].Summary}** Road: **{record.Record.Items[2].Summary}**"),
                 new DiscordSeparatorComponent(true),
                 new DiscordTextDisplayComponent($"-# Gameday Tracker ©️ {timestamp}")
             ];

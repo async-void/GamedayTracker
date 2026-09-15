@@ -9,23 +9,23 @@ namespace GamedayTracker.Pagination
 {
     public static class PaginationBuilder
     {
-        public static IReadOnlyList<DiscordComponent> CreateNavigationButtons(int currentPage, int totalPages)
+        public static IReadOnlyList<DiscordComponent> CreateNavigationButtons(int currentPage, int totalPages, ulong msgId)
         {
             return
             [
                 new DiscordButtonComponent(
                     DiscordButtonStyle.Primary,
-                    $"prev",
+                    $"configure:prev:{msgId}",
                     "◀ Previous",
                     currentPage == 0),
                 new DiscordButtonComponent(
                     DiscordButtonStyle.Secondary,
-                    $"page",
+                    $"configure:page:{msgId}",
                     $"Page {currentPage + 1}/{totalPages}",
                     true),
                 new DiscordButtonComponent(
                     DiscordButtonStyle.Primary,
-                    $"next",
+                    $"configure:next:{msgId}",
                     "Next ▶",
                     currentPage >= totalPages - 1)
             ];

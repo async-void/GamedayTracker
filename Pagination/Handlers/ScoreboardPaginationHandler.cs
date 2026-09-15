@@ -1,11 +1,6 @@
 ﻿using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using GamedayTracker.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GamedayTracker.Pagination.Handlers
 {
@@ -14,7 +9,7 @@ namespace GamedayTracker.Pagination.Handlers
         
         public async Task HandleNextAsync(object data, InteractionCreatedEventArgs eventArgs)
         {
-            var pagination = (NFLScoreboardPaginationData)data;
+            var pagination = (PaginationData)data;
 
             pagination.CurrentPage++;
 
@@ -24,7 +19,7 @@ namespace GamedayTracker.Pagination.Handlers
                 pagination.Season,
                 pagination.CurrentPage);
 
-            var buttons = PaginationBuilder.CreateNavigationButtons(pagination.CurrentPage, pagination.TotalPages);
+            var buttons = PaginationBuilder.CreateNavigationButtons(pagination.CurrentPage, pagination.TotalPages, eventArgs.Interaction.Message.Id);
             msg.AddActionRowComponent(new DiscordActionRowComponent(buttons));
 
             await eventArgs.Interaction.CreateResponseAsync(
@@ -34,7 +29,7 @@ namespace GamedayTracker.Pagination.Handlers
 
         public async Task HandlePreviousAsync(object data, InteractionCreatedEventArgs eventArgs)
         {
-            var pagination = (NFLScoreboardPaginationData)data;
+            var pagination = (PaginationData)data;
 
             pagination.CurrentPage--;
 
@@ -44,7 +39,7 @@ namespace GamedayTracker.Pagination.Handlers
                 pagination.Season,
                 pagination.CurrentPage);
 
-            var buttons = PaginationBuilder.CreateNavigationButtons(pagination.CurrentPage, pagination.TotalPages);
+            var buttons = PaginationBuilder.CreateNavigationButtons(pagination.CurrentPage, pagination.TotalPages, eventArgs.Interaction.Message.Id);
             msg.AddActionRowComponent(new DiscordActionRowComponent(buttons));
 
             await eventArgs.Interaction.CreateResponseAsync(

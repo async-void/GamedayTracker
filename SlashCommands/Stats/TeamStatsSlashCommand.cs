@@ -53,7 +53,7 @@ namespace GamedayTracker.SlashCommands.Stats
                 var teamEmoji = NflEmojiService.GetEmoji(abbr);
                 var msg = await embedService.CreateTeamStatsPage(stats.Value,teamEmoji, seasonChoice, season, 0);
 
-                var buttons = PaginationBuilder.CreateNavigationButtons(0, stats.Value.Splits.Categories.Count);
+                var buttons = PaginationBuilder.CreateNavigationButtons(0, stats.Value.Splits.Categories.Count, ctx.Interaction.Message.Id);
                 msg.AddActionRowComponent(new DiscordActionRowComponent(buttons));
                 //var embed = await embedService.CreateTeamStatsEmbed(stats.Value, seasonChoice, season, abbr);
                 await ctx.RespondAsync(msg);

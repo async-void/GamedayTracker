@@ -24,7 +24,7 @@ namespace GamedayTracker.Pagination.Handlers
                 pagination.Season,
                 pagination.CurrentPage);
 
-            var buttons = PaginationBuilder.CreateNavigationButtons(pagination.CurrentPage, pagination.TotalPages);
+            var buttons = PaginationBuilder.CreateNavigationButtons(pagination.CurrentPage, pagination.TotalPages, eventArgs.Interaction.Message.Id);
             msg.AddActionRowComponent(new DiscordActionRowComponent(buttons));
 
             await eventArgs.Interaction.CreateResponseAsync(
@@ -45,7 +45,7 @@ namespace GamedayTracker.Pagination.Handlers
                 pagination.Season,
                 pagination.CurrentPage);
 
-            var buttons = PaginationBuilder.CreateNavigationButtons(pagination.CurrentPage, pagination.TotalPages);
+            var buttons = PaginationBuilder.CreateNavigationButtons(pagination.CurrentPage, pagination.TotalPages, eventArgs.Interaction.Message.Id);
             msg.AddActionRowComponent(new DiscordActionRowComponent(buttons));
 
             await eventArgs.Interaction.CreateResponseAsync(

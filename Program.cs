@@ -162,6 +162,7 @@ namespace GamedayTracker
                    services.AddSingleton<IDmQueue>(sp =>
                         new JsonDmQueue(Path.Combine(AppContext.BaseDirectory, "dmqueue.json")));
                    services.AddHostedService<DmDispatcher>();
+                   services.AddSingleton<CrosspostDispatcher>();
                    services.AddSingleton<TicketIdGenerator>();
                    services.AddSingleton<TicketCoordinator>();
                    services.AddSingleton<EspnOptions>();
@@ -188,7 +189,7 @@ namespace GamedayTracker
                        q.AddTrigger(opts => opts
                            .ForJob(rtJobKey)
                            .WithIdentity("RealTimeScores-trigger")
-                           .StartNow()
+                           .StartAt(DateTimeOffset.UtcNow.AddMinutes(2))
                            .WithSimpleSchedule(x => x
                                .WithInterval(TimeSpan.FromHours(scoresInterval))
                                .RepeatForever().Build()));
@@ -199,7 +200,7 @@ namespace GamedayTracker
                        q.AddTrigger(opts => opts
                            .ForJob(headlinesJobKey)
                            .WithIdentity("DailyHeadlines-trigger")
-                           .StartNow()
+                           .StartAt(DateTimeOffset.UtcNow.AddMinutes(2))
                            .WithSimpleSchedule(x => x
                                .WithInterval(TimeSpan.FromHours(headlinesInterval))
                                .RepeatForever().Build()));
@@ -272,14 +273,14 @@ namespace GamedayTracker
 
                }).Build();
                RegisterPaginationHandlers(host.Services);
-            await host.RunAsync();
-            await Serilog.Log.CloseAndFlushAsync();
+               await host.RunAsync();
+               await Log.CloseAndFlushAsync();
 
         }
 
         private static void RegisterPaginationHandlers(IServiceProvider provider)
         {
-            PaginationHandlerRegistry.Register<NFLScoreboardPaginationData>(
+            PaginationHandlerRegistry.Register<PaginationData>(
                 provider.GetRequiredService<ScoreboardPaginationHandler>());
 
             PaginationHandlerRegistry.Register<TeamStatsPaginationData>(

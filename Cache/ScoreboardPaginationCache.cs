@@ -9,10 +9,10 @@ namespace GamedayTracker.Cache
 {
     public class ScoreboardPaginationCache
     {
-        private static readonly Dictionary<ulong, NFLScoreboardPaginationData> _cache = [];
+        private static readonly Dictionary<ulong, PaginationData> _cache = [];
         private static readonly object _lock = new();
 
-        public static void Store(ulong messageId, NFLScoreboardPaginationData data)
+        public static void Store(ulong messageId, PaginationData data)
         {
             lock (_lock)
             {
@@ -20,7 +20,7 @@ namespace GamedayTracker.Cache
             }
         }
 
-        public static NFLScoreboardPaginationData? Get(ulong messageId)
+        public static PaginationData? Get(ulong messageId)
         {
             lock (_lock)
             {

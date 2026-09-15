@@ -1,22 +1,18 @@
 ﻿using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
-using GamedayTracker.Interfaces;
+using GamedayTracker.Services.Espn;
 
 namespace GamedayTracker.AutoCompleteProvider
 {
-    public class GameDayAutoCompleteProvider : IAutoCompleteProvider
+    public class GameDayAutoCompleteProvider(IEspnClient espnClient) : IAutoCompleteProvider
     {
-        private readonly IGameData _gameData;
-
-        public GameDayAutoCompleteProvider(IGameData gameData)
-        {
-            _gameData = gameData;
-        }
+        private readonly IEspnClient _espnClient = espnClient;
 
         public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
         {
-            var games = await _gameData.GetNFLScoresAsync();
+            var season = await _espnClient.GetSeasonAsync();
+            var games = await _espnClient.GetScoreboardAsync(season.Year.ToString(), "", "");
 
             if (games?.Events == null || games.Events.Count == 0)
             {

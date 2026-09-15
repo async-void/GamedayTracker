@@ -8,13 +8,22 @@ namespace GamedayTracker.Services.Espn
             $"{baseUrl}season";
 
         public static string Roster(string baseUrl, string teamId) =>
-            $"{baseUrl}teams/{teamId}/roster";
+            $"{baseUrl}{teamId}/roster";
 
         public static string Team(string baseUrl, string teamId) =>
-            $"{baseUrl}teams/{teamId}";
+            $"{baseUrl}{teamId}";
+
+        public static string TeamSchedule(string baseUrl, string teamId) =>
+            $"{baseUrl}{teamId}/schedule";
+
+        public static string Teams(string baseUrl) =>
+           $"{baseUrl}teams";
 
         public static string Standings(string baseUrl) =>
            $"{baseUrl}standings";
+
+        public static string News(string baseUrl) =>
+            $"{baseUrl}";
 
         public static string Scoreboard(string baseUrl, string season, string week, string seasonType)
             => $"{baseUrl}scoreboard?week={week}&seasontype={seasonType}&season={season}";

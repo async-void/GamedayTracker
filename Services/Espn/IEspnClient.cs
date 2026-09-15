@@ -1,4 +1,5 @@
-﻿using GamedayTracker.Models.NFL;
+﻿using GamedayTracker.Models.News;
+using GamedayTracker.Models.NFL;
 
 namespace GamedayTracker.Services.Espn
 {
@@ -9,5 +10,7 @@ namespace GamedayTracker.Services.Espn
         Task<NFLTeam> GetTeam(string teamId, CancellationToken ct = default);
         Task<NflStandings> GetStandingsAsync(string? season = null, CancellationToken ct = default);
         Task<NFLScoreboard> GetScoreboardAsync(string? season, string? week, string? seasonType, CancellationToken ct = default);
+        Task<List<NewsArticle>> GetNewsAsync(CancellationToken ct = default);
+        Task<NFLScoreboard> GetTeamScheduleAsync(string teamId, CancellationToken ct = default);
     }
 }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GamedayTracker.Pagination
 {
-    public class NFLScoreboardPaginationData
+    public class PaginationData
     {
         public NFLScoreboard Scoreboard{ get; set; }
         public string Emoji { get; set; }

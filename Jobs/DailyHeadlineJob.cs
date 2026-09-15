@@ -2,6 +2,7 @@
 using DSharpPlus.Entities;
 using GamedayTracker.Enums;
 using GamedayTracker.Interfaces;
+using GamedayTracker.Services.Espn;
 using GamedayTracker.Utility;
 using Microsoft.Extensions.Logging;
 using Quartz;
@@ -10,7 +11,7 @@ using System.Text;
 
 namespace GamedayTracker.Jobs
 {
-    public class DailyHeadlineJob(IEvaluator evaluator, INewsService newsService, DiscordClient client, ILogger<DailyHeadlineJob> logger) : IJob
+    public class DailyHeadlineJob(IEvaluator evaluator, INewsService newsService, DiscordClient client, ILogger<DailyHeadlineJob> logger, IEspnClient espnClient) : IJob
     {
        
         public async Task Execute(IJobExecutionContext context)
@@ -25,21 +26,21 @@ namespace GamedayTracker.Jobs
             //}
             var timestamp = DateTimeOffset.UtcNow.ToTimestamp();
             var rnd = new Random();
-            var articles = await newsService.GetNews();
+            var articles = await espnClient.GetNewsAsync();
             var imgList = new List<string>();
-            if (articles.IsOk)
+            if (articles is not null || articles.Count > 0)
             {
                 var sBuilder = new StringBuilder();
-                var count = articles.Value.Count;
+                var count = articles.Take(5).Count();
                 var embedTitle = $"**Latest NFL News {DateTimeOffset.UtcNow:D}**";
 
                 for (var i = 0; i < count; i++)
                 {
-                    sBuilder.AppendLine($"{i + 1}. **{articles.Value[i].Headline}**\r\n{articles.Value[i].Description}");
+                    sBuilder.AppendLine($"{i + 1}. **{articles[i].Headline}**\r\n{articles[i].Description}");
 
-                    for (var j = 0; j < articles.Value[i].Images.Count; j++)
+                    for (var j = 0; j < articles[i].Images.Count; j++)
                     {
-                        imgList.Add(articles.Value[i].Images[j].Url);
+                        imgList.Add(articles[i].Images[j].Url);
                     }
                 }
 

@@ -1,6 +1,7 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
 using GamedayTracker.Utility.Ansi;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -20,6 +21,10 @@ namespace GamedayTracker.Services
             
             string[] handlers = [ "MemberBetsPaginationHandler", "NFLScoreboardPaginationHandler", "TeamStatsPaginationHandler" ];
             _logger.LogInformation($"Registering Pagination Handlers [{AnsiColors.GetAnsiCode("orange")} {string.Join(",", handlers)}]");
+
+            var crossPostDispatcher = _dClient.ServiceProvider.GetRequiredService<CrosspostDispatcher>();
+            crossPostDispatcher.Start();
+            _logger.LogInformation($"Crosspost Dispatcher started.");
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)

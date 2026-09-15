@@ -17,7 +17,6 @@ namespace GamedayTracker.Services
             var news = new List<NewsArticle>();
             using var client = new HttpClient();
 
-
             try
             {
 

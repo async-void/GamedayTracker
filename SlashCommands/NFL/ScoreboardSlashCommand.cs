@@ -47,15 +47,18 @@ namespace GamedayTracker.SlashCommands.NFL
             var emoji = NflEmojiService.GetEmoji("default");
 
             var completedGames = gameService.GetCompletedGames(scores);
-            var page = await embedService.CreateScoreboardPage(scores, emoji, season ?? 2025, 0);
-            var totalPages = (int)Math.Ceiling(completedGames.Count / 4.0);
-            
-            var buttons = PaginationBuilder.CreateNavigationButtons(0, totalPages);
-            page.AddActionRowComponent(new DiscordActionRowComponent(buttons));
+            var scheduledGames = gameService.GetScheduledGames(scores);
+            var page = await embedService.CreateScoreboardPage(scores, emoji, season ?? 2026, 0);
+            var totalPages = (int)Math.Ceiling(scores.Events.Count / 4.0);
 
             await ctx.RespondAsync(page);
             var response = await ctx.GetResponseAsync();
-            var paginationData = new NFLScoreboardPaginationData
+
+            var buttons = PaginationBuilder.CreateNavigationButtons(0, totalPages, response.Id);
+            page.AddActionRowComponent(new DiscordActionRowComponent(buttons));
+
+            await response.ModifyAsync(page);
+            var paginationData = new PaginationData
             {
                 Scoreboard = scores,
                 CurrentPage = 0,
@@ -66,12 +69,12 @@ namespace GamedayTracker.SlashCommands.NFL
                 UserId = ctx.User.Id,
                 MessageId = response.Id,
             };
-            PaginationCache.Store(response.Id, paginationData);
+            ScoreboardPaginationCache.Store(response.Id, paginationData);
             
             _ = Task.Run(async () =>
             {
                 await Task.Delay(TimeSpan.FromMinutes(10));
-                PaginationCache.Remove(response.Id);
+                ScoreboardPaginationCache.Remove(response.Id);
             });
         }
 

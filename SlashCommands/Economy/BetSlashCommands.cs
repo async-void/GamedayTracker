@@ -9,6 +9,7 @@ using GamedayTracker.Helpers;
 using GamedayTracker.Interfaces;
 using GamedayTracker.Models;
 using GamedayTracker.Pagination;
+using GamedayTracker.Services.Espn;
 using GamedayTracker.Utility;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel;
@@ -18,7 +19,7 @@ namespace GamedayTracker.SlashCommands.Economy
     [Command("betting")]
     [Description("betting slash commands")]
     public class BetSlashCommands(ICommandHelper slashCmdHelper, IJsonDataService jsonService, IGameData gameDataService, 
-        IBetting bettingService, IDiscordEmbedService embedService)
+        IBetting bettingService, IDiscordEmbedService embedService, IEspnClient espnClient)
     {
 
         #region BET
@@ -40,9 +41,10 @@ namespace GamedayTracker.SlashCommands.Economy
                     var canAffordBet = await bettingService.CanAffordBetAsync(bank, amount);
                     if (canAffordBet.IsOk)
                     {
-                        var scoreboard = await gameDataService.GetNFLScoresAsync();
+                        var season = await espnClient.GetSeasonAsync();
+                        var scoreboard = await espnClient.GetScoreboardAsync(season.Year.ToString(), "", "");
                         var scheduled = scoreboard.Events
-                            .Where(s => s.Date.Value.DayOfWeek.ToString().Equals(day))
+                            .Where(s => s.Date.Value.DayOfWeek.ToString().Equals(day) && s.Status.ToString() == "STATUS_SCHEDULED")
                             .ToList();
                         if (scheduled.Count == 0)
                         {
@@ -56,7 +58,7 @@ namespace GamedayTracker.SlashCommands.Economy
                         IEnumerable<DiscordSelectComponentOption> gameOptions = scheduled.Select(s =>
                         {
                             var optionLabel = $"{s.Name}";
-                            var optionValue = $"{s.Name}:{s.Id}:{amount}";
+                            var optionValue = $"{s.Name}:bet:{s.Id}:{amount}";
                             return new DiscordSelectComponentOption(optionLabel, optionValue);
                         });
 
@@ -132,7 +134,7 @@ namespace GamedayTracker.SlashCommands.Economy
                 {
                     var page = await embedService.CreateMemberBetsPage(bets.Value, ctx.Client, 0);
                     var totalPages = (int)Math.Ceiling(bets.Value.Count() / 4.0);
-                    var buttons = PaginationBuilder.CreateNavigationButtons(0, totalPages);
+                    var buttons = PaginationBuilder.CreateNavigationButtons(0, totalPages, ctx.Interaction.Message.Id);
                     page.AddActionRowComponent(new DiscordActionRowComponent(buttons));
                     await ctx.RespondAsync(page);
                     var response = await ctx.GetResponseAsync();

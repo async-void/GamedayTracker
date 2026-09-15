@@ -1,5 +1,7 @@
 ﻿using GamedayTracker.Helpers;
 using GamedayTracker.Models;
+using GamedayTracker.Models.NFL;
+using GamedayTracker.Records;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -347,6 +349,20 @@ namespace GamedayTracker.Extensions
                 .Replace(",", "")
                 .Replace("-", " ")
                 .Replace("  ", " ");
+        }
+        #endregion
+
+        #region TO TEAM STANDING
+        public static TeamStandingRecord ToTeamStanding(this StandingEntry e)
+        {
+            return new TeamStandingRecord(
+                TeamName: e.Team.Name,
+                Abbr: e.Team.Abbreviation ?? "default",
+                Wins: int.Parse(e.Stats.First(s => s.Name == "wins").DisplayValue),
+                Loses: int.Parse(e.Stats.First(s => s.Name == "losses").DisplayValue),
+                Pct: double.Parse(e.Stats.First(s => s.Name == "winPercent").DisplayValue),
+                GB: double.Parse(e.Stats.First(s => s.Name == "gamesBehind").DisplayValue)
+            );
         }
         #endregion
     }
